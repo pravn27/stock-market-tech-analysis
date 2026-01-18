@@ -1097,30 +1097,30 @@ body {
   }
 }
 
-/* ============ Performance Overview - Heatmap Matrix ============ */
-.perf-heatmap {
+/* ============ Performance Overview - Unified Sortable Table ============ */
+.perf-overview {
   padding: 1.5rem;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
 /* Header */
-.perf-heatmap-header {
+.perf-overview-header {
   margin-bottom: 1.5rem;
 }
 
-.perf-heatmap-title h2 {
+.perf-overview-title h2 {
   font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: 0.25rem;
 }
 
-.perf-heatmap-title p {
+.perf-overview-title p {
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
-.perf-heatmap-title .lookback-badge {
+.perf-overview-title .lookback-badge {
   display: inline-block;
   margin-left: 0.75rem;
   padding: 0.2rem 0.6rem;
@@ -1132,7 +1132,7 @@ body {
 }
 
 /* Controls */
-.perf-heatmap-controls {
+.perf-overview-controls {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -1143,18 +1143,18 @@ body {
   flex-wrap: wrap;
 }
 
-.perf-heatmap-controls .control-group {
+.perf-overview-controls .control-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.perf-heatmap-controls .control-group label {
+.perf-overview-controls .control-group label {
   color: var(--text-secondary);
   font-size: 0.85rem;
 }
 
-.perf-heatmap-controls .control-group input {
+.perf-overview-controls .control-group input {
   width: 50px;
   padding: 0.4rem 0.5rem;
   background: var(--bg-input);
@@ -1165,7 +1165,7 @@ body {
   text-align: center;
 }
 
-.perf-heatmap-controls .control-group select {
+.perf-overview-controls .control-group select {
   padding: 0.4rem 0.75rem;
   background: var(--bg-input);
   border: 1px solid var(--border);
@@ -1176,31 +1176,17 @@ body {
   min-width: 130px;
 }
 
-.perf-heatmap-controls .control-group select:focus {
+.perf-overview-controls .control-group select:focus {
   outline: none;
   border-color: var(--primary);
 }
 
-.perf-heatmap-controls .lookback-hint {
+.perf-overview-controls .lookback-hint {
   color: var(--text-muted);
   font-size: 0.75rem;
 }
 
-.perf-heatmap-controls .toggle-neutral {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-}
-
-.perf-heatmap-controls .toggle-neutral input {
-  width: auto;
-  cursor: pointer;
-}
-
-.perf-heatmap-controls .refresh-btn {
+.perf-overview-controls .refresh-btn {
   margin-left: auto;
   padding: 0.5rem 1rem;
   background: var(--primary);
@@ -1213,11 +1199,11 @@ body {
   transition: all 0.2s;
 }
 
-.perf-heatmap-controls .refresh-btn:hover:not(:disabled) {
+.perf-overview-controls .refresh-btn:hover:not(:disabled) {
   background: var(--primary-dark);
 }
 
-.perf-heatmap-controls .refresh-btn:disabled {
+.perf-overview-controls .refresh-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -1266,129 +1252,130 @@ body {
   font-size: 1rem;
 }
 
-/* Heatmap Content */
-.perf-heatmap-content {
+/* Performance Overview Content */
+.perf-overview-content {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
-/* Heatmap Section */
-.heatmap-section {
+/* Unified Table */
+.perf-table-wrapper {
   background: var(--bg-card);
   border-radius: var(--radius);
   overflow: hidden;
 }
 
-.heatmap-section.section-green {
-  border-left: 4px solid var(--positive);
-}
-
-.heatmap-section.section-red {
-  border-left: 4px solid var(--negative);
-}
-
-.heatmap-section.section-gray {
-  border-left: 4px solid var(--text-muted);
-}
-
-.heatmap-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid var(--border);
-}
-
-.heatmap-header .heatmap-icon {
-  font-size: 1rem;
-}
-
-.heatmap-header h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  flex: 1;
-}
-
-.heatmap-header .heatmap-count {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  background: var(--bg-input);
-  padding: 0.2rem 0.6rem;
-  border-radius: 10px;
-}
-
-.heatmap-empty {
-  padding: 2rem;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-/* Heatmap Table */
-.heatmap-table-wrapper {
-  overflow-x: auto;
-}
-
-.heatmap-table {
+.perf-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.85rem;
 }
 
-.heatmap-table th,
-.heatmap-table td {
-  padding: 0.6rem 0.75rem;
+.perf-table th,
+.perf-table td {
+  padding: 0.75rem 1rem;
   text-align: center;
   border-bottom: 1px solid var(--border);
 }
 
-.heatmap-table th {
+.perf-table th {
   background: var(--bg-input);
   font-weight: 600;
   color: var(--text-secondary);
   font-size: 0.8rem;
   position: sticky;
   top: 0;
+  z-index: 10;
 }
 
-.heatmap-table .sector-col {
+.perf-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.perf-table th.sortable:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary);
+}
+
+.perf-table th.sorted {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--primary);
+}
+
+.perf-table .sort-icon {
+  margin-left: 0.25rem;
+  font-size: 0.7rem;
+}
+
+.perf-table .sort-icon.inactive {
+  opacity: 0.3;
+}
+
+.perf-table .sort-icon.active {
+  color: var(--primary);
+}
+
+.perf-table .rank-col {
+  width: 40px;
+  text-align: center;
+}
+
+.perf-table .sector-col {
   text-align: left;
-  min-width: 180px;
+  min-width: 200px;
 }
 
-.heatmap-table .tf-col {
-  min-width: 60px;
+.perf-table .tf-col {
+  min-width: 80px;
 }
 
-/* Heatmap Row */
-.heatmap-row {
+/* Performance Row */
+.perf-row {
   cursor: pointer;
   transition: background 0.2s;
 }
 
-.heatmap-row:hover {
+.perf-row:hover {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.heatmap-row:hover .sector-arrow {
+.perf-row:hover .sector-arrow {
   color: var(--primary);
+  opacity: 1;
+}
+
+.perf-row.outperforming {
+  border-left: 3px solid var(--positive);
+}
+
+.perf-row.underperforming {
+  border-left: 3px solid var(--negative);
+}
+
+.perf-row.neutral {
+  border-left: 3px solid var(--text-muted);
+}
+
+/* Rank Cell */
+.perf-table .rank-cell {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 /* Sector Cell */
-.heatmap-table .sector-cell {
+.perf-table .sector-cell {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   text-align: left;
 }
 
-.sector-cell .sector-rank {
-  width: 20px;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-weight: 600;
+.sector-cell .status-dot {
+  font-size: 0.7rem;
 }
 
 .sector-cell .sector-name {
@@ -1401,8 +1388,14 @@ body {
 
 .sector-cell .sector-arrow {
   color: var(--text-muted);
-  font-size: 0.65rem;
-  transition: color 0.2s;
+  font-size: 0.6rem;
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+/* Sorted Column Highlight */
+.perf-table .sorted-col {
+  background: rgba(59, 130, 246, 0.05);
 }
 
 /* RS Cells with Color Gradients */
@@ -1436,14 +1429,27 @@ body {
   color: #f87171;
 }
 
-/* Help Text */
-.perf-help {
-  text-align: center;
-  padding: 0.75rem;
-  color: var(--text-muted);
-  font-size: 0.85rem;
+/* Footer */
+.perf-footer {
   background: var(--bg-card);
   border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.perf-legend {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.perf-help {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
 }
 
 /* ============ Modal Overlay ============ */
@@ -1626,26 +1632,34 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .perf-heatmap {
+  .perf-overview {
     padding: 1rem;
   }
   
-  .perf-heatmap-controls {
+  .perf-overview-controls {
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
   }
   
-  .perf-heatmap-controls .refresh-btn {
+  .perf-overview-controls .refresh-btn {
     margin-left: 0;
   }
   
-  .heatmap-table .sector-col {
-    min-width: 140px;
+  .perf-table .sector-col {
+    min-width: 150px;
   }
   
-  .heatmap-table .tf-col {
-    min-width: 50px;
+  .perf-table .tf-col {
+    min-width: 65px;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .perf-legend {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
   }
   
   .modal-content {
