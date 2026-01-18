@@ -3,6 +3,7 @@ ASTA - Stock Market Technical Analysis API
 FastAPI Backend Service
 """
 
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
@@ -19,14 +20,22 @@ app = FastAPI(
 )
 
 # CORS Configuration - Allow React frontend
+# Get additional origins from environment variable
+extra_origins = os.getenv("CORS_ORIGINS", "").split(",")
+extra_origins = [o.strip() for o in extra_origins if o.strip()]
+
+allowed_origins = [
+    "http://localhost:3000",      # React dev server
+    "http://localhost:5173",      # Vite dev server
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "https://pravn27.github.io",  # GitHub Pages
+    *extra_origins
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",      # React dev server
-        "http://localhost:5173",      # Vite dev server
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
