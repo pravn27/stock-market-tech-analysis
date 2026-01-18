@@ -11,6 +11,13 @@ const TIMEFRAMES = ['3M', 'M', 'W', 'D', '4H', '1H'];
 const TF_MAP = { '3M': '3m', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': '4h', '1H': '1h' };
 const TF_KEY_MAP = { '3M': 'three_month', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': 'four_hour', '1H': 'one_hour' };
 
+const INDEX_GROUPS = [
+  { value: 'all', label: 'All Indices' },
+  { value: 'sectorial', label: 'Sectorial' },
+  { value: 'broad_market', label: 'Broad Market' },
+  { value: 'thematic', label: 'Thematic' }
+];
+
 const PerformanceOverview = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -18,6 +25,7 @@ const PerformanceOverview = () => {
   const [limit, setLimit] = useState(5);
   const [lookback, setLookback] = useState(1);
   const [showNeutral, setShowNeutral] = useState(true);
+  const [indexGroup, setIndexGroup] = useState('all');
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -29,7 +37,7 @@ const PerformanceOverview = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await getTopPerformers(limit, 'all', lookback);
+      const result = await getTopPerformers(limit, indexGroup, lookback);
       setData(result);
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
@@ -254,7 +262,7 @@ const PerformanceOverview = () => {
         <div className="perf-heatmap-title">
           <h2>📊 Performance Overview</h2>
           <p>
-            All sectors vs NIFTY 50 across timeframes
+            {INDEX_GROUPS.find(g => g.value === indexGroup)?.label || 'All'} vs NIFTY 50 across timeframes
             {data && <span className="lookback-badge">Lookback: {data.lookback || lookback} period{(data.lookback || lookback) > 1 ? 's' : ''}</span>}
           </p>
         </div>
@@ -262,6 +270,19 @@ const PerformanceOverview = () => {
 
       {/* Controls */}
       <div className="perf-heatmap-controls">
+        <div className="control-group">
+          <label>Index Group</label>
+          <select
+            value={indexGroup}
+            onChange={(e) => setIndexGroup(e.target.value)}
+            className="index-group-select"
+          >
+            {INDEX_GROUPS.map(g => (
+              <option key={g.value} value={g.value}>{g.label}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="control-group">
           <label>Show Top</label>
           <input

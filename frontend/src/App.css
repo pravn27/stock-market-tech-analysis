@@ -1165,6 +1165,22 @@ body {
   text-align: center;
 }
 
+.perf-heatmap-controls .control-group select {
+  padding: 0.4rem 0.75rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-width: 130px;
+}
+
+.perf-heatmap-controls .control-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
 .perf-heatmap-controls .lookback-hint {
   color: var(--text-muted);
   font-size: 0.75rem;
