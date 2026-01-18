@@ -94,9 +94,21 @@ const DowTheoryScanner = () => {
 
   // Get emoji for trend
   const getTrendEmoji = (trend) => {
-    if (trend.includes('HH-HL')) return '🟢';
-    if (trend.includes('LL-LH')) return '🔴';
-    return '🟡';
+    if (!trend) return '⚪';
+    if (trend === 'HH-HL') return '🟢';
+    if (trend === 'LL-LH') return '🔴';
+    if (trend === 'LL→HL') return '🟡';  // Transition up
+    if (trend === 'HH→LH') return '🟠';  // Transition down
+    if (trend === 'Sideways') return '⚪';
+    return '⚪';
+  };
+
+  // Get trend label display
+  const getTrendLabel = (tf) => {
+    if (!tf) return '-';
+    const high = tf.last_high_label || '-';
+    const low = tf.last_low_label || '-';
+    return `${high}/${low}`;
   };
 
   // Render single stock detail modal
@@ -271,34 +283,42 @@ const DowTheoryScanner = () => {
                       
                       {/* Super TIDE: M, W */}
                       <td className={`trend-cell ${getTrendColor(tfs.monthly?.color)}`}>
-                        {getTrendEmoji(tfs.monthly?.trend || '')}
+                        <span className="trend-emoji">{getTrendEmoji(tfs.monthly?.trend)}</span>
+                        <span className="trend-label">{getTrendLabel(tfs.monthly)}</span>
                       </td>
                       <td className={`trend-cell ${getTrendColor(tfs.weekly?.color)}`}>
-                        {getTrendEmoji(tfs.weekly?.trend || '')}
+                        <span className="trend-emoji">{getTrendEmoji(tfs.weekly?.trend)}</span>
+                        <span className="trend-label">{getTrendLabel(tfs.weekly)}</span>
                       </td>
                       
                       {/* TIDE: D, 4H */}
                       <td className={`trend-cell ${getTrendColor(tfs.daily?.color)}`}>
-                        {getTrendEmoji(tfs.daily?.trend || '')}
+                        <span className="trend-emoji">{getTrendEmoji(tfs.daily?.trend)}</span>
+                        <span className="trend-label">{getTrendLabel(tfs.daily)}</span>
                       </td>
                       <td className={`trend-cell ${getTrendColor(tfs['4h']?.color)}`}>
-                        {getTrendEmoji(tfs['4h']?.trend || '')}
+                        <span className="trend-emoji">{getTrendEmoji(tfs['4h']?.trend)}</span>
+                        <span className="trend-label">{getTrendLabel(tfs['4h'])}</span>
                       </td>
                       
                       {/* WAVE: 4H, 1H */}
                       <td className={`trend-cell ${getTrendColor(tfs['4h']?.color)}`}>
-                        {getTrendEmoji(tfs['4h']?.trend || '')}
+                        <span className="trend-emoji">{getTrendEmoji(tfs['4h']?.trend)}</span>
+                        <span className="trend-label">{getTrendLabel(tfs['4h'])}</span>
                       </td>
                       <td className={`trend-cell ${getTrendColor(tfs['1h']?.color)}`}>
-                        {getTrendEmoji(tfs['1h']?.trend || '')}
+                        <span className="trend-emoji">{getTrendEmoji(tfs['1h']?.trend)}</span>
+                        <span className="trend-label">{getTrendLabel(tfs['1h'])}</span>
                       </td>
                       
                       {/* RIPPLE: 1H, 15M */}
                       <td className={`trend-cell ${getTrendColor(tfs['1h']?.color)}`}>
-                        {getTrendEmoji(tfs['1h']?.trend || '')}
+                        <span className="trend-emoji">{getTrendEmoji(tfs['1h']?.trend)}</span>
+                        <span className="trend-label">{getTrendLabel(tfs['1h'])}</span>
                       </td>
                       <td className={`trend-cell ${getTrendColor(tfs['15m']?.color)}`}>
-                        {getTrendEmoji(tfs['15m']?.trend || '')}
+                        <span className="trend-emoji">{getTrendEmoji(tfs['15m']?.trend)}</span>
+                        <span className="trend-label">{getTrendLabel(tfs['15m'])}</span>
                       </td>
                       
                       {/* Opportunity */}
@@ -314,12 +334,14 @@ const DowTheoryScanner = () => {
 
           <div className="dow-footer">
             <div className="dow-legend">
-              <span>🟢 Uptrend (HH-HL)</span>
-              <span>🟡 Sideways</span>
-              <span>🔴 Downtrend (LL-LH)</span>
+              <span>🟢 HH-HL = Uptrend</span>
+              <span>🟡 LL→HL = Transition Up</span>
+              <span>⚪ Sideways</span>
+              <span>🟠 HH→LH = Transition Down</span>
+              <span>🔴 LL-LH = Downtrend</span>
             </div>
             <div className="dow-help">
-              💡 Click any row for detailed analysis
+              💡 Click any row for detailed pivot analysis • HH=Higher High, HL=Higher Low, LH=Lower High, LL=Lower Low
             </div>
           </div>
         </div>

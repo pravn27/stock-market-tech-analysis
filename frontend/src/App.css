@@ -1958,8 +1958,22 @@ body {
 
 /* Trend Cells */
 .trend-cell {
-  font-size: 1rem;
+  font-size: 0.85rem;
   padding: 0.4rem;
+  text-align: center;
+}
+
+.trend-cell .trend-emoji {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.trend-cell .trend-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  opacity: 0.9;
+  margin-top: 2px;
 }
 
 .opp-cell {

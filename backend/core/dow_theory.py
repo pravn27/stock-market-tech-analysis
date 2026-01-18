@@ -1,9 +1,12 @@
 """
-Dow Theory Trend Analysis
-Detects swing highs/lows and classifies trend as:
-- HH-HL (Higher High, Higher Low) = Uptrend
-- LL-LH (Lower Low, Lower High) = Downtrend
-- HLs-LHs (Sideways/Consolidation)
+Dow Theory Trend Analysis - Enhanced Version
+Based on LonesomeTheBlue's Higher High Lower Low indicator logic
+
+Detects pivot highs/lows and classifies each as:
+- HH (Higher High) / LH (Lower High)
+- HL (Higher Low) / LL (Lower Low)
+
+Then determines overall trend based on the pattern.
 
 Multi-Timeframe Analysis:
 - Super TIDE: Monthly, Weekly
@@ -23,19 +26,19 @@ from enum import Enum
 class TrendType(Enum):
     UPTREND = "HH-HL"      # Higher High, Higher Low
     DOWNTREND = "LL-LH"    # Lower Low, Lower High
-    SIDEWAYS = "HLs-LHs"   # Sideways / Consolidation
-    WEAK_UP = "HH-HL (Weak)"
-    WEAK_DOWN = "LL-LH (Weak)"
+    SIDEWAYS = "Sideways"  # No clear direction
+    TRANSITION_UP = "LL→HL"   # Transitioning to uptrend
+    TRANSITION_DOWN = "HH→LH" # Transitioning to downtrend
 
 
 # Timeframe configurations
 TIMEFRAMES = {
-    'monthly': {'interval': '1mo', 'period': '5y', 'label': 'M', 'group': 'super_tide'},
-    'weekly': {'interval': '1wk', 'period': '2y', 'label': 'W', 'group': 'super_tide'},
-    'daily': {'interval': '1d', 'period': '6mo', 'label': 'D', 'group': 'tide'},
-    '4h': {'interval': '1h', 'period': '60d', 'label': '4H', 'group': 'tide'},  # Aggregate to 4H
-    '1h': {'interval': '1h', 'period': '30d', 'label': '1H', 'group': 'wave'},
-    '15m': {'interval': '15m', 'period': '7d', 'label': '15M', 'group': 'ripple'},
+    'monthly': {'interval': '1mo', 'period': '5y', 'label': 'M', 'group': 'super_tide', 'pivot_len': 3},
+    'weekly': {'interval': '1wk', 'period': '2y', 'label': 'W', 'group': 'super_tide', 'pivot_len': 3},
+    'daily': {'interval': '1d', 'period': '6mo', 'label': 'D', 'group': 'tide', 'pivot_len': 5},
+    '4h': {'interval': '1h', 'period': '60d', 'label': '4H', 'group': 'tide', 'pivot_len': 5},
+    '1h': {'interval': '1h', 'period': '30d', 'label': '1H', 'group': 'wave', 'pivot_len': 5},
+    '15m': {'interval': '15m', 'period': '7d', 'label': '15M', 'group': 'ripple', 'pivot_len': 5},
 }
 
 # MTF Groups
@@ -48,134 +51,283 @@ MTF_GROUPS = {
 
 
 class DowTheoryAnalyzer:
-    """Analyzes price action using Dow Theory principles"""
+    """
+    Enhanced Dow Theory Analysis using Pivot-based approach
+    Similar to LonesomeTheBlue's TradingView indicator
+    """
     
-    def __init__(self, swing_lookback: int = 5):
+    def __init__(self, pivot_left: int = 5, pivot_right: int = 5):
         """
         Initialize analyzer
         
         Args:
-            swing_lookback: Number of candles to look back for swing detection
+            pivot_left: Number of bars to the left for pivot confirmation
+            pivot_right: Number of bars to the right for pivot confirmation
         """
-        self.swing_lookback = swing_lookback
+        self.pivot_left = pivot_left
+        self.pivot_right = pivot_right
     
-    def detect_swing_highs(self, highs: pd.Series, lookback: int = None) -> pd.Series:
+    def find_pivot_highs(self, df: pd.DataFrame, left: int = None, right: int = None) -> List[Dict]:
         """
-        Detect swing highs (local maxima)
-        A swing high is a high that is higher than 'lookback' candles on each side
+        Find pivot highs (local maxima)
+        A pivot high requires the high to be greater than 'left' bars before
+        and 'right' bars after.
+        
+        Returns list of dicts with index, price, and date
         """
-        lookback = lookback or self.swing_lookback
-        swing_highs = pd.Series(index=highs.index, dtype=float)
+        left = left or self.pivot_left
+        right = right or self.pivot_right
+        pivots = []
         
-        for i in range(lookback, len(highs) - lookback):
-            window = highs.iloc[i - lookback:i + lookback + 1]
-            if highs.iloc[i] == window.max():
-                swing_highs.iloc[i] = highs.iloc[i]
+        highs = df['High'].values
         
-        return swing_highs.dropna()
+        for i in range(left, len(highs) - right):
+            is_pivot = True
+            current_high = highs[i]
+            
+            # Check left side - must be higher than all left bars
+            for j in range(1, left + 1):
+                if highs[i - j] >= current_high:
+                    is_pivot = False
+                    break
+            
+            if not is_pivot:
+                continue
+            
+            # Check right side - must be higher than all right bars
+            for j in range(1, right + 1):
+                if highs[i + j] >= current_high:
+                    is_pivot = False
+                    break
+            
+            if is_pivot:
+                pivots.append({
+                    'index': i,
+                    'price': round(current_high, 2),
+                    'date': df.index[i].strftime('%Y-%m-%d') if hasattr(df.index[i], 'strftime') else str(df.index[i])
+                })
+        
+        return pivots
     
-    def detect_swing_lows(self, lows: pd.Series, lookback: int = None) -> pd.Series:
+    def find_pivot_lows(self, df: pd.DataFrame, left: int = None, right: int = None) -> List[Dict]:
         """
-        Detect swing lows (local minima)
-        A swing low is a low that is lower than 'lookback' candles on each side
+        Find pivot lows (local minima)
+        A pivot low requires the low to be less than 'left' bars before
+        and 'right' bars after.
         """
-        lookback = lookback or self.swing_lookback
-        swing_lows = pd.Series(index=lows.index, dtype=float)
+        left = left or self.pivot_left
+        right = right or self.pivot_right
+        pivots = []
         
-        for i in range(lookback, len(lows) - lookback):
-            window = lows.iloc[i - lookback:i + lookback + 1]
-            if lows.iloc[i] == window.min():
-                swing_lows.iloc[i] = lows.iloc[i]
+        lows = df['Low'].values
         
-        return swing_lows.dropna()
+        for i in range(left, len(lows) - right):
+            is_pivot = True
+            current_low = lows[i]
+            
+            # Check left side - must be lower than all left bars
+            for j in range(1, left + 1):
+                if lows[i - j] <= current_low:
+                    is_pivot = False
+                    break
+            
+            if not is_pivot:
+                continue
+            
+            # Check right side - must be lower than all right bars
+            for j in range(1, right + 1):
+                if lows[i + j] <= current_low:
+                    is_pivot = False
+                    break
+            
+            if is_pivot:
+                pivots.append({
+                    'index': i,
+                    'price': round(current_low, 2),
+                    'date': df.index[i].strftime('%Y-%m-%d') if hasattr(df.index[i], 'strftime') else str(df.index[i])
+                })
+        
+        return pivots
     
-    def classify_trend(self, df: pd.DataFrame, lookback: int = None) -> Dict:
+    def label_pivots(self, pivot_highs: List[Dict], pivot_lows: List[Dict]) -> Dict:
         """
-        Classify the trend based on swing highs and lows
+        Label each pivot as HH, LH, HL, or LL by comparing to previous pivot of same type.
         
-        Returns:
-            Dict with trend type, swings, and confidence
+        Returns dict with labeled highs and lows
+        """
+        labeled_highs = []
+        labeled_lows = []
+        
+        # Label highs
+        for i, ph in enumerate(pivot_highs):
+            if i == 0:
+                labeled_highs.append({**ph, 'label': 'H', 'type': 'initial'})
+            else:
+                prev_high = pivot_highs[i - 1]['price']
+                if ph['price'] > prev_high:
+                    labeled_highs.append({**ph, 'label': 'HH', 'type': 'higher_high'})
+                else:
+                    labeled_highs.append({**ph, 'label': 'LH', 'type': 'lower_high'})
+        
+        # Label lows
+        for i, pl in enumerate(pivot_lows):
+            if i == 0:
+                labeled_lows.append({**pl, 'label': 'L', 'type': 'initial'})
+            else:
+                prev_low = pivot_lows[i - 1]['price']
+                if pl['price'] > prev_low:
+                    labeled_lows.append({**pl, 'label': 'HL', 'type': 'higher_low'})
+                else:
+                    labeled_lows.append({**pl, 'label': 'LL', 'type': 'lower_low'})
+        
+        return {
+            'highs': labeled_highs,
+            'lows': labeled_lows
+        }
+    
+    def determine_trend(self, labeled_pivots: Dict) -> Dict:
+        """
+        Determine overall trend based on the pattern of recent pivots.
+        
+        Logic (like LonesomeTheBlue):
+        - UPTREND: Recent pivots show HH and HL pattern
+        - DOWNTREND: Recent pivots show LH and LL pattern
+        - SIDEWAYS: Mixed signals
+        - TRANSITION: Trend changing
+        """
+        highs = labeled_pivots['highs']
+        lows = labeled_pivots['lows']
+        
+        if len(highs) < 2 or len(lows) < 2:
+            return {
+                'trend': 'Insufficient Data',
+                'color': 'gray',
+                'confidence': 0,
+                'last_high_label': highs[-1]['label'] if highs else '-',
+                'last_low_label': lows[-1]['label'] if lows else '-',
+                'description': 'Not enough pivots to determine trend'
+            }
+        
+        # Get last 2-3 labels for analysis
+        recent_high_labels = [h['label'] for h in highs[-3:] if h['label'] in ['HH', 'LH']]
+        recent_low_labels = [l['label'] for l in lows[-3:] if l['label'] in ['HL', 'LL']]
+        
+        last_high = highs[-1]
+        last_low = lows[-1]
+        
+        # Count patterns
+        hh_count = recent_high_labels.count('HH')
+        lh_count = recent_high_labels.count('LH')
+        hl_count = recent_low_labels.count('HL')
+        ll_count = recent_low_labels.count('LL')
+        
+        # Determine trend based on most recent pivots
+        last_high_label = last_high['label'] if last_high else '-'
+        last_low_label = last_low['label'] if last_low else '-'
+        
+        # Strong Uptrend: HH + HL
+        if last_high_label == 'HH' and last_low_label == 'HL':
+            return {
+                'trend': 'HH-HL',
+                'trend_name': 'Uptrend',
+                'color': 'green',
+                'confidence': 90,
+                'last_high_label': last_high_label,
+                'last_low_label': last_low_label,
+                'last_high_price': last_high['price'],
+                'last_low_price': last_low['price'],
+                'description': 'Strong Uptrend - Making Higher Highs and Higher Lows'
+            }
+        
+        # Strong Downtrend: LH + LL
+        if last_high_label == 'LH' and last_low_label == 'LL':
+            return {
+                'trend': 'LL-LH',
+                'trend_name': 'Downtrend',
+                'color': 'red',
+                'confidence': 90,
+                'last_high_label': last_high_label,
+                'last_low_label': last_low_label,
+                'last_high_price': last_high['price'],
+                'last_low_price': last_low['price'],
+                'description': 'Strong Downtrend - Making Lower Highs and Lower Lows'
+            }
+        
+        # Transition to Uptrend: Was making LL, now making HL
+        if last_high_label == 'HH' and last_low_label == 'LL':
+            return {
+                'trend': 'LL→HL',
+                'trend_name': 'Transition Up',
+                'color': 'lightgreen',
+                'confidence': 70,
+                'last_high_label': last_high_label,
+                'last_low_label': last_low_label,
+                'last_high_price': last_high['price'],
+                'last_low_price': last_low['price'],
+                'description': 'Potential Trend Reversal - Higher High formed, watching for Higher Low'
+            }
+        
+        # Transition to Downtrend: Was making HH, now making LH
+        if last_high_label == 'LH' and last_low_label == 'HL':
+            return {
+                'trend': 'HH→LH',
+                'trend_name': 'Transition Down',
+                'color': 'orange',
+                'confidence': 70,
+                'last_high_label': last_high_label,
+                'last_low_label': last_low_label,
+                'last_high_price': last_high['price'],
+                'last_low_price': last_low['price'],
+                'description': 'Potential Trend Reversal - Lower High formed, watching for Lower Low'
+            }
+        
+        # Sideways / Consolidation
+        return {
+            'trend': 'Sideways',
+            'trend_name': 'Sideways',
+            'color': 'yellow',
+            'confidence': 60,
+            'last_high_label': last_high_label,
+            'last_low_label': last_low_label,
+            'last_high_price': last_high['price'] if last_high else None,
+            'last_low_price': last_low['price'] if last_low else None,
+            'description': f'Sideways/Consolidation - Last High: {last_high_label}, Last Low: {last_low_label}'
+        }
+    
+    def analyze_timeframe(self, df: pd.DataFrame, pivot_len: int = 5) -> Dict:
+        """
+        Complete analysis for a single timeframe
         """
         if df is None or len(df) < 20:
             return {
-                'trend': TrendType.SIDEWAYS.value,
-                'color': 'yellow',
+                'trend': 'No Data',
+                'color': 'gray',
                 'confidence': 0,
-                'swings': {'highs': [], 'lows': []},
+                'pivots': {'highs': [], 'lows': []},
                 'description': 'Insufficient data'
             }
         
-        # Detect swings
-        swing_highs = self.detect_swing_highs(df['High'], lookback)
-        swing_lows = self.detect_swing_lows(df['Low'], lookback)
+        # Find pivots with specified length
+        pivot_highs = self.find_pivot_highs(df, left=pivot_len, right=pivot_len)
+        pivot_lows = self.find_pivot_lows(df, left=pivot_len, right=pivot_len)
         
-        # Need at least 2 swing highs and 2 swing lows
-        if len(swing_highs) < 2 or len(swing_lows) < 2:
-            return {
-                'trend': TrendType.SIDEWAYS.value,
-                'color': 'yellow',
-                'confidence': 50,
-                'swings': {
-                    'highs': swing_highs.tolist()[-3:] if len(swing_highs) > 0 else [],
-                    'lows': swing_lows.tolist()[-3:] if len(swing_lows) > 0 else []
-                },
-                'description': 'Not enough swings to determine trend'
-            }
-        
-        # Get last 2-3 swings for analysis
-        recent_highs = swing_highs.tail(3).values
-        recent_lows = swing_lows.tail(3).values
-        
-        # Compare highs
-        higher_highs = all(recent_highs[i] < recent_highs[i+1] for i in range(len(recent_highs)-1))
-        lower_highs = all(recent_highs[i] > recent_highs[i+1] for i in range(len(recent_highs)-1))
-        
-        # Compare lows
-        higher_lows = all(recent_lows[i] < recent_lows[i+1] for i in range(len(recent_lows)-1))
-        lower_lows = all(recent_lows[i] > recent_lows[i+1] for i in range(len(recent_lows)-1))
+        # Label pivots
+        labeled = self.label_pivots(pivot_highs, pivot_lows)
         
         # Determine trend
-        if higher_highs and higher_lows:
-            trend = TrendType.UPTREND
-            color = 'green'
-            confidence = 85
-            description = 'Strong Uptrend - Making Higher Highs and Higher Lows'
-        elif lower_highs and lower_lows:
-            trend = TrendType.DOWNTREND
-            color = 'red'
-            confidence = 85
-            description = 'Strong Downtrend - Making Lower Lows and Lower Highs'
-        elif higher_highs and not higher_lows:
-            trend = TrendType.WEAK_UP
-            color = 'lightgreen'
-            confidence = 60
-            description = 'Weak Uptrend - Higher Highs but no Higher Lows'
-        elif lower_lows and not lower_highs:
-            trend = TrendType.WEAK_DOWN
-            color = 'orange'
-            confidence = 60
-            description = 'Weak Downtrend - Lower Lows but no Lower Highs'
-        else:
-            trend = TrendType.SIDEWAYS
-            color = 'yellow'
-            confidence = 70
-            description = 'Sideways/Consolidation - No clear trend direction'
+        trend_data = self.determine_trend(labeled)
         
-        return {
-            'trend': trend.value,
-            'color': color,
-            'confidence': confidence,
-            'swings': {
-                'highs': [round(h, 2) for h in recent_highs.tolist()],
-                'lows': [round(l, 2) for l in recent_lows.tolist()]
-            },
-            'description': description
+        # Add pivot data
+        trend_data['pivots'] = {
+            'highs': labeled['highs'][-5:],  # Last 5 pivot highs
+            'lows': labeled['lows'][-5:]      # Last 5 pivot lows
         }
+        
+        return trend_data
     
     def fetch_data(self, symbol: str, interval: str, period: str) -> Optional[pd.DataFrame]:
         """Fetch OHLC data from Yahoo Finance"""
         try:
-            # Add .NS suffix for NSE stocks
             yf_symbol = f"{symbol}.NS" if not symbol.endswith('.NS') else symbol
             
             ticker = yf.Ticker(yf_symbol)
@@ -207,9 +359,6 @@ class DowTheoryAnalyzer:
     def analyze_stock(self, symbol: str) -> Dict:
         """
         Analyze a single stock across all timeframes
-        
-        Returns:
-            Dict with trend analysis for each timeframe and MTF groups
         """
         result = {
             'symbol': symbol,
@@ -223,6 +372,7 @@ class DowTheoryAnalyzer:
         for tf_key, tf_config in TIMEFRAMES.items():
             interval = tf_config['interval']
             period = tf_config['period']
+            pivot_len = tf_config.get('pivot_len', 5)
             
             # Fetch data
             df = self.fetch_data(symbol, interval, period)
@@ -231,10 +381,8 @@ class DowTheoryAnalyzer:
             if tf_key == '4h' and df is not None:
                 df = self.aggregate_to_4h(df)
             
-            # Classify trend
-            # Use smaller lookback for shorter timeframes
-            lookback = 3 if tf_key in ['15m', '1h'] else 5
-            trend_data = self.classify_trend(df, lookback)
+            # Analyze timeframe
+            trend_data = self.analyze_timeframe(df, pivot_len)
             
             result['timeframes'][tf_key] = {
                 'label': tf_config['label'],
@@ -249,10 +397,9 @@ class DowTheoryAnalyzer:
                 if tf in result['timeframes']:
                     group_trends.append(result['timeframes'][tf])
             
-            # Determine group trend
             if group_trends:
-                bullish_count = sum(1 for t in group_trends if 'HH-HL' in t['trend'])
-                bearish_count = sum(1 for t in group_trends if 'LL-LH' in t['trend'])
+                bullish_count = sum(1 for t in group_trends if t.get('trend') in ['HH-HL', 'LL→HL'])
+                bearish_count = sum(1 for t in group_trends if t.get('trend') in ['LL-LH', 'HH→LH'])
                 
                 if bullish_count == len(group_trends):
                     group_trend = 'BULLISH'
@@ -343,7 +490,6 @@ class DowTheoryAnalyzer:
                 'description': 'Short-term bearish alignment - Good for intraday short'
             }
         
-        # No clear opportunity
         return {
             'type': 'WAIT / NO TRADE',
             'color': 'gray',
@@ -359,15 +505,7 @@ class DowTheoryScanner:
         self.analyzer = DowTheoryAnalyzer()
     
     def scan_stocks(self, symbols: List[str]) -> List[Dict]:
-        """
-        Scan multiple stocks
-        
-        Args:
-            symbols: List of stock symbols
-            
-        Returns:
-            List of analysis results
-        """
+        """Scan multiple stocks"""
         results = []
         
         for symbol in symbols:
@@ -384,16 +522,7 @@ class DowTheoryScanner:
         return results
     
     def scan_with_filter(self, symbols: List[str], filter_type: str = 'all') -> List[Dict]:
-        """
-        Scan stocks with opportunity filter
-        
-        Args:
-            symbols: List of stock symbols
-            filter_type: 'all', 'strong_buy', 'pullback_buy', 'intraday_buy', 'bearish'
-            
-        Returns:
-            Filtered list of analysis results
-        """
+        """Scan stocks with opportunity filter"""
         results = self.scan_stocks(symbols)
         
         if filter_type == 'all':
