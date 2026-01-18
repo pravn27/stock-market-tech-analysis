@@ -28,18 +28,24 @@ const StatusBadge = ({ status }) => {
   return <span className={className}>{label}</span>;
 };
 
+const BENCHMARK_OPTIONS = [
+  { value: 'banknifty', label: 'Bank Nifty' },
+  { value: 'nifty50', label: 'Nifty 50' }
+];
+
 const BankNifty = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [timeframe, setTimeframe] = useState('weekly');
   const [lookback, setLookback] = useState(1);
+  const [compareTo, setCompareTo] = useState('banknifty');
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await getBankNiftyHeavyweights(timeframe, lookback);
+      const result = await getBankNiftyHeavyweights(timeframe, lookback, compareTo);
       setData(result);
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
@@ -69,6 +75,19 @@ const BankNifty = () => {
 
       {/* Filters */}
       <div className="filters">
+        <div className="filter-group">
+          <label>Compare To</label>
+          <select 
+            value={compareTo} 
+            onChange={(e) => setCompareTo(e.target.value)}
+            disabled={loading}
+          >
+            {BENCHMARK_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="filter-group">
           <label>Timeframe</label>
           <select 
@@ -154,7 +173,7 @@ const BankNifty = () => {
                   <th>Weightage %</th>
                   <th>Price</th>
                   <th>Return</th>
-                  <th>RS vs BankNifty</th>
+                  <th>RS vs {compareTo === 'nifty50' ? 'Nifty50' : 'BankNifty'}</th>
                   <th>Status</th>
                 </tr>
               </thead>

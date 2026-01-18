@@ -339,20 +339,25 @@ class ScannerService:
         }
     
     @staticmethod
-    def analyze_banknifty_heavyweights(timeframe: str = 'weekly', lookback: int = 1) -> Dict:
+    def analyze_banknifty_heavyweights(timeframe: str = 'weekly', lookback: int = 1, compare_to: str = 'banknifty') -> Dict:
         """
-        Analyze Bank Nifty heavyweight stocks vs Bank Nifty index
+        Analyze Bank Nifty heavyweight stocks vs selected benchmark
         Shows which banking stocks are driving the index movement
         
         Args:
             timeframe: '1h', '4h', 'daily', 'weekly', 'monthly'
             lookback: Number of periods back to compare
+            compare_to: 'banknifty' or 'nifty50' - benchmark to compare against
         """
         import yfinance as yf
         
-        # Bank Nifty benchmark
-        banknifty_symbol = "^NSEBANK"
-        banknifty_name = "NIFTY BANK"
+        # Select benchmark based on compare_to parameter
+        if compare_to == 'nifty50':
+            benchmark_symbol = "^NSEI"
+            benchmark_name = "NIFTY 50"
+        else:  # default to banknifty
+            benchmark_symbol = "^NSEBANK"
+            benchmark_name = "NIFTY BANK"
         
         # Get stocks list with weightage
         stocks_list = BANKNIFTY_STOCKS
@@ -362,12 +367,12 @@ class ScannerService:
         weightage_map = {s["symbol"]: s["weightage"] for s in stocks_list}
         name_map = {s["symbol"]: s["name"] for s in stocks_list}
         
-        # Run analysis using StockRelativeStrength but with Bank Nifty as benchmark
+        # Run analysis using StockRelativeStrength with selected benchmark
         scanner = StockRelativeStrength()
         
-        # Override benchmark for Bank Nifty
-        scanner.benchmark_symbol = banknifty_symbol
-        scanner.benchmark_name = banknifty_name
+        # Override benchmark based on selection
+        scanner.benchmark_symbol = benchmark_symbol
+        scanner.benchmark_name = benchmark_name
         
         results = scanner.analyze_sector_stocks("Bank Nifty", stock_symbols, include_intraday=True, lookback=lookback)
         

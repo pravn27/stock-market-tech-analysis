@@ -69,10 +69,11 @@ export const getNifty50Heavyweights = async (timeframe = 'weekly', lookback = 1,
  * Get Bank Nifty heavyweight stocks with weightage
  * @param {string} timeframe - Timeframe: 1h, 4h, daily, weekly, monthly
  * @param {number} lookback - Periods back to compare (1=previous, 2=2 periods back, etc.)
+ * @param {string} compareTo - Benchmark: 'banknifty' or 'nifty50'
  */
-export const getBankNiftyHeavyweights = async (timeframe = 'weekly', lookback = 1) => {
+export const getBankNiftyHeavyweights = async (timeframe = 'weekly', lookback = 1, compareTo = 'banknifty') => {
   const response = await api.get('/stocks/banknifty/heavyweights', {
-    params: { timeframe, lookback }
+    params: { timeframe, lookback, compare_to: compareTo }
   });
   return response.data;
 };
