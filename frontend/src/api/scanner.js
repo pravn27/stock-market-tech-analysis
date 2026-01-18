@@ -78,4 +78,26 @@ export const getBankNiftyHeavyweights = async (timeframe = 'weekly', lookback = 
   return response.data;
 };
 
+/**
+ * Get global market indices with sentiment analysis
+ * @param {string} timeframe - Timeframe: 1h, 4h, daily, weekly, monthly
+ */
+export const getGlobalMarkets = async (timeframe = 'daily') => {
+  const response = await api.get('/markets/global', {
+    params: { timeframe }
+  });
+  return response.data;
+};
+
+/**
+ * Get only market sentiment
+ * @param {string} timeframe - Timeframe: 1h, 4h, daily, weekly, monthly
+ */
+export const getMarketSentiment = async (timeframe = 'daily') => {
+  const response = await api.get('/markets/sentiment', {
+    params: { timeframe }
+  });
+  return response.data;
+};
+
 export default api;
