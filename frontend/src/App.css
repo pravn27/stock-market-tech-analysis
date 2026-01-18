@@ -1097,443 +1097,545 @@ body {
   }
 }
 
-/* ============ Performance Overview Page ============ */
-.performance-overview-page {
+/* ============ Performance Overview Page - Clean Design ============ */
+.perf-overview {
   padding: 1.5rem;
-  max-width: 1600px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
-.performance-overview-page .page-header {
+/* Header */
+.perf-header {
   margin-bottom: 1.5rem;
 }
 
-.performance-overview-page .page-header h2 {
-  font-size: 1.75rem;
-  margin-bottom: 0.5rem;
+.perf-title h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
 }
 
-.performance-overview-page .page-subtitle {
+.perf-title p {
   color: var(--text-secondary);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
-/* Filters Row */
-.performance-overview-page .filters-row {
+/* Controls */
+.perf-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
   align-items: center;
+  gap: 1rem;
+  padding: 1rem;
   background: var(--bg-card);
-  padding: 1rem 1.5rem;
   border-radius: var(--radius);
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
-.performance-overview-page .filter-group {
+.perf-control-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.performance-overview-page .filter-group label {
+.perf-control-group label {
   color: var(--text-secondary);
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 0.85rem;
 }
 
-.performance-overview-page .limit-input {
-  width: 60px;
-  padding: 0.5rem;
+.perf-control-group input {
+  width: 50px;
+  padding: 0.4rem 0.5rem;
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 6px;
   color: var(--text-primary);
-  font-size: 1rem;
+  font-size: 0.9rem;
   text-align: center;
 }
 
-.performance-overview-page .filter-select {
-  padding: 0.5rem 1rem;
+/* Timeframe Tabs */
+.perf-timeframe-tabs {
+  display: flex;
+  gap: 0.25rem;
   background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-primary);
-  font-size: 0.9rem;
-  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 8px;
 }
 
-.performance-overview-page .refresh-btn {
+.tf-tab {
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.tf-tab:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tf-tab.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* Refresh Button */
+.perf-refresh-btn {
   margin-left: auto;
-  padding: 0.5rem 1.5rem;
+  padding: 0.5rem 1rem;
   background: var(--primary);
   color: white;
   border: none;
-  border-radius: var(--radius);
-  font-size: 0.9rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
 }
 
-.performance-overview-page .refresh-btn:hover:not(:disabled) {
+.perf-refresh-btn:hover:not(:disabled) {
   background: var(--primary-dark);
 }
 
-.performance-overview-page .refresh-btn:disabled {
+.perf-refresh-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Benchmark Info */
-.performance-overview-page .benchmark-info {
+/* Error */
+.perf-error {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  background: rgba(30, 64, 175, 0.2);
+  justify-content: space-between;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: var(--radius);
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
+  color: #f87171;
+  margin-bottom: 1rem;
 }
 
-.performance-overview-page .benchmark-label {
+.perf-error button {
+  padding: 0.4rem 1rem;
+  background: var(--negative);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Empty State */
+.perf-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.perf-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.perf-empty p {
   color: var(--text-secondary);
+  font-size: 1rem;
 }
 
-.performance-overview-page .benchmark-name {
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.performance-overview-page .benchmark-price {
-  color: #60a5fa;
-  font-weight: 500;
-}
-
-/* Matrices Container */
-.performance-overview-page .matrices-container {
+/* Main Content */
+.perf-content {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-/* Performance Matrix */
-.performance-matrix {
+/* Three Columns Layout */
+.perf-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+/* Column */
+.perf-column {
   background: var(--bg-card);
   border-radius: var(--radius);
-  padding: 1rem;
   overflow: hidden;
 }
 
-.performance-matrix.matrix-outperforming {
-  border-left: 4px solid var(--positive);
-}
-
-.performance-matrix.matrix-underperforming {
-  border-left: 4px solid var(--negative);
-}
-
-.performance-matrix.matrix-neutral {
-  border-left: 4px solid var(--text-muted);
-}
-
-.performance-matrix .matrix-title {
+.perf-column-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
 }
 
-.performance-matrix .matrix-icon {
-  font-size: 1rem;
+.perf-column-header .indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
 }
 
-/* Matrix Table */
-.performance-matrix .matrix-table-container {
-  overflow-x: auto;
+.perf-column-header .indicator.green {
+  background: var(--positive);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
 }
 
-.performance-matrix .matrix-table {
-  width: 100%;
-  border-collapse: collapse;
+.perf-column-header .indicator.red {
+  background: var(--negative);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.perf-column-header .indicator.gray {
+  background: var(--text-muted);
+}
+
+.perf-column-header h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.perf-column-header .count {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+}
+
+.perf-column-body {
+  padding: 0.5rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.perf-column-body .no-items {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--text-muted);
   font-size: 0.85rem;
 }
 
-.performance-matrix .matrix-table th,
-.performance-matrix .matrix-table td {
-  padding: 0.5rem;
-  text-align: center;
-  border: 1px solid var(--border);
+/* Sector Card */
+.sector-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
 }
 
-.performance-matrix .matrix-table th {
-  background: var(--bg-input);
-  font-weight: 600;
-  color: var(--text-secondary);
-  font-size: 0.8rem;
+.sector-card:hover {
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.performance-matrix .matrix-table .rank-col {
-  width: 40px;
+.sector-card.expanded {
+  background: rgba(30, 64, 175, 0.2);
+  border-left-color: var(--primary);
+}
+
+.sector-card.green {
+  border-left-color: var(--positive);
+}
+
+.sector-card.red {
+  border-left-color: var(--negative);
+}
+
+.sector-card.gray {
+  border-left-color: var(--text-muted);
+}
+
+.sector-card-rank {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: var(--bg-input);
+  border-radius: 50%;
+  font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-muted);
 }
 
-.performance-matrix .matrix-table .tf-col {
-  min-width: 100px;
+.sector-card-content {
+  flex: 1;
+  min-width: 0;
 }
 
-/* Sector Cell */
-.performance-matrix .sector-cell {
-  cursor: pointer;
-  transition: all 0.2s;
-  background: rgba(255, 255, 255, 0.02);
-  vertical-align: top;
-  padding: 0.5rem !important;
-}
-
-.performance-matrix .sector-cell:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.performance-matrix .sector-cell.expanded {
-  background: rgba(30, 64, 175, 0.3);
-  box-shadow: inset 0 0 0 2px var(--primary);
-}
-
-.performance-matrix .sector-cell .sector-name {
-  font-weight: 600;
-  font-size: 0.8rem;
-  color: var(--text-primary);
+.sector-card-name {
+  font-size: 0.85rem;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
-.performance-matrix .sector-cell .sector-stats {
+.sector-card-stats {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   font-size: 0.75rem;
-  gap: 0.25rem;
 }
 
-.performance-matrix .sector-cell .rs-badge {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 0.1rem 0.3rem;
-  border-radius: 3px;
-  font-size: 0.7rem;
+.sector-card-stats .return-value {
+  font-weight: 600;
 }
 
-.performance-matrix .empty-cell {
+.sector-card-stats .return-value.positive {
+  color: var(--positive);
+}
+
+.sector-card-stats .return-value.negative {
+  color: var(--negative);
+}
+
+.sector-card-stats .return-value.neutral {
   color: var(--text-muted);
-  background: rgba(0, 0, 0, 0.1);
 }
 
-/* Stocks Panel */
-.performance-overview-page .stocks-panel {
-  margin-top: 1.5rem;
+.sector-card-stats .rs-label {
+  color: var(--text-muted);
+  margin-left: 0.25rem;
+}
+
+.sector-card-stats .rs-value {
+  font-weight: 500;
+}
+
+.sector-card-stats .rs-value.positive {
+  color: #4ade80;
+}
+
+.sector-card-stats .rs-value.negative {
+  color: #f87171;
+}
+
+.sector-card-stats .rs-value.neutral {
+  color: var(--text-secondary);
+}
+
+.sector-card-arrow {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  transition: transform 0.2s;
+}
+
+.sector-card.expanded .sector-card-arrow {
+  color: var(--primary);
+}
+
+/* Stocks Expanded Panel */
+.stocks-expanded {
   background: var(--bg-card);
   border-radius: var(--radius);
   border: 2px solid var(--primary);
   overflow: hidden;
 }
 
-.performance-overview-page .stocks-panel-header {
+.stocks-expanded-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
-  background: rgba(30, 64, 175, 0.2);
+  padding: 0.75rem 1rem;
+  background: rgba(30, 64, 175, 0.15);
   border-bottom: 1px solid var(--border);
 }
 
-.performance-overview-page .stocks-panel-header h4 {
-  font-size: 1rem;
+.stocks-expanded-header h4 {
+  font-size: 0.95rem;
   font-weight: 600;
 }
 
-.performance-overview-page .close-btn {
+.stocks-expanded-header button {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem;
+  line-height: 1;
   border-radius: 4px;
-  transition: all 0.2s;
 }
 
-.performance-overview-page .close-btn:hover {
+.stocks-expanded-header button:hover {
   background: rgba(255, 255, 255, 0.1);
   color: var(--text-primary);
 }
 
-/* Stocks Grid */
-.performance-overview-page .stocks-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  padding: 1rem;
-}
-
-.performance-overview-page .stocks-category {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: var(--radius);
-  padding: 1rem;
-}
-
-.performance-overview-page .stocks-category h5 {
-  font-size: 0.9rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.performance-overview-page .stocks-category.outperforming h5 {
-  color: var(--positive);
-}
-
-.performance-overview-page .stocks-category.underperforming h5 {
-  color: var(--negative);
-}
-
-.performance-overview-page .stocks-category.neutral h5 {
+.stocks-loading {
+  padding: 2rem;
+  text-align: center;
   color: var(--text-secondary);
 }
 
-.performance-overview-page .stocks-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+/* Simple Stock List */
+.stocks-list-simple {
+  padding: 0.5rem;
 }
 
-.performance-overview-page .stock-item {
+.stock-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.4rem 0.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 4px;
-  font-size: 0.85rem;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.25rem;
+  transition: background 0.2s;
 }
 
-.performance-overview-page .stock-item:hover {
-  background: rgba(255, 255, 255, 0.08);
+.stock-row:hover {
+  background: rgba(255, 255, 255, 0.04);
 }
 
-.performance-overview-page .stock-rank {
+.stock-row.outperforming {
+  border-left: 2px solid var(--positive);
+}
+
+.stock-row.underperforming {
+  border-left: 2px solid var(--negative);
+}
+
+.stock-row.neutral {
+  border-left: 2px solid var(--text-muted);
+}
+
+.stock-row .stock-rank {
   width: 20px;
+  font-size: 0.75rem;
   color: var(--text-muted);
   font-weight: 600;
-  font-size: 0.75rem;
 }
 
-.performance-overview-page .stock-name {
+.stock-row .stock-name {
   flex: 1;
+  font-size: 0.85rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.performance-overview-page .stock-return {
-  font-weight: 500;
+.stock-row .stock-return {
   font-size: 0.8rem;
+  font-weight: 600;
+  min-width: 60px;
+  text-align: right;
 }
 
-.performance-overview-page .no-stocks {
+.stock-row .stock-return.positive {
+  color: var(--positive);
+}
+
+.stock-row .stock-return.negative {
+  color: var(--negative);
+}
+
+.stock-row .stock-return.neutral {
+  color: var(--text-secondary);
+}
+
+.stock-row .stock-rs {
+  font-size: 0.75rem;
+  min-width: 50px;
+  text-align: right;
   color: var(--text-muted);
-  font-size: 0.85rem;
-  text-align: center;
-  padding: 1rem 0;
 }
 
-.performance-overview-page .stocks-loading {
-  text-align: center;
-  padding: 2rem;
-  color: var(--text-secondary);
+.stock-row .stock-rs.positive {
+  color: #4ade80;
 }
 
-/* Legend */
-.performance-overview-page .legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  margin-top: 1.5rem;
-  padding: 1rem;
-  background: var(--bg-card);
-  border-radius: var(--radius);
-  font-size: 0.85rem;
-  color: var(--text-secondary);
+.stock-row .stock-rs.negative {
+  color: #f87171;
 }
 
-.performance-overview-page .legend-item {
+.stock-row .stock-status-badge {
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-}
-
-.performance-overview-page .legend-dot {
-  width: 10px;
-  height: 10px;
+  justify-content: center;
   border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
-.performance-overview-page .legend-dot.green {
-  background: var(--positive);
+.stock-row .stock-status-badge.outperforming {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--positive);
 }
 
-.performance-overview-page .legend-dot.red {
-  background: var(--negative);
+.stock-row .stock-status-badge.underperforming {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--negative);
 }
 
-.performance-overview-page .legend-dot.gray {
-  background: var(--text-muted);
+.stock-row .stock-status-badge.neutral {
+  background: rgba(148, 163, 184, 0.2);
+  color: var(--text-muted);
 }
 
-.performance-overview-page .legend-item.clickable {
-  color: #60a5fa;
+/* Help Text */
+.perf-help {
+  text-align: center;
+  padding: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  background: var(--bg-card);
+  border-radius: var(--radius);
 }
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .performance-overview-page .stocks-grid {
+  .perf-columns {
     grid-template-columns: 1fr;
+  }
+  
+  .perf-column-body {
+    max-height: 300px;
   }
 }
 
 @media (max-width: 768px) {
-  .performance-overview-page {
+  .perf-overview {
     padding: 1rem;
   }
   
-  .performance-overview-page .filters-row {
+  .perf-controls {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.75rem;
   }
   
-  .performance-overview-page .refresh-btn {
+  .perf-timeframe-tabs {
+    justify-content: center;
+  }
+  
+  .perf-refresh-btn {
     margin-left: 0;
   }
   
-  .performance-matrix .sector-cell .sector-name {
-    font-size: 0.7rem;
-  }
-  
-  .performance-matrix .sector-cell .sector-stats {
-    flex-direction: column;
-    gap: 0.1rem;
-  }
-  
-  .performance-matrix .matrix-table .tf-col {
-    min-width: 80px;
+  .sector-card-stats {
+    flex-wrap: wrap;
   }
 }

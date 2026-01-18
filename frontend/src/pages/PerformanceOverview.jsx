@@ -1,20 +1,29 @@
 /**
- * Performance Overview Page
- * Shows top N outperforming, underperforming, and neutral sectors across all timeframes
+ * Performance Overview Page - Clean & Simple UX
+ * Shows top performers across timeframes with easy navigation
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { getTopPerformers, getSectorStocks } from '../api/scanner';
 import Loader from '../components/Loader';
+
+const TIMEFRAMES = [
+  { key: '3M', label: '3 Month' },
+  { key: 'M', label: 'Monthly' },
+  { key: 'W', label: 'Weekly' },
+  { key: 'D', label: 'Daily' },
+  { key: '4H', label: '4 Hour' },
+  { key: '1H', label: '1 Hour' }
+];
 
 const PerformanceOverview = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
-  const [limit, setLimit] = useState(3);
-  const [include, setInclude] = useState('all');
+  const [limit, setLimit] = useState(5);
+  const [selectedTimeframe, setSelectedTimeframe] = useState('D');
   
-  // Expanded sector state
+  // Expanded sector for stocks view
   const [expandedSector, setExpandedSector] = useState(null);
   const [sectorStocks, setSectorStocks] = useState(null);
   const [stocksLoading, setStocksLoading] = useState(false);
@@ -22,8 +31,10 @@ const PerformanceOverview = () => {
   const fetchData = async () => {
     setLoading(true);
     setError(null);
+    setExpandedSector(null);
+    setSectorStocks(null);
     try {
-      const result = await getTopPerformers(limit, include);
+      const result = await getTopPerformers(limit, 'all');
       setData(result);
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
@@ -32,276 +43,239 @@ const PerformanceOverview = () => {
     }
   };
 
-  // Fetch sector stocks when a sector is clicked
-  const handleSectorClick = async (sectorName, timeframe) => {
-    const key = `${sectorName}-${timeframe}`;
-    
-    if (expandedSector === key) {
-      // Collapse if already expanded
+  const handleSectorClick = async (sectorName) => {
+    if (expandedSector === sectorName) {
       setExpandedSector(null);
       setSectorStocks(null);
       return;
     }
 
-    setExpandedSector(key);
+    setExpandedSector(sectorName);
     setStocksLoading(true);
     
-    // Map timeframe label to API value
     const tfMap = { '3M': '3m', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': '4h', '1H': '1h' };
-    const apiTf = tfMap[timeframe] || 'daily';
+    const apiTf = tfMap[selectedTimeframe] || 'daily';
     
     try {
       const result = await getSectorStocks(sectorName, apiTf, 1);
-      setSectorStocks({ ...result, timeframe: apiTf, tfLabel: timeframe });
+      setSectorStocks(result);
     } catch (err) {
-      console.error('Failed to fetch sector stocks:', err);
+      console.error('Failed to fetch stocks:', err);
       setSectorStocks(null);
     } finally {
       setStocksLoading(false);
     }
   };
 
-  const formatReturn = (value) => {
+  const formatValue = (value, showSign = true) => {
     if (value === null || value === undefined) return '-';
-    const color = value > 0 ? '#4ade80' : value < 0 ? '#f87171' : '#9ca3af';
-    return <span style={{ color }}>{value > 0 ? '+' : ''}{value.toFixed(2)}%</span>;
+    const sign = showSign && value > 0 ? '+' : '';
+    return `${sign}${value.toFixed(2)}%`;
   };
 
-  const formatRS = (value) => {
-    if (value === null || value === undefined) return '-';
-    const color = value > 1 ? '#4ade80' : value < -1 ? '#f87171' : '#9ca3af';
-    return <span style={{ color }}>{value > 0 ? '+' : ''}{value.toFixed(2)}</span>;
+  const getValueColor = (value, type = 'return') => {
+    if (value === null || value === undefined) return 'neutral';
+    if (type === 'rs') {
+      return value > 1 ? 'positive' : value < -1 ? 'negative' : 'neutral';
+    }
+    return value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral';
   };
 
-  const renderMatrix = (category, title, icon, bgClass) => {
-    if (!data || !data[category]) return null;
-    
-    const timeframes = data.timeframes || ['3M', 'M', 'W', 'D', '4H', '1H'];
+  const getTfKey = () => {
+    const map = { '3M': 'three_month', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': 'four_hour', '1H': 'one_hour' };
+    return map[selectedTimeframe] || 'daily';
+  };
+
+  const renderSectorCard = (item, index, type) => {
+    const isExpanded = expandedSector === item.name;
+    const colorClass = type === 'outperforming' ? 'green' : type === 'underperforming' ? 'red' : 'gray';
     
     return (
-      <div className={`performance-matrix ${bgClass}`}>
-        <h3 className="matrix-title">
-          <span className="matrix-icon">{icon}</span>
-          {title} (Top {data.limit})
-        </h3>
-        <div className="matrix-table-container">
-          <table className="matrix-table">
-            <thead>
-              <tr>
-                <th className="rank-col">#</th>
-                {timeframes.map(tf => (
-                  <th key={tf} className="tf-col">{tf}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: data.limit }).map((_, rowIndex) => (
-                <tr key={rowIndex}>
-                  <td className="rank-col">{rowIndex + 1}</td>
-                  {timeframes.map(tf => {
-                    const items = data[category][tf] || [];
-                    const item = items[rowIndex];
-                    
-                    if (!item) {
-                      return <td key={tf} className="empty-cell">-</td>;
-                    }
-                    
-                    const isExpanded = expandedSector === `${item.name}-${tf}`;
-                    
-                    return (
-                      <td 
-                        key={tf} 
-                        className={`sector-cell ${isExpanded ? 'expanded' : ''}`}
-                        onClick={() => handleSectorClick(item.name, tf)}
-                        title={`${item.name}\nReturn: ${item.return?.toFixed(2)}%\nRS: ${item.rs?.toFixed(2)}`}
-                      >
-                        <div className="sector-name">{item.name.replace('Nifty ', '').replace('NIFTY ', '')}</div>
-                        <div className="sector-stats">
-                          {formatReturn(item.return)}
-                          <span className="rs-badge">{formatRS(item.rs)}</span>
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div 
+        key={item.symbol}
+        className={`sector-card ${colorClass} ${isExpanded ? 'expanded' : ''}`}
+        onClick={() => handleSectorClick(item.name)}
+      >
+        <div className="sector-card-rank">{index + 1}</div>
+        <div className="sector-card-content">
+          <div className="sector-card-name">{item.name}</div>
+          <div className="sector-card-stats">
+            <span className={`return-value ${getValueColor(item.return)}`}>
+              {formatValue(item.return)}
+            </span>
+            <span className="rs-label">RS:</span>
+            <span className={`rs-value ${getValueColor(item.rs, 'rs')}`}>
+              {formatValue(item.rs, false)}
+            </span>
+          </div>
         </div>
+        <div className="sector-card-arrow">{isExpanded ? '▼' : '▶'}</div>
       </div>
     );
   };
 
-  // Render expanded stocks panel
-  const renderStocksPanel = () => {
+  const renderStocksExpanded = () => {
     if (!expandedSector || !sectorStocks) return null;
     
-    const tfKey = {
-      '3m': 'three_month', 'monthly': 'monthly', 'weekly': 'weekly',
-      'daily': 'daily', '4h': 'four_hour', '1h': 'one_hour'
-    }[sectorStocks.timeframe] || 'daily';
+    const tfKey = getTfKey();
+    const topStocks = [...(sectorStocks.stocks || [])].slice(0, limit);
     
     return (
-      <div className="stocks-panel">
-        <div className="stocks-panel-header">
-          <h4>
-            {sectorStocks.sector_name} - Top {limit} Stocks ({sectorStocks.tfLabel})
-          </h4>
-          <button className="close-btn" onClick={() => { setExpandedSector(null); setSectorStocks(null); }}>
-            ✕
-          </button>
+      <div className="stocks-expanded">
+        <div className="stocks-expanded-header">
+          <h4>{expandedSector} - Top {limit} Stocks</h4>
+          <button onClick={() => { setExpandedSector(null); setSectorStocks(null); }}>✕</button>
         </div>
-        
         {stocksLoading ? (
           <div className="stocks-loading">Loading stocks...</div>
         ) : (
-          <div className="stocks-grid">
-            {/* Outperforming Stocks */}
-            <div className="stocks-category outperforming">
-              <h5>🟢 Outperforming ({sectorStocks.outperforming?.length || 0})</h5>
-              <div className="stocks-list">
-                {(sectorStocks.outperforming || []).slice(0, limit).map((stock, idx) => (
-                  <div key={stock.symbol} className="stock-item">
-                    <span className="stock-rank">{idx + 1}</span>
-                    <span className="stock-name">{stock.name}</span>
-                    <span className="stock-return">{formatReturn(stock.returns?.[tfKey])}</span>
-                  </div>
-                ))}
-                {(!sectorStocks.outperforming || sectorStocks.outperforming.length === 0) && (
-                  <div className="no-stocks">No outperforming stocks</div>
-                )}
+          <div className="stocks-list-simple">
+            {topStocks.map((stock, idx) => (
+              <div key={stock.symbol} className={`stock-row ${stock.status}`}>
+                <span className="stock-rank">{idx + 1}</span>
+                <span className="stock-name">{stock.name}</span>
+                <span className={`stock-return ${getValueColor(stock.returns?.[tfKey])}`}>
+                  {formatValue(stock.returns?.[tfKey])}
+                </span>
+                <span className={`stock-rs ${getValueColor(stock.relative_strength?.[tfKey], 'rs')}`}>
+                  {formatValue(stock.relative_strength?.[tfKey], false)}
+                </span>
+                <span className={`stock-status-badge ${stock.status}`}>
+                  {stock.status === 'outperforming' ? '↑' : stock.status === 'underperforming' ? '↓' : '–'}
+                </span>
               </div>
-            </div>
-            
-            {/* Underperforming Stocks */}
-            <div className="stocks-category underperforming">
-              <h5>🔴 Underperforming ({sectorStocks.underperforming?.length || 0})</h5>
-              <div className="stocks-list">
-                {(sectorStocks.underperforming || []).slice(0, limit).map((stock, idx) => (
-                  <div key={stock.symbol} className="stock-item">
-                    <span className="stock-rank">{idx + 1}</span>
-                    <span className="stock-name">{stock.name}</span>
-                    <span className="stock-return">{formatReturn(stock.returns?.[tfKey])}</span>
-                  </div>
-                ))}
-                {(!sectorStocks.underperforming || sectorStocks.underperforming.length === 0) && (
-                  <div className="no-stocks">No underperforming stocks</div>
-                )}
-              </div>
-            </div>
-            
-            {/* Neutral Stocks */}
-            <div className="stocks-category neutral">
-              <h5>⚪ Neutral ({sectorStocks.neutral?.length || 0})</h5>
-              <div className="stocks-list">
-                {(sectorStocks.neutral || []).slice(0, limit).map((stock, idx) => (
-                  <div key={stock.symbol} className="stock-item">
-                    <span className="stock-rank">{idx + 1}</span>
-                    <span className="stock-name">{stock.name}</span>
-                    <span className="stock-return">{formatReturn(stock.returns?.[tfKey])}</span>
-                  </div>
-                ))}
-                {(!sectorStocks.neutral || sectorStocks.neutral.length === 0) && (
-                  <div className="no-stocks">No neutral stocks</div>
-                )}
-              </div>
-            </div>
+            ))}
           </div>
         )}
       </div>
     );
   };
 
+  const currentData = data || {};
+  const outperforming = currentData.outperforming?.[selectedTimeframe] || [];
+  const underperforming = currentData.underperforming?.[selectedTimeframe] || [];
+  const neutral = currentData.neutral?.[selectedTimeframe] || [];
+
   return (
-    <div className="performance-overview-page">
-      <div className="page-header">
-        <h2>📊 Performance Overview</h2>
-        <p className="page-subtitle">Top performers across all timeframes - Click any sector to see stocks</p>
+    <div className="perf-overview">
+      {/* Header */}
+      <div className="perf-header">
+        <div className="perf-title">
+          <h2>Performance Overview</h2>
+          <p>Top performing & underperforming sectors at a glance</p>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div className="filters-row">
-        <div className="filter-group">
-          <label>Show Top:</label>
+      {/* Controls */}
+      <div className="perf-controls">
+        <div className="perf-control-group">
+          <label>Show Top</label>
           <input
             type="number"
             min="1"
             max="20"
             value={limit}
-            onChange={(e) => setLimit(Math.max(1, Math.min(20, parseInt(e.target.value) || 3)))}
-            className="limit-input"
+            onChange={(e) => setLimit(Math.max(1, Math.min(20, parseInt(e.target.value) || 5)))}
           />
         </div>
         
-        <div className="filter-group">
-          <label>Include:</label>
-          <select value={include} onChange={(e) => setInclude(e.target.value)} className="filter-select">
-            <option value="all">All Indices</option>
-            <option value="sectorial">Sectors Only</option>
-            <option value="broad_market">Broad Market</option>
-            <option value="thematic">Thematic</option>
-          </select>
+        <div className="perf-timeframe-tabs">
+          {TIMEFRAMES.map(tf => (
+            <button
+              key={tf.key}
+              className={`tf-tab ${selectedTimeframe === tf.key ? 'active' : ''}`}
+              onClick={() => setSelectedTimeframe(tf.key)}
+              title={tf.label}
+            >
+              {tf.key}
+            </button>
+          ))}
         </div>
         
-        <button className="refresh-btn" onClick={fetchData} disabled={loading}>
-          {loading ? 'Loading...' : 'Refresh'}
+        <button className="perf-refresh-btn" onClick={fetchData} disabled={loading}>
+          {loading ? '...' : '↻ Refresh'}
         </button>
       </div>
 
       {/* Error */}
       {error && (
-        <div className="error-message">
-          {error}
-          <button className="retry-btn" onClick={fetchData}>Retry</button>
+        <div className="perf-error">
+          <span>{error}</span>
+          <button onClick={fetchData}>Retry</button>
         </div>
       )}
 
       {/* Loading */}
-      {loading && <Loader message="Fetching performance data across all timeframes..." />}
+      {loading && <Loader message="Loading performance data..." />}
 
-      {/* No data message */}
+      {/* Empty State */}
       {!loading && !error && !data && (
-        <div className="no-data">
-          Click Refresh to load performance data
+        <div className="perf-empty">
+          <div className="perf-empty-icon">📊</div>
+          <p>Click <strong>Refresh</strong> to load sector performance data</p>
         </div>
       )}
 
       {/* Main Content */}
       {!loading && data && (
-        <div className="performance-content">
-          {/* Benchmark Info */}
-          {data.benchmark && (
-            <div className="benchmark-info">
-              <span className="benchmark-label">Benchmark:</span>
-              <span className="benchmark-name">{data.benchmark.name}</span>
-              <span className="benchmark-price">₹{data.benchmark.price?.toFixed(2)}</span>
+        <div className="perf-content">
+          {/* Three Columns */}
+          <div className="perf-columns">
+            {/* Outperforming */}
+            <div className="perf-column outperforming">
+              <div className="perf-column-header">
+                <span className="indicator green"></span>
+                <h3>Outperforming</h3>
+                <span className="count">{outperforming.length}</span>
+              </div>
+              <div className="perf-column-body">
+                {outperforming.length === 0 ? (
+                  <div className="no-items">No outperforming sectors</div>
+                ) : (
+                  outperforming.map((item, idx) => renderSectorCard(item, idx, 'outperforming'))
+                )}
+              </div>
             </div>
-          )}
 
-          {/* Three Matrices */}
-          <div className="matrices-container">
-            {renderMatrix('outperforming', 'Outperforming', '🟢', 'matrix-outperforming')}
-            {renderMatrix('underperforming', 'Underperforming', '🔴', 'matrix-underperforming')}
-            {renderMatrix('neutral', 'Neutral', '⚪', 'matrix-neutral')}
+            {/* Neutral */}
+            <div className="perf-column neutral">
+              <div className="perf-column-header">
+                <span className="indicator gray"></span>
+                <h3>Neutral</h3>
+                <span className="count">{neutral.length}</span>
+              </div>
+              <div className="perf-column-body">
+                {neutral.length === 0 ? (
+                  <div className="no-items">No neutral sectors</div>
+                ) : (
+                  neutral.map((item, idx) => renderSectorCard(item, idx, 'neutral'))
+                )}
+              </div>
+            </div>
+
+            {/* Underperforming */}
+            <div className="perf-column underperforming">
+              <div className="perf-column-header">
+                <span className="indicator red"></span>
+                <h3>Underperforming</h3>
+                <span className="count">{underperforming.length}</span>
+              </div>
+              <div className="perf-column-body">
+                {underperforming.length === 0 ? (
+                  <div className="no-items">No underperforming sectors</div>
+                ) : (
+                  underperforming.map((item, idx) => renderSectorCard(item, idx, 'underperforming'))
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Expanded Stocks Panel */}
-          {renderStocksPanel()}
+          {/* Expanded Stocks */}
+          {renderStocksExpanded()}
 
-          {/* Legend */}
-          <div className="legend">
-            <span className="legend-item">
-              <span className="legend-dot green"></span> Outperforming (RS &gt; 1%)
-            </span>
-            <span className="legend-item">
-              <span className="legend-dot red"></span> Underperforming (RS &lt; -1%)
-            </span>
-            <span className="legend-item">
-              <span className="legend-dot gray"></span> Neutral (-1% to 1%)
-            </span>
-            <span className="legend-item clickable">
-              💡 Click any sector to see its stocks
-            </span>
+          {/* Help Text */}
+          <div className="perf-help">
+            💡 Click on any sector to see its top stocks
           </div>
         </div>
       )}
