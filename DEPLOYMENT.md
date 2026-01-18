@@ -47,7 +47,7 @@ curl https://asta-backend.onrender.com/health
 2. Click **"Variables"** tab → **"New repository variable"**
 3. Add:
    - **Name**: `VITE_API_URL`
-   - **Value**: `https://asta-backend.onrender.com/api`
+   - **Value**: `https://stock-market-tech-analysis.onrender.com/api`
 
 ### 2.3 Trigger Deployment
 
