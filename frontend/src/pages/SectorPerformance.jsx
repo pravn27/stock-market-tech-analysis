@@ -32,9 +32,8 @@ const SectorPerformance = () => {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Note: No auto-fetch on mount or filter change
+  // User must click "Refresh" button to load data
 
   return (
     <div className="page sector-performance">
@@ -104,6 +103,12 @@ const SectorPerformance = () => {
             Last updated: {new Date(data.timestamp).toLocaleString()}
           </div>
         </>
+      )}
+
+      {!loading && !error && !data && (
+        <div className="no-data">
+          Select filters and click Refresh to load data
+        </div>
       )}
     </div>
   );

@@ -22,7 +22,7 @@ function App() {
       <footer className="footer">
         <p>ASTA - Stock Market Technical Analysis</p>
       </footer>
-    </div>
+      </div>
   );
 }
 
