@@ -2,8 +2,15 @@
  * API Configuration
  */
 
-// Use environment variable for production, fallback to localhost for development
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+// Production API URL (Render)
+const PRODUCTION_API_URL = 'https://stock-market-tech-analysis.onrender.com/api';
+
+// Use environment variable, or auto-detect production (GitHub Pages), fallback to localhost
+const isProduction = window.location.hostname.includes('github.io') || 
+                     window.location.hostname !== 'localhost';
+
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 
+                            (isProduction ? PRODUCTION_API_URL : 'http://localhost:8000/api');
 
 export const TIMEFRAMES = [
   { value: '1h', label: '1 Hour' },
