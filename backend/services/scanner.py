@@ -452,3 +452,117 @@ class ScannerService:
             'timeframe': timeframe,
             'lookback': lookback
         }
+    
+    @staticmethod
+    def get_top_performers(limit: int = 3, include: str = 'all') -> Dict:
+        """
+        Get top N outperforming, underperforming, and neutral sectors/indices
+        across ALL timeframes (3M, M, W, D, 4H, 1H)
+        
+        Args:
+            limit: Number of top items per category (default 3)
+            include: 'sectorial', 'broad_market', 'thematic', or 'all'
+        """
+        # Select index group
+        indices_map = {
+            'sectorial': NIFTY_SECTORS_MAIN,
+            'broad_market': NIFTY_BROAD_INDICES,
+            'thematic': NIFTY_THEMATIC,
+            'all': NIFTY_ALL_SECTORS
+        }
+        indices = indices_map.get(include, NIFTY_ALL_SECTORS)
+        
+        # Timeframes to analyze
+        timeframes = ['3m', 'monthly', 'weekly', 'daily', '4h', '1h']
+        tf_keys = {
+            '3m': 'three_month', 'monthly': 'monthly', 'weekly': 'weekly',
+            'daily': 'daily', '4h': 'four_hour', '1h': 'one_hour'
+        }
+        tf_labels = {
+            '3m': '3M', 'monthly': 'M', 'weekly': 'W',
+            'daily': 'D', '4h': '4H', '1h': '1H'
+        }
+        
+        # Run scanner once to get all data
+        scanner = SectorRelativeStrength(indices)
+        results = scanner.analyze_all_sectors(include_intraday=True, lookback=1)
+        
+        if not results:
+            return None
+        
+        # Process results - exclude benchmark
+        sectors = []
+        benchmark = None
+        for sector in results:
+            if sector['is_benchmark']:
+                benchmark = {
+                    'name': sector['name'],
+                    'symbol': sector['symbol'],
+                    'price': sector['price'],
+                    'returns': convert_returns(sector['returns'])
+                }
+                continue
+            
+            sectors.append({
+                'name': sector['name'],
+                'symbol': sector['symbol'],
+                'price': sector['price'],
+                'returns': convert_returns(sector['returns']),
+                'relative_strength': convert_returns(sector['relative'])
+            })
+        
+        # Build response for each timeframe
+        result = {
+            'outperforming': {},
+            'underperforming': {},
+            'neutral': {},
+            'benchmark': benchmark,
+            'timeframes': list(tf_labels.values()),
+            'limit': limit,
+            'include': include,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        for tf in timeframes:
+            tf_key = tf_keys[tf]
+            tf_label = tf_labels[tf]
+            
+            # Sort by relative strength for this timeframe
+            sorted_sectors = sorted(
+                sectors,
+                key=lambda x: x['relative_strength'].get(tf_key) or -999,
+                reverse=True
+            )
+            
+            # Categorize
+            outperforming = []
+            underperforming = []
+            neutral = []
+            
+            for s in sorted_sectors:
+                rs = s['relative_strength'].get(tf_key) or 0
+                ret = s['returns'].get(tf_key)
+                
+                item = {
+                    'name': s['name'],
+                    'symbol': s['symbol'],
+                    'return': ret,
+                    'rs': rs
+                }
+                
+                if rs > 1:
+                    outperforming.append(item)
+                elif rs < -1:
+                    underperforming.append(item)
+                else:
+                    neutral.append(item)
+            
+            # Sort underperforming by RS ascending (worst first)
+            underperforming.sort(key=lambda x: x['rs'])
+            
+            # Take top N for each category
+            result['outperforming'][tf_label] = outperforming[:limit]
+            result['underperforming'][tf_label] = underperforming[:limit]
+            result['neutral'][tf_label] = neutral[:limit]
+        
+        return result

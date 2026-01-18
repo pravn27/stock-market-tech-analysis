@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import Header from './components/Header';
+import PerformanceOverview from './pages/PerformanceOverview';
 import GlobalMarkets from './pages/GlobalMarkets';
 import Nifty50 from './pages/Nifty50';
 import BankNifty from './pages/BankNifty';
@@ -13,12 +14,13 @@ import SectorStocks from './pages/SectorStocks';
 import './App.css';
 
 function App() {
-  const [activePage, setActivePage] = useState('global');
+  const [activePage, setActivePage] = useState('overview');
 
   return (
     <div className="app">
       <Header activePage={activePage} onPageChange={setActivePage} />
       <main className="main-content">
+        {activePage === 'overview' && <PerformanceOverview />}
         {activePage === 'global' && <GlobalMarkets />}
         {activePage === 'nifty50' && <Nifty50 />}
         {activePage === 'banknifty' && <BankNifty />}

@@ -11,6 +11,12 @@ const Header = ({ activePage, onPageChange }) => {
         <h1 className="header-title">Stock Market TA</h1>
         <nav className="nav">
           <button 
+            className={`nav-btn ${activePage === 'overview' ? 'active' : ''}`}
+            onClick={() => onPageChange('overview')}
+          >
+            Performance Overview
+          </button>
+          <button 
             className={`nav-btn ${activePage === 'global' ? 'active' : ''}`}
             onClick={() => onPageChange('global')}
           >

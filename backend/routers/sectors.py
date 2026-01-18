@@ -47,3 +47,24 @@ async def get_sectors_list():
         "sectors": sectors,
         "total": len(sectors)
     }
+
+
+@router.get("/top-performers")
+async def get_top_performers(
+    limit: int = Query(3, ge=1, le=20, description="Number of top items per category (1-20)"),
+    include: str = Query("all", description="Include: sectorial, broad_market, thematic, or all")
+):
+    """
+    Get top N outperforming, underperforming, and neutral sectors/indices
+    across ALL timeframes (3M, M, W, D, 4H, 1H) in a single view.
+    
+    - **limit**: Number of top items to show per category (default 3)
+    - **include**: Which indices to include (default all)
+    """
+    try:
+        result = ScannerService.get_top_performers(limit, include)
+        if not result:
+            raise HTTPException(status_code=500, detail="Failed to fetch top performers data")
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

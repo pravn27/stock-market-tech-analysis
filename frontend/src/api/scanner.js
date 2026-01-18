@@ -100,4 +100,16 @@ export const getMarketSentiment = async (timeframe = 'daily') => {
   return response.data;
 };
 
+/**
+ * Get top performers across all timeframes
+ * @param {number} limit - Number of items per category (1-20)
+ * @param {string} include - Include: sectorial, broad_market, thematic, or all
+ */
+export const getTopPerformers = async (limit = 3, include = 'all') => {
+  const response = await api.get('/sectors/top-performers', {
+    params: { limit, include }
+  });
+  return response.data;
+};
+
 export default api;
