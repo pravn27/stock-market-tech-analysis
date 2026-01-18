@@ -1,38 +1,32 @@
 /**
- * Performance Overview Page - Clean & Simple UX
- * Shows top performers across timeframes with easy navigation
+ * Performance Overview Page - Heatmap Matrix with Modal
+ * Shows all sectors across ALL timeframes in one view
  */
 
 import { useState } from 'react';
 import { getTopPerformers, getSectorStocks } from '../api/scanner';
 import Loader from '../components/Loader';
 
-const TIMEFRAMES = [
-  { key: '3M', label: '3 Month' },
-  { key: 'M', label: 'Monthly' },
-  { key: 'W', label: 'Weekly' },
-  { key: 'D', label: 'Daily' },
-  { key: '4H', label: '4 Hour' },
-  { key: '1H', label: '1 Hour' }
-];
+const TIMEFRAMES = ['3M', 'M', 'W', 'D', '4H', '1H'];
+const TF_MAP = { '3M': '3m', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': '4h', '1H': '1h' };
+const TF_KEY_MAP = { '3M': 'three_month', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': 'four_hour', '1H': 'one_hour' };
 
 const PerformanceOverview = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [limit, setLimit] = useState(5);
-  const [selectedTimeframe, setSelectedTimeframe] = useState('D');
+  const [showNeutral, setShowNeutral] = useState(true);
   
-  // Expanded sector for stocks view
-  const [expandedSector, setExpandedSector] = useState(null);
-  const [sectorStocks, setSectorStocks] = useState(null);
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalSector, setModalSector] = useState(null);
+  const [stocksData, setStocksData] = useState(null);
   const [stocksLoading, setStocksLoading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
-    setExpandedSector(null);
-    setSectorStocks(null);
     try {
       const result = await getTopPerformers(limit, 'all');
       setData(result);
@@ -43,132 +37,228 @@ const PerformanceOverview = () => {
     }
   };
 
-  const handleSectorClick = async (sectorName) => {
-    if (expandedSector === sectorName) {
-      setExpandedSector(null);
-      setSectorStocks(null);
-      return;
-    }
-
-    setExpandedSector(sectorName);
+  const openStocksModal = async (sectorName) => {
+    setModalSector(sectorName);
+    setModalOpen(true);
     setStocksLoading(true);
-    
-    const tfMap = { '3M': '3m', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': '4h', '1H': '1h' };
-    const apiTf = tfMap[selectedTimeframe] || 'daily';
+    setStocksData(null);
     
     try {
-      const result = await getSectorStocks(sectorName, apiTf, 1);
-      setSectorStocks(result);
+      // Fetch stocks for all timeframes (using weekly as base, data has all)
+      const result = await getSectorStocks(sectorName, 'weekly', 1);
+      setStocksData(result);
     } catch (err) {
       console.error('Failed to fetch stocks:', err);
-      setSectorStocks(null);
     } finally {
       setStocksLoading(false);
     }
   };
 
-  const formatValue = (value, showSign = true) => {
-    if (value === null || value === undefined) return '-';
-    const sign = showSign && value > 0 ? '+' : '';
-    return `${sign}${value.toFixed(2)}%`;
+  const closeModal = () => {
+    setModalOpen(false);
+    setModalSector(null);
+    setStocksData(null);
   };
 
-  const getValueColor = (value, type = 'return') => {
+  // Get RS color based on value
+  const getRsColor = (value) => {
     if (value === null || value === undefined) return 'neutral';
-    if (type === 'rs') {
-      return value > 1 ? 'positive' : value < -1 ? 'negative' : 'neutral';
+    if (value > 3) return 'strong-positive';
+    if (value > 1) return 'positive';
+    if (value < -3) return 'strong-negative';
+    if (value < -1) return 'negative';
+    return 'neutral';
+  };
+
+  // Format RS value
+  const formatRs = (value) => {
+    if (value === null || value === undefined) return '-';
+    const sign = value > 0 ? '+' : '';
+    return `${sign}${value.toFixed(1)}`;
+  };
+
+  // Get sector data for a specific timeframe
+  const getSectorForTimeframe = (category, tf, index) => {
+    if (!data || !data[category] || !data[category][tf]) return null;
+    return data[category][tf][index] || null;
+  };
+
+  // Build unified sector list with all timeframe data
+  const buildSectorRows = (category) => {
+    if (!data || !data[category]) return [];
+    
+    // Get all unique sectors from first timeframe that has data
+    const sectorsMap = new Map();
+    
+    TIMEFRAMES.forEach(tf => {
+      const items = data[category][tf] || [];
+      items.forEach((item, idx) => {
+        if (!sectorsMap.has(item.name)) {
+          sectorsMap.set(item.name, {
+            name: item.name,
+            symbol: item.symbol,
+            values: {}
+          });
+        }
+        sectorsMap.get(item.name).values[tf] = item.rs;
+      });
+    });
+    
+    // Convert to array and limit
+    return Array.from(sectorsMap.values()).slice(0, limit);
+  };
+
+  // Render heatmap table for a category
+  const renderHeatmapTable = (category, title, icon, colorClass) => {
+    const rows = buildSectorRows(category);
+    
+    if (rows.length === 0) {
+      return (
+        <div className={`heatmap-section ${colorClass}`}>
+          <div className="heatmap-header">
+            <span className="heatmap-icon">{icon}</span>
+            <h3>{title}</h3>
+            <span className="heatmap-count">0</span>
+          </div>
+          <div className="heatmap-empty">No sectors in this category</div>
+        </div>
+      );
     }
-    return value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral';
-  };
-
-  const getTfKey = () => {
-    const map = { '3M': 'three_month', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': 'four_hour', '1H': 'one_hour' };
-    return map[selectedTimeframe] || 'daily';
-  };
-
-  const renderSectorCard = (item, index, type) => {
-    const isExpanded = expandedSector === item.name;
-    const colorClass = type === 'outperforming' ? 'green' : type === 'underperforming' ? 'red' : 'gray';
     
     return (
-      <div 
-        key={item.symbol}
-        className={`sector-card ${colorClass} ${isExpanded ? 'expanded' : ''}`}
-        onClick={() => handleSectorClick(item.name)}
-      >
-        <div className="sector-card-rank">{index + 1}</div>
-        <div className="sector-card-content">
-          <div className="sector-card-name">{item.name}</div>
-          <div className="sector-card-stats">
-            <span className={`return-value ${getValueColor(item.return)}`}>
-              {formatValue(item.return)}
-            </span>
-            <span className="rs-label">RS:</span>
-            <span className={`rs-value ${getValueColor(item.rs, 'rs')}`}>
-              {formatValue(item.rs, false)}
-            </span>
-          </div>
+      <div className={`heatmap-section ${colorClass}`}>
+        <div className="heatmap-header">
+          <span className="heatmap-icon">{icon}</span>
+          <h3>{title}</h3>
+          <span className="heatmap-count">{rows.length}</span>
         </div>
-        <div className="sector-card-arrow">{isExpanded ? '▼' : '▶'}</div>
+        <div className="heatmap-table-wrapper">
+          <table className="heatmap-table">
+            <thead>
+              <tr>
+                <th className="sector-col">Sector</th>
+                {TIMEFRAMES.map(tf => (
+                  <th key={tf} className="tf-col">{tf}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, idx) => (
+                <tr 
+                  key={row.name} 
+                  className="heatmap-row"
+                  onClick={() => openStocksModal(row.name)}
+                >
+                  <td className="sector-cell">
+                    <span className="sector-rank">{idx + 1}</span>
+                    <span className="sector-name">{row.name}</span>
+                    <span className="sector-arrow">▶</span>
+                  </td>
+                  {TIMEFRAMES.map(tf => (
+                    <td 
+                      key={tf} 
+                      className={`rs-cell ${getRsColor(row.values[tf])}`}
+                    >
+                      {formatRs(row.values[tf])}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   };
 
-  const renderStocksExpanded = () => {
-    if (!expandedSector || !sectorStocks) return null;
-    
-    const tfKey = getTfKey();
-    const topStocks = [...(sectorStocks.stocks || [])].slice(0, limit);
+  // Render stocks modal
+  const renderModal = () => {
+    if (!modalOpen) return null;
     
     return (
-      <div className="stocks-expanded">
-        <div className="stocks-expanded-header">
-          <h4>{expandedSector} - Top {limit} Stocks</h4>
-          <button onClick={() => { setExpandedSector(null); setSectorStocks(null); }}>✕</button>
-        </div>
-        {stocksLoading ? (
-          <div className="stocks-loading">Loading stocks...</div>
-        ) : (
-          <div className="stocks-list-simple">
-            {topStocks.map((stock, idx) => (
-              <div key={stock.symbol} className={`stock-row ${stock.status}`}>
-                <span className="stock-rank">{idx + 1}</span>
-                <span className="stock-name">{stock.name}</span>
-                <span className={`stock-return ${getValueColor(stock.returns?.[tfKey])}`}>
-                  {formatValue(stock.returns?.[tfKey])}
-                </span>
-                <span className={`stock-rs ${getValueColor(stock.relative_strength?.[tfKey], 'rs')}`}>
-                  {formatValue(stock.relative_strength?.[tfKey], false)}
-                </span>
-                <span className={`stock-status-badge ${stock.status}`}>
-                  {stock.status === 'outperforming' ? '↑' : stock.status === 'underperforming' ? '↓' : '–'}
-                </span>
-              </div>
-            ))}
+      <div className="modal-overlay" onClick={closeModal}>
+        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h3>📈 {modalSector} - Top {limit} Stocks</h3>
+            <button className="modal-close" onClick={closeModal}>✕</button>
           </div>
-        )}
+          
+          <div className="modal-body">
+            {stocksLoading && (
+              <div className="modal-loading">Loading stocks...</div>
+            )}
+            
+            {!stocksLoading && stocksData && stocksData.stocks && (
+              <>
+                <div className="modal-table-wrapper">
+                  <table className="stocks-modal-table">
+                    <thead>
+                      <tr>
+                        <th className="stock-col">Stock</th>
+                        {TIMEFRAMES.map(tf => (
+                          <th key={tf} className="tf-col">{tf}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stocksData.stocks.slice(0, limit).map((stock, idx) => (
+                        <tr key={stock.symbol} className={`stock-row ${stock.status}`}>
+                          <td className="stock-cell">
+                            <span className="stock-rank">{idx + 1}</span>
+                            <span className={`stock-indicator ${stock.status}`}>
+                              {stock.status === 'outperforming' ? '🟢' : 
+                               stock.status === 'underperforming' ? '🔴' : '⚪'}
+                            </span>
+                            <span className="stock-name">{stock.name}</span>
+                          </td>
+                          {TIMEFRAMES.map(tf => {
+                            const tfKey = TF_KEY_MAP[tf];
+                            const rs = stock.relative_strength?.[tfKey];
+                            return (
+                              <td 
+                                key={tf} 
+                                className={`rs-cell ${getRsColor(rs)}`}
+                              >
+                                {formatRs(rs)}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                
+                <div className="modal-legend">
+                  <span>🟢 Outperforming (RS &gt; 1%)</span>
+                  <span>⚪ Neutral</span>
+                  <span>🔴 Underperforming (RS &lt; -1%)</span>
+                </div>
+              </>
+            )}
+            
+            {!stocksLoading && (!stocksData || !stocksData.stocks) && (
+              <div className="modal-empty">No stocks data available</div>
+            )}
+          </div>
+        </div>
       </div>
     );
   };
-
-  const currentData = data || {};
-  const outperforming = currentData.outperforming?.[selectedTimeframe] || [];
-  const underperforming = currentData.underperforming?.[selectedTimeframe] || [];
-  const neutral = currentData.neutral?.[selectedTimeframe] || [];
 
   return (
-    <div className="perf-overview">
+    <div className="perf-heatmap">
       {/* Header */}
-      <div className="perf-header">
-        <div className="perf-title">
-          <h2>Performance Overview</h2>
-          <p>Top performing & underperforming sectors at a glance</p>
+      <div className="perf-heatmap-header">
+        <div className="perf-heatmap-title">
+          <h2>📊 Performance Overview</h2>
+          <p>All sectors vs NIFTY 50 across timeframes</p>
         </div>
       </div>
 
       {/* Controls */}
-      <div className="perf-controls">
-        <div className="perf-control-group">
+      <div className="perf-heatmap-controls">
+        <div className="control-group">
           <label>Show Top</label>
           <input
             type="number"
@@ -179,21 +269,17 @@ const PerformanceOverview = () => {
           />
         </div>
         
-        <div className="perf-timeframe-tabs">
-          {TIMEFRAMES.map(tf => (
-            <button
-              key={tf.key}
-              className={`tf-tab ${selectedTimeframe === tf.key ? 'active' : ''}`}
-              onClick={() => setSelectedTimeframe(tf.key)}
-              title={tf.label}
-            >
-              {tf.key}
-            </button>
-          ))}
-        </div>
+        <label className="toggle-neutral">
+          <input
+            type="checkbox"
+            checked={showNeutral}
+            onChange={(e) => setShowNeutral(e.target.checked)}
+          />
+          <span>Show Neutral</span>
+        </label>
         
-        <button className="perf-refresh-btn" onClick={fetchData} disabled={loading}>
-          {loading ? '...' : '↻ Refresh'}
+        <button className="refresh-btn" onClick={fetchData} disabled={loading}>
+          {loading ? 'Loading...' : '↻ Refresh'}
         </button>
       </div>
 
@@ -206,79 +292,31 @@ const PerformanceOverview = () => {
       )}
 
       {/* Loading */}
-      {loading && <Loader message="Loading performance data..." />}
+      {loading && <Loader message="Loading all timeframes..." />}
 
       {/* Empty State */}
       {!loading && !error && !data && (
         <div className="perf-empty">
           <div className="perf-empty-icon">📊</div>
-          <p>Click <strong>Refresh</strong> to load sector performance data</p>
+          <p>Click <strong>Refresh</strong> to load sector performance</p>
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Heatmap Tables */}
       {!loading && data && (
-        <div className="perf-content">
-          {/* Three Columns */}
-          <div className="perf-columns">
-            {/* Outperforming */}
-            <div className="perf-column outperforming">
-              <div className="perf-column-header">
-                <span className="indicator green"></span>
-                <h3>Outperforming</h3>
-                <span className="count">{outperforming.length}</span>
-              </div>
-              <div className="perf-column-body">
-                {outperforming.length === 0 ? (
-                  <div className="no-items">No outperforming sectors</div>
-                ) : (
-                  outperforming.map((item, idx) => renderSectorCard(item, idx, 'outperforming'))
-                )}
-              </div>
-            </div>
-
-            {/* Neutral */}
-            <div className="perf-column neutral">
-              <div className="perf-column-header">
-                <span className="indicator gray"></span>
-                <h3>Neutral</h3>
-                <span className="count">{neutral.length}</span>
-              </div>
-              <div className="perf-column-body">
-                {neutral.length === 0 ? (
-                  <div className="no-items">No neutral sectors</div>
-                ) : (
-                  neutral.map((item, idx) => renderSectorCard(item, idx, 'neutral'))
-                )}
-              </div>
-            </div>
-
-            {/* Underperforming */}
-            <div className="perf-column underperforming">
-              <div className="perf-column-header">
-                <span className="indicator red"></span>
-                <h3>Underperforming</h3>
-                <span className="count">{underperforming.length}</span>
-              </div>
-              <div className="perf-column-body">
-                {underperforming.length === 0 ? (
-                  <div className="no-items">No underperforming sectors</div>
-                ) : (
-                  underperforming.map((item, idx) => renderSectorCard(item, idx, 'underperforming'))
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Expanded Stocks */}
-          {renderStocksExpanded()}
-
-          {/* Help Text */}
+        <div className="perf-heatmap-content">
+          {renderHeatmapTable('outperforming', 'Outperforming', '🟢', 'section-green')}
+          {showNeutral && renderHeatmapTable('neutral', 'Neutral', '⚪', 'section-gray')}
+          {renderHeatmapTable('underperforming', 'Underperforming', '🔴', 'section-red')}
+          
           <div className="perf-help">
-            💡 Click on any sector to see its top stocks
+            💡 Click any sector row to see its top stocks across all timeframes
           </div>
         </div>
       )}
+
+      {/* Modal */}
+      {renderModal()}
     </div>
   );
 };
