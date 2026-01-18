@@ -1,0 +1,544 @@
+/**
+ * ASTA - Stock Market TA Styles
+ * Clean, Simple, Responsive Design
+ */
+
+/* ============ Variables ============ */
+:root {
+  --primary: #1e40af;
+  --primary-dark: #1e3a8a;
+  --bg-dark: #0f172a;
+  --bg-card: #1e293b;
+  --bg-input: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border: #334155;
+  --positive: #22c55e;
+  --negative: #ef4444;
+  --neutral: #f59e0b;
+  --radius: 8px;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* ============ Base ============ */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============ Header ============ */
+.header {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.5px;
+}
+
+.nav {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius);
+  transition: all 0.2s;
+}
+
+.nav-btn:hover {
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.nav-btn.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* ============ Main Content ============ */
+.main-content {
+  flex: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  width: 100%;
+}
+
+/* ============ Page ============ */
+.page {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.page-desc {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* ============ Filters ============ */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.filter-group label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.filter-group select,
+.filter-group input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  min-width: 150px;
+  cursor: pointer;
+}
+
+.filter-group select:focus,
+.filter-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* ============ Buttons ============ */
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============ Benchmark Card ============ */
+.benchmark-card {
+  display: flex;
+  gap: 2rem;
+  padding: 1rem 1.5rem;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.benchmark-info,
+.benchmark-price,
+.benchmark-return {
+  display: flex;
+  flex-direction: column;
+}
+
+.benchmark-label,
+.price-label,
+.return-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.benchmark-name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.price-value {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.return-value {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.return-value.positive {
+  color: var(--positive);
+}
+
+.return-value.negative {
+  color: var(--negative);
+}
+
+/* ============ View Toggle ============ */
+.view-toggle {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  background: var(--bg-card);
+  padding: 0.25rem;
+  border-radius: var(--radius);
+  width: fit-content;
+}
+
+.view-toggle button {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.view-toggle button:hover {
+  color: var(--text-primary);
+}
+
+.view-toggle button.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* ============ Category View ============ */
+.category-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.category-section {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.category-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+
+.category-title .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.category-title.outperforming .dot {
+  background: var(--positive);
+}
+
+.category-title.neutral .dot {
+  background: var(--neutral);
+}
+
+.category-title.underperforming .dot {
+  background: var(--negative);
+}
+
+/* ============ Data Table ============ */
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.data-table .rank {
+  color: var(--text-muted);
+  width: 40px;
+}
+
+.data-table .name {
+  font-weight: 500;
+}
+
+.data-table .symbol {
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.data-table .price {
+  font-family: monospace;
+}
+
+.data-table .positive {
+  color: var(--positive);
+}
+
+.data-table .negative {
+  color: var(--negative);
+}
+
+/* ============ Status Badge ============ */
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-outperforming {
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--positive);
+}
+
+.status-neutral {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--neutral);
+}
+
+.status-underperforming {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--negative);
+}
+
+/* ============ Sector Summary ============ */
+.sector-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.sector-summary .sector-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.sector-summary .stock-count {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* ============ Loader ============ */
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+}
+
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loader-text {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* ============ Error & No Data ============ */
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--negative);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.error-message p {
+  color: var(--negative);
+}
+
+.error-message button {
+  background: var(--negative);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.no-data {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+/* ============ Last Updated ============ */
+.last-updated {
+  margin-top: 1.5rem;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ============ Footer ============ */
+.footer {
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+/* ============ Responsive ============ */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    height: auto;
+    padding: 1rem 0;
+    gap: 0.75rem;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+
+  .filter-group select {
+    min-width: 100%;
+  }
+
+  .benchmark-card {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .data-table {
+    font-size: 0.8rem;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 1rem;
+  }
+
+  .page-header h2 {
+    font-size: 1.25rem;
+  }
+}
