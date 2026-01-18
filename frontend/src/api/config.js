@@ -2,15 +2,14 @@
  * API Configuration
  */
 
-// Production API URL (Render)
+// Production API URL (Render backend)
 const PRODUCTION_API_URL = 'https://stock-market-tech-analysis.onrender.com/api';
 
-// Use environment variable, or auto-detect production (GitHub Pages), fallback to localhost
-const isProduction = window.location.hostname.includes('github.io') || 
-                     window.location.hostname !== 'localhost';
+// Development API URL (local backend)
+const DEVELOPMENT_API_URL = 'http://localhost:8000/api';
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 
-                            (isProduction ? PRODUCTION_API_URL : 'http://localhost:8000/api');
+// Vite: import.meta.env.DEV is true during `npm run dev`, false during `npm run build`
+export const API_BASE_URL = import.meta.env.DEV ? DEVELOPMENT_API_URL : PRODUCTION_API_URL;
 
 export const TIMEFRAMES = [
   { value: '1h', label: '1 Hour' },
