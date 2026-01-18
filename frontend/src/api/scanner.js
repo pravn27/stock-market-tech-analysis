@@ -113,4 +113,36 @@ export const getTopPerformers = async (limit = 3, include = 'all', lookback = 1)
   return response.data;
 };
 
+/**
+ * Get Dow Theory analysis for a single stock
+ * @param {string} symbol - Stock symbol
+ */
+export const getDowTheoryAnalysis = async (symbol) => {
+  const response = await api.get(`/scanner/dow-theory/${symbol}`);
+  return response.data;
+};
+
+/**
+ * Scan multiple stocks using Dow Theory
+ * @param {string} universe - Stock universe: nifty50, custom
+ * @param {string} filterType - Filter: all, strong_buy, pullback_buy, intraday_buy, bearish, wait
+ * @param {string} symbols - Comma-separated symbols for custom universe
+ * @param {number} limit - Max stocks to return
+ */
+export const scanDowTheory = async (universe = 'nifty50', filterType = 'all', symbols = null, limit = 50) => {
+  const params = { universe, filter_type: filterType, limit };
+  if (symbols) params.symbols = symbols;
+  
+  const response = await api.get('/scanner/dow-theory', { params });
+  return response.data;
+};
+
+/**
+ * Get Dow Theory scan summary
+ */
+export const getDowTheorySummary = async () => {
+  const response = await api.get('/scanner/dow-theory/summary');
+  return response.data;
+};
+
 export default api;

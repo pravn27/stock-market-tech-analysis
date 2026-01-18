@@ -1711,3 +1711,422 @@ body {
     min-width: 150px;
   }
 }
+
+
+/* ============ Dow Theory Scanner ============ */
+.dow-scanner {
+  padding: 1.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.dow-header {
+  margin-bottom: 1.5rem;
+}
+
+.dow-title h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.dow-title p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Controls */
+.dow-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.dow-controls .control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dow-controls .control-group label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.dow-controls .control-group select {
+  padding: 0.5rem 1rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+.dow-controls .refresh-btn {
+  margin-left: auto;
+  padding: 0.6rem 1.5rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dow-controls .refresh-btn:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.dow-controls .refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Error & Empty */
+.dow-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius);
+  color: #f87171;
+  margin-bottom: 1rem;
+}
+
+.dow-error button {
+  padding: 0.4rem 1rem;
+  background: var(--negative);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.dow-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.dow-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.dow-empty p {
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.dow-empty-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+}
+
+/* Results */
+.dow-content {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.dow-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.filter-badge {
+  padding: 0.25rem 0.75rem;
+  background: var(--bg-input);
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+/* Dow Theory Table */
+.dow-table-wrapper {
+  overflow-x: auto;
+}
+
+.dow-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.dow-table th,
+.dow-table td {
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.dow-table th {
+  background: var(--bg-input);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.dow-table th small {
+  display: block;
+  font-weight: 400;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.dow-table .stock-col {
+  text-align: left;
+  min-width: 120px;
+}
+
+.dow-table .mtf-col {
+  min-width: 60px;
+  border-left: 1px solid var(--border);
+}
+
+.dow-table .opp-col {
+  min-width: 140px;
+  text-align: left;
+  border-left: 2px solid var(--border);
+}
+
+/* Dow Row */
+.dow-row {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dow-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dow-row:hover .stock-arrow {
+  color: var(--primary);
+}
+
+.dow-table .stock-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.stock-cell .stock-rank {
+  width: 20px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.stock-cell .stock-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.stock-cell .stock-arrow {
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  opacity: 0.5;
+  transition: all 0.2s;
+}
+
+/* Trend Cells */
+.trend-cell {
+  font-size: 1rem;
+  padding: 0.4rem;
+}
+
+.opp-cell {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.5rem;
+}
+
+.opp-cell .opp-type {
+  white-space: nowrap;
+}
+
+/* Trend Colors */
+.trend-green { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+.trend-lightgreen { background: rgba(34, 197, 94, 0.1); color: #86efac; }
+.trend-red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.trend-orange { background: rgba(249, 115, 22, 0.2); color: #fb923c; }
+.trend-yellow { background: rgba(234, 179, 8, 0.15); color: #facc15; }
+.trend-gray { background: rgba(148, 163, 184, 0.1); color: var(--text-secondary); }
+.trend-cyan { background: rgba(6, 182, 212, 0.2); color: #22d3ee; }
+.trend-pink { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+
+/* Footer */
+.dow-footer {
+  padding: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.dow-legend {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.dow-help {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* Dow Detail Modal */
+.dow-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dow-mtf-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.mtf-group-card {
+  padding: 1rem;
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.mtf-group-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.mtf-group-trend {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.mtf-group-purpose {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+/* Opportunity Card */
+.dow-opportunity {
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+.dow-opportunity .opp-type {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.dow-opportunity .opp-strategy {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.dow-opportunity .opp-desc {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+/* Timeframe Detail Table */
+.dow-tf-table {
+  background: var(--bg-input);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.dow-tf-table h4 {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.dow-tf-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.dow-tf-table th,
+.dow-tf-table td {
+  padding: 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.dow-tf-table th {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.dow-tf-table .tf-label {
+  font-weight: 600;
+}
+
+.dow-tf-table .tf-swings {
+  font-size: 0.75rem;
+  font-family: monospace;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dow-scanner {
+    padding: 1rem;
+  }
+  
+  .dow-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .dow-controls .refresh-btn {
+    margin-left: 0;
+  }
+  
+  .dow-table .stock-col {
+    min-width: 100px;
+  }
+  
+  .dow-table .opp-col {
+    min-width: 100px;
+  }
+  
+  .dow-mtf-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}

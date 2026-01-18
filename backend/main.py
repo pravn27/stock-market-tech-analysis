@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 
-from routers import sectors, stocks, markets
+from routers import sectors, stocks, markets, scanner
 
 # Create FastAPI app
 app = FastAPI(
@@ -45,6 +45,7 @@ app.add_middleware(
 app.include_router(sectors.router, prefix="/api")
 app.include_router(stocks.router, prefix="/api")
 app.include_router(markets.router, prefix="/api")
+app.include_router(scanner.router, prefix="/api")
 
 
 @app.get("/")

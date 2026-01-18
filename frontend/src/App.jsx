@@ -11,6 +11,7 @@ import Nifty50 from './pages/Nifty50';
 import BankNifty from './pages/BankNifty';
 import SectorPerformance from './pages/SectorPerformance';
 import SectorStocks from './pages/SectorStocks';
+import DowTheoryScanner from './pages/DowTheoryScanner';
 import './App.css';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
       <Header activePage={activePage} onPageChange={setActivePage} />
       <main className="main-content">
         {activePage === 'overview' && <PerformanceOverview />}
+        {activePage === 'dow-scanner' && <DowTheoryScanner />}
         {activePage === 'global' && <GlobalMarkets />}
         {activePage === 'nifty50' && <Nifty50 />}
         {activePage === 'banknifty' && <BankNifty />}
