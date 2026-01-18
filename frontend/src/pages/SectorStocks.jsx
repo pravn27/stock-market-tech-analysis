@@ -18,6 +18,7 @@ const SectorStocks = () => {
   const [sectors, setSectors] = useState([]);
   const [selectedSector, setSelectedSector] = useState('');
   const [timeframe, setTimeframe] = useState('weekly');
+  const [lookback, setLookback] = useState(1);
   const [viewMode, setViewMode] = useState('category');
 
   // Load sectors list on mount
@@ -44,7 +45,7 @@ const SectorStocks = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await getSectorStocks(selectedSector, timeframe);
+      const result = await getSectorStocks(selectedSector, timeframe, lookback);
       setData(result);
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
@@ -79,6 +80,8 @@ const SectorStocks = () => {
         onSectorChange={setSelectedSector}
         timeframe={timeframe}
         onTimeframeChange={setTimeframe}
+        lookback={lookback}
+        onLookbackChange={setLookback}
         onRefresh={fetchData}
         loading={loading}
       />

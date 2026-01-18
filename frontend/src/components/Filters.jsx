@@ -11,6 +11,8 @@ const Filters = ({
   onIndexGroupChange, 
   timeframe, 
   onTimeframeChange,
+  lookback = 1,
+  onLookbackChange,
   sectors = [],
   selectedSector,
   onSectorChange,
@@ -62,6 +64,23 @@ const Filters = ({
             <option key={tf.value} value={tf.value}>{tf.label}</option>
           ))}
         </select>
+      </div>
+      
+      <div className="filter-group">
+        <label>Lookback</label>
+        <input 
+          type="number"
+          className="lookback-input"
+          value={lookback} 
+          onChange={(e) => {
+            const val = parseInt(e.target.value) || 1;
+            onLookbackChange(Math.max(1, Math.min(val, 99)));
+          }}
+          min="1"
+          max="99"
+          disabled={loading}
+          title="Compare with N periods back (1 = previous period)"
+        />
       </div>
       
       <div className="filter-group">

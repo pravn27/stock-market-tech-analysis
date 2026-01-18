@@ -16,13 +16,14 @@ const SectorPerformance = () => {
   const [data, setData] = useState(null);
   const [indexGroup, setIndexGroup] = useState('sectorial');
   const [timeframe, setTimeframe] = useState('weekly');
+  const [lookback, setLookback] = useState(1);
   const [viewMode, setViewMode] = useState('category'); // 'category' or 'ranked'
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await getSectorPerformance(indexGroup, timeframe);
+      const result = await getSectorPerformance(indexGroup, timeframe, lookback);
       setData(result);
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
@@ -48,6 +49,8 @@ const SectorPerformance = () => {
         onIndexGroupChange={setIndexGroup}
         timeframe={timeframe}
         onTimeframeChange={setTimeframe}
+        lookback={lookback}
+        onLookbackChange={setLookback}
         onRefresh={fetchData}
         loading={loading}
       />

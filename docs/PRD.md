@@ -1,9 +1,13 @@
 # ASTA - Stock Market Technical Analysis
 ## Project Requirements Document (PRD)
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Last Updated:** January 18, 2026  
 **Status:** Active Development
+
+### Changelog
+- **v1.1.0**: Added Lookback Period feature for configurable historical comparison
+- **v1.0.0**: Initial release with sector and stock relative strength analysis
 
 ---
 
@@ -229,14 +233,39 @@ stock-market-tech-analysis/
 
 | Timeframe | Key | Calculation Method |
 |-----------|-----|-------------------|
-| 1 Hour | `1h` | Current vs 1 hour ago close |
-| 4 Hour | `4h` | Current vs 4 hours ago close |
-| Daily | `daily` | Current vs previous day close |
-| Weekly | `weekly` | Current vs previous week's last close |
-| Monthly | `monthly` | Current vs previous month's last close |
-| 3 Month | `3m` | Current vs 3 months ago close |
+| 1 Hour | `1h` | Current vs N hours ago close |
+| 4 Hour | `4h` | Current vs (4×N) hours ago close |
+| Daily | `daily` | Current vs N days ago close |
+| Weekly | `weekly` | Current vs N weeks ago close |
+| Monthly | `monthly` | Current vs N months ago close |
+| 3 Month | `3m` | Current vs (3×N) months ago close |
 
-#### 4.1.4 Relative Strength Calculation
+*Where N = lookback parameter (default: 1)*
+
+#### 4.1.4 Lookback Period Feature
+
+The **Lookback Period** allows users to configure how many periods back to compare for calculating returns.
+
+| Lookback | Description | Example (Daily TF) |
+|----------|-------------|-------------------|
+| 1 (default) | Compare with previous period | Today vs Yesterday |
+| 2 | Compare with 2 periods back | Today vs 2 days ago |
+| 3 | Compare with 3 periods back | Today vs 3 days ago |
+| 4 | Compare with 4 periods back | Today vs 4 days ago |
+| 5 | Compare with 5 periods back | Today vs 5 days ago |
+
+**Use Cases:**
+- **Lookback 1**: Standard day-over-day, week-over-week comparison
+- **Lookback 3-4**: Identify multi-candle momentum changes
+- **Lookback 5**: Longer-term trend comparison within the timeframe
+
+**Calculation Formula:**
+```python
+# For each timeframe with lookback N:
+return = ((current_price - price_N_periods_back) / price_N_periods_back) * 100
+```
+
+#### 4.1.5 Relative Strength Calculation
 
 ```python
 Relative Strength (RS) = Sector Return (%) - NIFTY 50 Return (%)
@@ -590,16 +619,24 @@ http://localhost:8000/api
 Get sector performance relative to NIFTY 50.
 
 **Query Parameters:**
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| group | string | sectorial | Index group: sectorial, broad_market, all |
-| timeframe | string | weekly | Timeframe: 1h, 4h, daily, weekly, monthly, 3m |
+| Parameter | Type | Default | Range | Description |
+|-----------|------|---------|-------|-------------|
+| group | string | sectorial | - | Index group: sectorial, broad_market, all |
+| timeframe | string | weekly | - | Timeframe: 1h, 4h, daily, weekly, monthly, 3m |
+| lookback | int | 1 | 1-10 | Periods back to compare (1=previous period) |
 
 **Response:** `SectorPerformanceResponse`
 
-**Example:**
+**Examples:**
 ```bash
+# Default: compare with previous period
 GET /api/sectors/performance?group=sectorial&timeframe=weekly
+
+# Compare with 3 weeks back
+GET /api/sectors/performance?group=sectorial&timeframe=weekly&lookback=3
+
+# Compare daily returns from 2 days back
+GET /api/sectors/performance?timeframe=daily&lookback=2
 ```
 
 #### GET /sectors/list
@@ -637,15 +674,23 @@ Get stocks in a sector with performance analysis.
 | sector_name | string | Sector name (URL encoded) |
 
 **Query Parameters:**
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| timeframe | string | weekly | Analysis timeframe |
+| Parameter | Type | Default | Range | Description |
+|-----------|------|---------|-------|-------------|
+| timeframe | string | weekly | - | Analysis timeframe |
+| lookback | int | 1 | 1-10 | Periods back to compare (1=previous period) |
 
 **Response:** `SectorStocksResponse`
 
-**Example:**
+**Examples:**
 ```bash
+# Default: compare with previous period
 GET /api/stocks/sector/Nifty%20IT?timeframe=daily
+
+# Compare with 3 days back
+GET /api/stocks/sector/Nifty%20IT?timeframe=daily&lookback=3
+
+# Weekly comparison from 2 weeks back
+GET /api/stocks/sector/Bank%20Nifty?timeframe=weekly&lookback=2
 ```
 
 #### GET /stocks/sector/{sector_name}/list

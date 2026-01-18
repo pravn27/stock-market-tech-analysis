@@ -148,13 +148,13 @@ class SectorRelativeStrength:
             print(f"Error fetching intraday {symbol}: {e}")
             return pd.DataFrame()
     
-    def calculate_returns(self, df: pd.DataFrame) -> Dict[str, float]:
+    def calculate_returns(self, df: pd.DataFrame, lookback: int = 1) -> Dict[str, float]:
         """
-        Calculate returns comparing with previous period's closing price
+        Calculate returns comparing with N periods back closing price
         
-        - Daily: Current close vs Previous day's close
-        - Weekly: Current close vs Previous week's last trading day close
-        - Monthly: Current close vs Previous month's last trading day close
+        Args:
+            df: DataFrame with OHLC data
+            lookback: Number of periods back to compare (1 = previous period, 2 = 2 periods back, etc.)
         
         Returns:
             Dict with returns for each period
@@ -170,60 +170,77 @@ class SectorRelativeStrength:
         current_price = float(df['Close'].iloc[-1])
         current_date = df['Date'].iloc[-1]
         
-        # Daily: vs previous day's close
-        if len(df) > 1:
-            prev_day_close = float(df['Close'].iloc[-2])
+        # Daily: vs N days back close
+        daily_offset = lookback
+        if len(df) > daily_offset:
+            prev_day_close = float(df['Close'].iloc[-(daily_offset + 1)])
             returns['Daily'] = ((current_price - prev_day_close) / prev_day_close) * 100
         else:
             returns['Daily'] = None
         
-        # Weekly: vs previous week's last trading day close
+        # Weekly: vs N weeks back's last trading day close
         try:
-            # Get current week number
-            current_week = current_date.isocalendar()[1]
-            current_year = current_date.year
-            
-            # Find last trading day of previous week
             df['week'] = df['Date'].apply(lambda x: x.isocalendar()[1])
             df['year'] = df['Date'].apply(lambda x: x.year)
+            df['year_week'] = df['year'] * 100 + df['week']
             
-            prev_week_data = df[
-                (df['week'] < current_week) | 
-                (df['year'] < current_year)
-            ]
-            if not prev_week_data.empty:
-                prev_week_close = float(prev_week_data['Close'].iloc[-1])
-                returns['Weekly'] = ((current_price - prev_week_close) / prev_week_close) * 100
+            # Get unique weeks sorted
+            unique_weeks = df['year_week'].unique()
+            unique_weeks.sort()
+            
+            # Find current week position
+            current_year_week = current_date.year * 100 + current_date.isocalendar()[1]
+            
+            # Find all weeks before current week
+            prev_weeks = [w for w in unique_weeks if w < current_year_week]
+            
+            if len(prev_weeks) >= lookback:
+                target_week = prev_weeks[-lookback]
+                target_week_data = df[df['year_week'] == target_week]
+                if not target_week_data.empty:
+                    prev_week_close = float(target_week_data['Close'].iloc[-1])
+                    returns['Weekly'] = ((current_price - prev_week_close) / prev_week_close) * 100
+                else:
+                    returns['Weekly'] = None
             else:
                 returns['Weekly'] = None
         except Exception:
             returns['Weekly'] = None
         
-        # Monthly: vs previous month's last trading day close
+        # Monthly: vs N months back's last trading day close
         try:
-            current_month = current_date.month
-            current_year = current_date.year
-            
             df['month'] = df['Date'].apply(lambda x: x.month)
             df['year'] = df['Date'].apply(lambda x: x.year)
+            df['year_month'] = df['year'] * 100 + df['month']
             
-            # Find last trading day of previous month
-            prev_month_data = df[
-                (df['month'] < current_month) | 
-                (df['year'] < current_year)
-            ]
-            if not prev_month_data.empty:
-                prev_month_close = float(prev_month_data['Close'].iloc[-1])
-                returns['Monthly'] = ((current_price - prev_month_close) / prev_month_close) * 100
+            # Get unique months sorted
+            unique_months = df['year_month'].unique()
+            unique_months.sort()
+            
+            # Find current month position
+            current_year_month = current_date.year * 100 + current_date.month
+            
+            # Find all months before current month
+            prev_months = [m for m in unique_months if m < current_year_month]
+            
+            if len(prev_months) >= lookback:
+                target_month = prev_months[-lookback]
+                target_month_data = df[df['year_month'] == target_month]
+                if not target_month_data.empty:
+                    prev_month_close = float(target_month_data['Close'].iloc[-1])
+                    returns['Monthly'] = ((current_price - prev_month_close) / prev_month_close) * 100
+                else:
+                    returns['Monthly'] = None
             else:
                 returns['Monthly'] = None
         except Exception:
             returns['Monthly'] = None
         
-        # Quarterly (3 Month): vs 3 months ago last trading day close
+        # Quarterly (3 Month): vs (3 * lookback) months ago last trading day close
         try:
-            three_months_ago = current_date - pd.DateOffset(months=3)
-            prev_quarter_data = df[df['Date'] <= three_months_ago]
+            months_back = 3 * lookback
+            target_date = current_date - pd.DateOffset(months=months_back)
+            prev_quarter_data = df[df['Date'] <= target_date]
             if not prev_quarter_data.empty:
                 prev_quarter_close = float(prev_quarter_data['Close'].iloc[-1])
                 returns['3 Month'] = ((current_price - prev_quarter_close) / prev_quarter_close) * 100
@@ -234,12 +251,13 @@ class SectorRelativeStrength:
         
         return returns
     
-    def calculate_intraday_returns(self, df: pd.DataFrame) -> Dict[str, float]:
+    def calculate_intraday_returns(self, df: pd.DataFrame, lookback: int = 1) -> Dict[str, float]:
         """
         Calculate returns for intraday timeframes
         
-        - 1 Hour: Current close vs 1 hour ago close
-        - 4 Hour: Current close vs 4 hours ago close
+        Args:
+            df: DataFrame with OHLC data (1hr interval)
+            lookback: Number of periods back (1 = 1hr/4hr ago, 2 = 2hr/8hr ago, etc.)
         
         Returns:
             Dict with returns for each intraday period
@@ -252,16 +270,18 @@ class SectorRelativeStrength:
         
         current_price = float(df['Close'].iloc[-1])
         
-        # 1 Hour: vs 1 hour ago close
-        if len(df) > 1:
-            one_hour_ago_close = float(df['Close'].iloc[-2])
+        # 1 Hour: vs N hours ago close
+        one_hour_offset = lookback
+        if len(df) > one_hour_offset:
+            one_hour_ago_close = float(df['Close'].iloc[-(one_hour_offset + 1)])
             returns['1 Hour'] = ((current_price - one_hour_ago_close) / one_hour_ago_close) * 100
         else:
             returns['1 Hour'] = None
         
-        # 4 Hour: vs 4 hours ago close
-        if len(df) > 4:
-            four_hour_ago_close = float(df['Close'].iloc[-5])
+        # 4 Hour: vs (4 * N) hours ago close
+        four_hour_offset = 4 * lookback
+        if len(df) > four_hour_offset:
+            four_hour_ago_close = float(df['Close'].iloc[-(four_hour_offset + 1)])
             returns['4 Hour'] = ((current_price - four_hour_ago_close) / four_hour_ago_close) * 100
         else:
             returns['4 Hour'] = None
@@ -281,17 +301,22 @@ class SectorRelativeStrength:
                 relative[period] = None
         return relative
     
-    def analyze_all_sectors(self, progress_callback=None, include_intraday: bool = True) -> List[Dict]:
+    def analyze_all_sectors(self, progress_callback=None, include_intraday: bool = True, lookback: int = 1) -> List[Dict]:
         """
         Analyze all sectors and calculate relative strength
         
-        Compares with previous period's closing prices:
-        - 1 Hour: vs 1 hour ago close
-        - 4 Hour: vs 4 hours ago close
-        - Daily: vs previous day close
-        - Weekly: vs previous week's last close
-        - Monthly: vs previous month's last close
-        - 3 Month: vs 3 months ago close
+        Args:
+            progress_callback: Optional callback for progress updates
+            include_intraday: Whether to include 1hr and 4hr timeframes
+            lookback: Number of periods back to compare (1 = previous period, 2 = 2 periods back, etc.)
+        
+        Compares with N periods back closing prices:
+        - 1 Hour: vs N hours ago close
+        - 4 Hour: vs (4*N) hours ago close
+        - Daily: vs N days ago close
+        - Weekly: vs N weeks ago close
+        - Monthly: vs N months ago close
+        - 3 Month: vs (3*N) months ago close
         
         Returns:
             List of dicts with sector analysis
@@ -300,13 +325,13 @@ class SectorRelativeStrength:
         
         # Fetch benchmark data first
         benchmark_df = self.fetch_index_data(self.benchmark_symbol, period="6mo")
-        benchmark_returns = self.calculate_returns(benchmark_df)
+        benchmark_returns = self.calculate_returns(benchmark_df, lookback=lookback)
         
         # Fetch intraday benchmark data
         benchmark_intraday_returns = {}
         if include_intraday:
             benchmark_intraday_df = self.fetch_intraday_data(self.benchmark_symbol)
-            benchmark_intraday_returns = self.calculate_intraday_returns(benchmark_intraday_df)
+            benchmark_intraday_returns = self.calculate_intraday_returns(benchmark_intraday_df, lookback=lookback)
             benchmark_returns.update(benchmark_intraday_returns)
         
         if not benchmark_returns:
@@ -320,7 +345,8 @@ class SectorRelativeStrength:
             'price': float(benchmark_price),
             'returns': benchmark_returns,
             'relative': {p: 0.0 for p in benchmark_returns.keys()},  # Benchmark relative to itself is 0
-            'is_benchmark': True
+            'is_benchmark': True,
+            'lookback': lookback
         })
         
         # Analyze each sector
@@ -335,12 +361,12 @@ class SectorRelativeStrength:
             if df.empty:
                 continue
             
-            returns = self.calculate_returns(df)
+            returns = self.calculate_returns(df, lookback=lookback)
             
             # Add intraday returns
             if include_intraday:
                 intraday_df = self.fetch_intraday_data(symbol)
-                intraday_returns = self.calculate_intraday_returns(intraday_df)
+                intraday_returns = self.calculate_intraday_returns(intraday_df, lookback=lookback)
                 returns.update(intraday_returns)
             
             relative = self.calculate_relative_strength(returns, benchmark_returns)
@@ -433,8 +459,14 @@ class StockRelativeStrength:
         except Exception:
             return pd.DataFrame()
     
-    def calculate_returns(self, df: pd.DataFrame) -> Dict[str, float]:
-        """Calculate returns for different timeframes"""
+    def calculate_returns(self, df: pd.DataFrame, lookback: int = 1) -> Dict[str, float]:
+        """
+        Calculate returns for different timeframes
+        
+        Args:
+            df: DataFrame with OHLC data
+            lookback: Number of periods back to compare
+        """
         if df.empty or len(df) < 2:
             return {}
         
@@ -446,56 +478,93 @@ class StockRelativeStrength:
         current_price = float(df['Close'].iloc[-1])
         current_date = df['Date'].iloc[-1]
         
-        # Daily
-        if len(df) > 1:
-            prev_close = float(df['Close'].iloc[-2])
+        # Daily: vs N days back
+        daily_offset = lookback
+        if len(df) > daily_offset:
+            prev_close = float(df['Close'].iloc[-(daily_offset + 1)])
             returns['Daily'] = ((current_price - prev_close) / prev_close) * 100
         
-        # Weekly
+        # Weekly: vs N weeks back
         try:
-            current_week = current_date.isocalendar()[1]
-            current_year = current_date.year
             df['week'] = df['Date'].apply(lambda x: x.isocalendar()[1])
             df['year'] = df['Date'].apply(lambda x: x.year)
-            prev_week_data = df[(df['week'] < current_week) | (df['year'] < current_year)]
-            if not prev_week_data.empty:
-                prev_close = float(prev_week_data['Close'].iloc[-1])
-                returns['Weekly'] = ((current_price - prev_close) / prev_close) * 100
+            df['year_week'] = df['year'] * 100 + df['week']
+            
+            unique_weeks = df['year_week'].unique()
+            unique_weeks.sort()
+            
+            current_year_week = current_date.year * 100 + current_date.isocalendar()[1]
+            prev_weeks = [w for w in unique_weeks if w < current_year_week]
+            
+            if len(prev_weeks) >= lookback:
+                target_week = prev_weeks[-lookback]
+                target_week_data = df[df['year_week'] == target_week]
+                if not target_week_data.empty:
+                    prev_close = float(target_week_data['Close'].iloc[-1])
+                    returns['Weekly'] = ((current_price - prev_close) / prev_close) * 100
         except:
             pass
         
-        # Monthly
+        # Monthly: vs N months back
         try:
-            current_month = current_date.month
             df['month'] = df['Date'].apply(lambda x: x.month)
-            prev_month_data = df[(df['month'] < current_month) | (df['year'] < current_year)]
-            if not prev_month_data.empty:
-                prev_close = float(prev_month_data['Close'].iloc[-1])
-                returns['Monthly'] = ((current_price - prev_close) / prev_close) * 100
+            df['year_month'] = df['year'] * 100 + df['month']
+            
+            unique_months = df['year_month'].unique()
+            unique_months.sort()
+            
+            current_year_month = current_date.year * 100 + current_date.month
+            prev_months = [m for m in unique_months if m < current_year_month]
+            
+            if len(prev_months) >= lookback:
+                target_month = prev_months[-lookback]
+                target_month_data = df[df['year_month'] == target_month]
+                if not target_month_data.empty:
+                    prev_close = float(target_month_data['Close'].iloc[-1])
+                    returns['Monthly'] = ((current_price - prev_close) / prev_close) * 100
         except:
             pass
         
         return returns
     
-    def calculate_intraday_returns(self, df: pd.DataFrame) -> Dict[str, float]:
-        """Calculate intraday returns"""
+    def calculate_intraday_returns(self, df: pd.DataFrame, lookback: int = 1) -> Dict[str, float]:
+        """
+        Calculate intraday returns
+        
+        Args:
+            df: DataFrame with OHLC data (1hr interval)
+            lookback: Number of periods back to compare
+        """
         if df.empty or len(df) < 2:
             return {}
         
         returns = {}
         current_price = float(df['Close'].iloc[-1])
         
-        if len(df) > 1:
-            returns['1 Hour'] = ((current_price - float(df['Close'].iloc[-2])) / float(df['Close'].iloc[-2])) * 100
-        if len(df) > 4:
-            returns['4 Hour'] = ((current_price - float(df['Close'].iloc[-5])) / float(df['Close'].iloc[-5])) * 100
+        # 1 Hour: vs N hours ago
+        one_hour_offset = lookback
+        if len(df) > one_hour_offset:
+            returns['1 Hour'] = ((current_price - float(df['Close'].iloc[-(one_hour_offset + 1)])) / float(df['Close'].iloc[-(one_hour_offset + 1)])) * 100
+        
+        # 4 Hour: vs (4*N) hours ago
+        four_hour_offset = 4 * lookback
+        if len(df) > four_hour_offset:
+            returns['4 Hour'] = ((current_price - float(df['Close'].iloc[-(four_hour_offset + 1)])) / float(df['Close'].iloc[-(four_hour_offset + 1)])) * 100
         
         return returns
     
     def analyze_sector_stocks(self, sector_name: str, stocks: List[str], 
-                              progress_callback=None, include_intraday: bool = True) -> Dict:
+                              progress_callback=None, include_intraday: bool = True,
+                              lookback: int = 1) -> Dict:
         """
         Analyze all stocks in a sector and compare with NIFTY 50
+        
+        Args:
+            sector_name: Name of the sector
+            stocks: List of stock symbols
+            progress_callback: Optional callback for progress updates
+            include_intraday: Whether to include 1hr and 4hr timeframes
+            lookback: Number of periods back to compare
         
         Returns:
             Dict with benchmark, sector stocks analysis
@@ -508,16 +577,17 @@ class StockRelativeStrength:
             'stocks': [],
             'outperforming': [],
             'underperforming': [],
-            'neutral': []
+            'neutral': [],
+            'lookback': lookback
         }
         
         # Fetch benchmark data
         benchmark_df = self.fetch_stock_data(self.benchmark_symbol, period="6mo")
-        benchmark_returns = self.calculate_returns(benchmark_df)
+        benchmark_returns = self.calculate_returns(benchmark_df, lookback=lookback)
         
         if include_intraday:
             intraday_df = self.fetch_intraday_data(self.benchmark_symbol)
-            intraday_returns = self.calculate_intraday_returns(intraday_df)
+            intraday_returns = self.calculate_intraday_returns(intraday_df, lookback=lookback)
             benchmark_returns.update(intraday_returns)
         
         if not benchmark_returns:
@@ -540,11 +610,11 @@ class StockRelativeStrength:
                 if df.empty:
                     continue
                 
-                returns = self.calculate_returns(df)
+                returns = self.calculate_returns(df, lookback=lookback)
                 
                 if include_intraday:
                     intraday_df = self.fetch_intraday_data(symbol)
-                    intraday_returns = self.calculate_intraday_returns(intraday_df)
+                    intraday_returns = self.calculate_intraday_returns(intraday_df, lookback=lookback)
                     returns.update(intraday_returns)
                 
                 # Calculate relative strength

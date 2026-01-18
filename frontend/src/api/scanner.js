@@ -12,10 +12,13 @@ const api = axios.create({
 
 /**
  * Get sector performance data
+ * @param {string} group - Index group: sectorial, broad_market, all
+ * @param {string} timeframe - Timeframe: 1h, 4h, daily, weekly, monthly, 3m
+ * @param {number} lookback - Periods back to compare (1=previous, 2=2 periods back, etc.)
  */
-export const getSectorPerformance = async (group = 'sectorial', timeframe = 'weekly') => {
+export const getSectorPerformance = async (group = 'sectorial', timeframe = 'weekly', lookback = 1) => {
   const response = await api.get('/sectors/performance', {
-    params: { group, timeframe }
+    params: { group, timeframe, lookback }
   });
   return response.data;
 };
@@ -30,10 +33,13 @@ export const getSectorsList = async () => {
 
 /**
  * Get stocks in a sector with performance data
+ * @param {string} sectorName - Name of the sector
+ * @param {string} timeframe - Timeframe: 1h, 4h, daily, weekly, monthly
+ * @param {number} lookback - Periods back to compare (1=previous, 2=2 periods back, etc.)
  */
-export const getSectorStocks = async (sectorName, timeframe = 'weekly') => {
+export const getSectorStocks = async (sectorName, timeframe = 'weekly', lookback = 1) => {
   const response = await api.get(`/stocks/sector/${encodeURIComponent(sectorName)}`, {
-    params: { timeframe }
+    params: { timeframe, lookback }
   });
   return response.data;
 };

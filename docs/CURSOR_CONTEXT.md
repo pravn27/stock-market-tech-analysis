@@ -44,6 +44,11 @@ frontend/src/
 - 14 sectors with ~10-20 stocks each
 - Same timeframe and categorization logic
 
+### 3. Lookback Period
+- Configure N periods back for comparison (1-10)
+- Default: 1 (compare with previous period)
+- Example: lookback=3 with weekly TF compares today vs 3 weeks ago
+
 ## API Patterns
 
 ### Adding New Endpoint
@@ -194,9 +199,13 @@ df = ticker.history(period="6mo", interval="1d")  # Daily
 df = ticker.history(period="7d", interval="1h")   # Intraday
 ```
 
-### Calculate Returns
+### Calculate Returns with Lookback
 ```python
-daily_return = ((current - prev_close) / prev_close) * 100
+# Lookback N periods back
+def calculate_returns(df, lookback=1):
+    current_price = df['Close'].iloc[-1]
+    prev_close = df['Close'].iloc[-(lookback + 1)]
+    return ((current_price - prev_close) / prev_close) * 100
 ```
 
 ## Testing Commands
@@ -226,7 +235,7 @@ import pandas as pd
 ### Frontend
 ```javascript
 import axios from 'axios';
-import { API_BASE_URL, TIMEFRAMES, INDEX_GROUPS } from './config';
+import { API_BASE_URL, TIMEFRAMES, INDEX_GROUPS, LOOKBACK_OPTIONS } from './config';
 ```
 
 ---

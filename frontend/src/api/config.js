@@ -18,3 +18,13 @@ export const INDEX_GROUPS = [
   { value: 'broad_market', label: 'Broad Market' },
   { value: 'all', label: 'All Indices' }
 ];
+
+// Lookback options: how many periods back to compare
+// 1 = previous period (default), 2 = 2 periods back, etc.
+export const LOOKBACK_OPTIONS = [
+  { value: 1, label: 'Previous (1)' },
+  { value: 2, label: '2 Periods Back' },
+  { value: 3, label: '3 Periods Back' },
+  { value: 4, label: '4 Periods Back' },
+  { value: 5, label: '5 Periods Back' }
+];

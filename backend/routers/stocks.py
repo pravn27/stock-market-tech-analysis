@@ -11,15 +11,20 @@ router = APIRouter(prefix="/stocks", tags=["Stocks"])
 @router.get("/sector/{sector_name}")
 async def get_sector_stocks(
     sector_name: str,
-    timeframe: str = Query("weekly", description="Timeframe: 1h, 4h, daily, weekly, monthly")
+    timeframe: str = Query("weekly", description="Timeframe: 1h, 4h, daily, weekly, monthly"),
+    lookback: int = Query(1, ge=1, le=99, description="Lookback periods: 1=previous period, 2=2 periods back, etc.")
 ):
     """
     Get stocks in a sector with performance relative to NIFTY 50
     
     Returns stocks categorized as outperforming, neutral, underperforming
+    
+    - **lookback=1**: Compare current price vs previous period (default)
+    - **lookback=2**: Compare current price vs 2 periods back
+    - **lookback=3**: Compare current price vs 3 periods back
     """
     try:
-        result = ScannerService.analyze_sector_stocks(sector_name, timeframe)
+        result = ScannerService.analyze_sector_stocks(sector_name, timeframe, lookback)
         if not result:
             raise HTTPException(
                 status_code=404, 

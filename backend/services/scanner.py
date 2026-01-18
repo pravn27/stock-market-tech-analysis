@@ -63,13 +63,14 @@ class ScannerService:
         return SECTOR_STOCKS_MAP.get(sector_name, [])
     
     @staticmethod
-    def analyze_sectors(index_group: str = 'sectorial', timeframe: str = 'weekly') -> Dict:
+    def analyze_sectors(index_group: str = 'sectorial', timeframe: str = 'weekly', lookback: int = 1) -> Dict:
         """
         Analyze sector performance vs NIFTY 50
         
         Args:
             index_group: 'sectorial', 'broad_market', or 'all'
             timeframe: '1h', '4h', 'daily', 'weekly', 'monthly', '3m'
+            lookback: Number of periods back to compare (1 = previous, 2 = 2 periods back, etc.)
         """
         # Select index group
         indices_map = {
@@ -81,7 +82,7 @@ class ScannerService:
         
         # Run scanner
         scanner = SectorRelativeStrength(indices)
-        results = scanner.analyze_all_sectors(include_intraday=True)
+        results = scanner.analyze_all_sectors(include_intraday=True, lookback=lookback)
         
         if not results:
             return None
@@ -144,24 +145,26 @@ class ScannerService:
             'neutral': neutral,
             'underperforming': underperforming,
             'timestamp': datetime.now().isoformat(),
-            'timeframe': timeframe
+            'timeframe': timeframe,
+            'lookback': lookback
         }
     
     @staticmethod
-    def analyze_sector_stocks(sector_name: str, timeframe: str = 'weekly') -> Dict:
+    def analyze_sector_stocks(sector_name: str, timeframe: str = 'weekly', lookback: int = 1) -> Dict:
         """
         Analyze stocks within a sector vs NIFTY 50
         
         Args:
             sector_name: Name of the sector
             timeframe: '1h', '4h', 'daily', 'weekly', 'monthly'
+            lookback: Number of periods back to compare (1 = previous, 2 = 2 periods back, etc.)
         """
         stocks = SECTOR_STOCKS_MAP.get(sector_name)
         if not stocks:
             return None
         
         scanner = StockRelativeStrength()
-        results = scanner.analyze_sector_stocks(sector_name, stocks, include_intraday=True)
+        results = scanner.analyze_sector_stocks(sector_name, stocks, include_intraday=True, lookback=lookback)
         
         if not results or not results.get('stocks'):
             return None
@@ -227,5 +230,6 @@ class ScannerService:
             'underperforming': underperforming,
             'total_stocks': len(stocks_data),
             'timestamp': datetime.now().isoformat(),
-            'timeframe': timeframe
+            'timeframe': timeframe,
+            'lookback': lookback
         }

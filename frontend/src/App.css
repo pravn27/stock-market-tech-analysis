@@ -166,6 +166,24 @@ body {
   cursor: pointer;
 }
 
+.filter-group input.lookback-input {
+  min-width: 80px;
+  width: 80px;
+  text-align: center;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+/* Hide number input spinner arrows */
+.filter-group input[type="number"]::-webkit-inner-spin-button,
+.filter-group input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.filter-group input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .filter-group select:focus,
 .filter-group input:focus {
   outline: none;
