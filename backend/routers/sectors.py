@@ -53,7 +53,7 @@ async def get_sectors_list():
 
 @router.get("/top-performers")
 async def get_top_performers(
-    limit: int = Query(3, ge=1, le=20, description="Number of top items per category (1-20)"),
+    limit: int = Query(3, ge=1, le=100, description="Number of top items per category (1-100)"),
     include: str = Query("all", description="Include: sectorial, broad_market, thematic, or all"),
     lookback: int = Query(1, ge=1, le=99, description="Lookback periods: 1=current, 2=2 periods back, etc.")
 ):

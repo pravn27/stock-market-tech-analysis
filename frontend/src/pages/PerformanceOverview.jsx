@@ -40,10 +40,20 @@ const PerformanceOverview = () => {
     setError(null);
     try {
       // Fetch more data than limit to allow sorting across all
-      const result = await getTopPerformers(50, indexGroup, lookback);
+      const result = await getTopPerformers(100, indexGroup, lookback);
       setData(result);
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
+      // Handle FastAPI validation errors (422) which return array of error objects
+      const detail = err.response?.data?.detail;
+      let errorMsg = 'Failed to fetch data';
+      if (typeof detail === 'string') {
+        errorMsg = detail;
+      } else if (Array.isArray(detail) && detail[0]?.msg) {
+        errorMsg = detail[0].msg;
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
