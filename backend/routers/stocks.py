@@ -79,3 +79,33 @@ async def get_nifty50_heavyweights(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/banknifty/heavyweights")
+async def get_banknifty_heavyweights(
+    timeframe: str = Query("weekly", description="Timeframe: 1h, 4h, daily, weekly, monthly"),
+    lookback: int = Query(1, ge=1, le=99, description="Lookback periods: 1=previous, 2=2 periods back")
+):
+    """
+    Get Bank Nifty heavyweight stocks with weightage and relative performance
+    
+    Shows which banking stocks are driving the BANK NIFTY index movement.
+    Stocks are sorted by weightage (heaviest first).
+    
+    Returns:
+    - Weightage percentage for each stock
+    - Performance relative to BANK NIFTY
+    - Total weightage of outperforming/underperforming stocks
+    """
+    try:
+        result = ScannerService.analyze_banknifty_heavyweights(timeframe, lookback)
+        if not result:
+            raise HTTPException(
+                status_code=500, 
+                detail="Failed to analyze Bank Nifty heavyweights"
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -8,6 +8,7 @@ from core.sector_scanner import (
 )
 from core.sector_stocks import SECTOR_STOCKS_MAP
 from core.nifty50_stocks import NIFTY50_STOCKS, NIFTY50_TOP_HEAVYWEIGHTS
+from core.banknifty_stocks import BANKNIFTY_STOCKS
 
 from typing import Dict, List
 from datetime import datetime
@@ -264,6 +265,116 @@ class ScannerService:
             return None
         
         # Process benchmark
+        benchmark = None
+        if results.get('benchmark'):
+            b = results['benchmark']
+            benchmark = {
+                'name': b['name'],
+                'symbol': b['symbol'],
+                'price': b['price'],
+                'returns': convert_returns(b['returns']),
+                'timestamp': datetime.now().isoformat()
+            }
+        
+        # Process stocks with weightage
+        stocks_data = []
+        outperforming = []
+        neutral = []
+        underperforming = []
+        
+        for stock in results['stocks']:
+            symbol = stock['symbol']
+            returns_data = convert_returns(stock['returns'])
+            relative_data = convert_returns(stock['relative'])
+            status = get_status(stock['relative'], timeframe)
+            weightage = weightage_map.get(symbol, 0)
+            
+            stock_data = {
+                'symbol': symbol,
+                'name': name_map.get(symbol, stock['name']),
+                'price': stock['price'],
+                'weightage': weightage,
+                'returns': returns_data,
+                'relative_strength': relative_data,
+                'status': status,
+                'rank': None
+            }
+            
+            stocks_data.append(stock_data)
+            if status == 'outperforming':
+                outperforming.append(stock_data)
+            elif status == 'underperforming':
+                underperforming.append(stock_data)
+            else:
+                neutral.append(stock_data)
+        
+        # Sort by weightage (heaviest first)
+        stocks_data.sort(key=lambda x: x['weightage'], reverse=True)
+        for i, s in enumerate(stocks_data, 1):
+            s['rank'] = i
+        
+        # Sort categories by weightage too
+        outperforming.sort(key=lambda x: x['weightage'], reverse=True)
+        neutral.sort(key=lambda x: x['weightage'], reverse=True)
+        underperforming.sort(key=lambda x: x['weightage'], reverse=True)
+        
+        # Calculate impact metrics
+        total_weightage = sum(s['weightage'] for s in stocks_data)
+        outperforming_weightage = sum(s['weightage'] for s in outperforming)
+        underperforming_weightage = sum(s['weightage'] for s in underperforming)
+        
+        return {
+            'benchmark': benchmark,
+            'stocks': stocks_data,
+            'outperforming': outperforming,
+            'neutral': neutral,
+            'underperforming': underperforming,
+            'total_stocks': len(stocks_data),
+            'total_weightage': round(total_weightage, 2),
+            'outperforming_weightage': round(outperforming_weightage, 2),
+            'underperforming_weightage': round(underperforming_weightage, 2),
+            'timestamp': datetime.now().isoformat(),
+            'timeframe': timeframe,
+            'lookback': lookback
+        }
+    
+    @staticmethod
+    def analyze_banknifty_heavyweights(timeframe: str = 'weekly', lookback: int = 1) -> Dict:
+        """
+        Analyze Bank Nifty heavyweight stocks vs Bank Nifty index
+        Shows which banking stocks are driving the index movement
+        
+        Args:
+            timeframe: '1h', '4h', 'daily', 'weekly', 'monthly'
+            lookback: Number of periods back to compare
+        """
+        import yfinance as yf
+        
+        # Bank Nifty benchmark
+        banknifty_symbol = "^NSEBANK"
+        banknifty_name = "NIFTY BANK"
+        
+        # Get stocks list with weightage
+        stocks_list = BANKNIFTY_STOCKS
+        stock_symbols = [s["symbol"] for s in stocks_list]
+        
+        # Create weightage lookup
+        weightage_map = {s["symbol"]: s["weightage"] for s in stocks_list}
+        name_map = {s["symbol"]: s["name"] for s in stocks_list}
+        
+        # Run analysis using StockRelativeStrength but with Bank Nifty as benchmark
+        scanner = StockRelativeStrength()
+        
+        # Override benchmark for Bank Nifty
+        scanner.benchmark_symbol = banknifty_symbol
+        scanner.benchmark_name = banknifty_name
+        
+        results = scanner.analyze_sector_stocks("Bank Nifty", stock_symbols, include_intraday=True, lookback=lookback)
+        
+        if not results or not results.get('stocks'):
+            return None
+        
+        # Process benchmark (Bank Nifty)
         benchmark = None
         if results.get('benchmark'):
             b = results['benchmark']

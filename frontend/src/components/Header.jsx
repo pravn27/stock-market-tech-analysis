@@ -17,6 +17,12 @@ const Header = ({ activePage, onPageChange }) => {
             Nifty 50
           </button>
           <button 
+            className={`nav-btn ${activePage === 'banknifty' ? 'active' : ''}`}
+            onClick={() => onPageChange('banknifty')}
+          >
+            Bank Nifty
+          </button>
+          <button 
             className={`nav-btn ${activePage === 'sectors' ? 'active' : ''}`}
             onClick={() => onPageChange('sectors')}
           >

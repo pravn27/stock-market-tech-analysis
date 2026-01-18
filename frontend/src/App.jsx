@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
 import Nifty50 from './pages/Nifty50';
+import BankNifty from './pages/BankNifty';
 import SectorPerformance from './pages/SectorPerformance';
 import SectorStocks from './pages/SectorStocks';
 import './App.css';
@@ -18,6 +19,7 @@ function App() {
       <Header activePage={activePage} onPageChange={setActivePage} />
       <main className="main-content">
         {activePage === 'nifty50' && <Nifty50 />}
+        {activePage === 'banknifty' && <BankNifty />}
         {activePage === 'sectors' && <SectorPerformance />}
         {activePage === 'stocks' && <SectorStocks />}
       </main>
