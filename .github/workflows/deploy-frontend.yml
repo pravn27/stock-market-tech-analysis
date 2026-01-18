@@ -3,10 +3,7 @@ name: Deploy Frontend to GitHub Pages
 on:
   push:
     branches:
-      - main
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/deploy-frontend.yml'
+      - master
   workflow_dispatch:
 
 permissions:
