@@ -5,6 +5,8 @@ Sector Analysis API Routes
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from services.scanner import ScannerService
+from core.data_validator import validate_all_indices
+from core.sector_scanner import NIFTY_SECTORS_MAIN, NIFTY_BROAD_INDICES, NIFTY_ALL_SECTORS
 
 router = APIRouter(prefix="/sectors", tags=["Sectors"])
 
@@ -68,5 +70,39 @@ async def get_top_performers(
         if not result:
             raise HTTPException(status_code=500, detail="Failed to fetch top performers data")
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/validate")
+async def validate_data_sources(
+    group: str = Query("sectorial", description="Index group to validate: sectorial, broad_market, all")
+):
+    """
+    Validate data sources for all indices.
+    
+    Use this endpoint to check if Yahoo Finance symbols are returning valid data.
+    Run periodically to catch data source issues early.
+    """
+    try:
+        indices_map = {
+            'sectorial': NIFTY_SECTORS_MAIN,
+            'broad_market': NIFTY_BROAD_INDICES,
+            'all': NIFTY_ALL_SECTORS
+        }
+        indices = indices_map.get(group, NIFTY_SECTORS_MAIN)
+        result = validate_all_indices(indices)
+        
+        return {
+            'group': group,
+            'valid_count': len(result['valid']),
+            'invalid_count': len(result['invalid']),
+            'nse_fallback_count': len(result['nse_fallback']),
+            'valid': result['valid'],
+            'invalid': result['invalid'],
+            'nse_fallback': result['nse_fallback'],
+            'timestamp': result['timestamp'],
+            'health': 'OK' if len(result['invalid']) == 0 else 'WARNING'
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

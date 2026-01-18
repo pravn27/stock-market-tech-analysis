@@ -32,8 +32,8 @@ NIFTY_SECTORS_MAIN = {
     # Banking & Finance
     "Bank Nifty": "^NSEBANK",
     "Nifty PSU Bank": "^CNXPSUBANK",
-    "Nifty Pvt Bank": "^NIFTYPVTBANK",
-    "Nifty Finance": "^CNXFINANCE",
+    "Nifty Pvt Bank": "NSE:NIFTY PRIVATE BANK",  # NSE fallback - Yahoo delisted
+    "Nifty Finance": "NSE:NIFTY FINANCIAL SERVICES",  # NSE fallback - Yahoo delisted
     
     # Technology
     "Nifty IT": "^CNXIT",
@@ -135,8 +135,8 @@ NIFTY_ALL_SECTORS = {
     # Banking & Finance
     "Bank Nifty": "^NSEBANK",
     "Nifty PSU Bank": "^CNXPSUBANK",
-    "Nifty Pvt Bank": "^NIFTYPVTBANK",
-    "Nifty Finance": "^CNXFINANCE",
+    "Nifty Pvt Bank": "NSE:NIFTY PRIVATE BANK",  # NSE fallback - Yahoo delisted
+    "Nifty Finance": "NSE:NIFTY FINANCIAL SERVICES",  # NSE fallback - Yahoo delisted
     
     # Technology
     "Nifty IT": "^CNXIT",
