@@ -16,6 +16,7 @@ export const TIMEFRAMES = [
 export const INDEX_GROUPS = [
   { value: 'sectorial', label: 'NIFTY Sectors' },
   { value: 'broad_market', label: 'Broad Market' },
+  { value: 'thematic', label: 'Thematic Indices' },
   { value: 'all', label: 'All Indices' }
 ];
 

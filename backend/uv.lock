@@ -34,13 +34,14 @@ wheels = [
 
 [[package]]
 name = "asta-backend"
-version = "1.1.0"
+version = "1.2.0"
 source = { virtual = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "pydantic" },
+    { name = "requests" },
     { name = "ta" },
     { name = "uvicorn" },
     { name = "yfinance" },
@@ -52,6 +53,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.4.1" },
     { name = "pandas", specifier = ">=2.3.3" },
     { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "requests", specifier = ">=2.32.0" },
     { name = "ta", specifier = ">=0.11.0" },
     { name = "uvicorn", specifier = ">=0.40.0" },
     { name = "yfinance", specifier = ">=1.0" },

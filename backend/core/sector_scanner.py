@@ -2,6 +2,10 @@
 Sector Relative Performance Scanner
 Compares NIFTY sector indices against NIFTY 50 to identify
 outperforming and underperforming sectors across timeframes.
+
+Data Sources:
+- Primary: yfinance (Yahoo Finance)
+- Fallback: NSE India (for indices not available on Yahoo Finance)
 """
 
 import yfinance as yf
@@ -10,80 +14,191 @@ import numpy as np
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
 
-
-# NOTE: Many Yahoo Finance NSE index symbols are deprecated or don't work.
-# Only verified working symbols are included in the lists below.
-#
-# Working symbols format:
-# - ^NSEI, ^NSEBANK, ^CNXIT, etc. (caret prefix)
-# - NIFTYMIDCAP150.NS, NIFTY_MID_SELECT.NS (suffix format)
-#
-# Non-working symbols (as of Jan 2026):
-# - ^CNXFINANCE, ^NIFTYPVTBANK, ^CNXMIDCAP, ^CNXSMALLCAP, ^CNX500, etc.
+# Import NSE fallback fetcher
+from core.nse_fetcher import get_nse_fetcher
 
 
-# Sectorial Indices (only verified working Yahoo Finance symbols)
+# =============================================================================
+# INDEX DEFINITIONS - Complete NSE Indices
+# =============================================================================
+# All indices use NSE India API for consistent and reliable data
+# Reference: https://www.nseindia.com/market-data/live-market-indices
+
+# Sectorial Indices (All major sectors)
 NIFTY_SECTORS_MAIN = {
-    "NIFTY 50": "^NSEI",
-    "Bank Nifty": "^NSEBANK",
-    "Nifty IT": "^CNXIT",
-    "Nifty Pharma": "^CNXPHARMA",
-    "Nifty FMCG": "^CNXFMCG",
-    "Nifty Auto": "^CNXAUTO",
-    "Nifty Metal": "^CNXMETAL",
-    "Nifty Realty": "^CNXREALTY",
-    "Nifty Energy": "^CNXENERGY",
-    "Nifty PSU Bank": "^CNXPSUBANK",
-    "Nifty Infra": "^CNXINFRA",
-    "Nifty Media": "^CNXMEDIA",
+    "NIFTY 50": "NSE:NIFTY 50",
+    
+    # Banking & Finance
+    "Bank Nifty": "NSE:NIFTY BANK",
+    "Nifty PSU Bank": "NSE:NIFTY PSU BANK",
+    "Nifty Pvt Bank": "NSE:NIFTY PRIVATE BANK",
+    "Nifty Finance": "NSE:NIFTY FINANCIAL SERVICES",
+    
+    # Technology
+    "Nifty IT": "NSE:NIFTY IT",
+    
+    # Healthcare
+    "Nifty Pharma": "NSE:NIFTY PHARMA",
+    "Nifty Healthcare": "NSE:NIFTY HEALTHCARE INDEX",
+    
+    # Consumer
+    "Nifty FMCG": "NSE:NIFTY FMCG",
+    "Nifty Consumer Durables": "NSE:NIFTY CONSUMER DURABLES",
+    "Nifty India Consumption": "NSE:NIFTY INDIA CONSUMPTION",
+    
+    # Industrial & Manufacturing
+    "Nifty Auto": "NSE:NIFTY AUTO",
+    "Nifty Metal": "NSE:NIFTY METAL",
+    "Nifty Realty": "NSE:NIFTY REALTY",
+    "Nifty Infra": "NSE:NIFTY INFRASTRUCTURE",
+    
+    # Energy & Resources
+    "Nifty Energy": "NSE:NIFTY ENERGY",
+    "Nifty Oil & Gas": "NSE:NIFTY OIL & GAS",
+    
+    # Others
+    "Nifty Media": "NSE:NIFTY MEDIA",
+    "Nifty Commodities": "NSE:NIFTY COMMODITIES",
+    "Nifty MNC": "NSE:NIFTY MNC",
+    "Nifty Services": "NSE:NIFTY SERVICES SECTOR",
+    "Nifty PSE": "NSE:NIFTY PSE",
+    "Nifty CPSE": "NSE:NIFTY CPSE",
 }
 
-# Broader Market Indices (using .NS suffix format that works with yfinance)
+# Broader Market Indices
 NIFTY_BROAD_INDICES = {
     # Benchmark
-    "NIFTY 50": "^NSEI",
+    "NIFTY 50": "NSE:NIFTY 50",
     
     # Broad Market
-    "Nifty Next 50": "^NSMIDCP",
-    "Nifty 100": "^CNX100",
-    "Nifty 200": "^CNX200",
+    "Nifty Next 50": "NSE:NIFTY NEXT 50",
+    "Nifty 100": "NSE:NIFTY 100",
+    "Nifty 200": "NSE:NIFTY 200",
+    "Nifty 500": "NSE:NIFTY 500",
+    "Nifty Total Market": "NSE:NIFTY TOTAL MARKET",
     
     # Midcap Indices
-    "Nifty Midcap 150": "NIFTYMIDCAP150.NS",
-    "Nifty Mid Select": "NIFTY_MID_SELECT.NS",
+    "Nifty Midcap 50": "NSE:NIFTY MIDCAP 50",
+    "Nifty Midcap 100": "NSE:NIFTY MIDCAP 100",
+    "Nifty Midcap 150": "NSE:NIFTY MIDCAP 150",
+    "Nifty Midcap Select": "NSE:NIFTY MIDCAP SELECT",
     
     # Smallcap Indices
-    "Nifty Smallcap 250": "NIFTYSMLCAP250.NS",
+    "Nifty Smallcap 50": "NSE:NIFTY SMALLCAP 50",
+    "Nifty Smallcap 100": "NSE:NIFTY SMALLCAP 100",
+    "Nifty Smallcap 250": "NSE:NIFTY SMALLCAP 250",
+    
+    # Microcap
+    "Nifty Microcap 250": "NSE:NIFTY MICROCAP 250",
+    
+    # Combined
+    "Nifty LargeMidcap 250": "NSE:NIFTY LARGEMIDCAP 250",
+    "Nifty MidSmallcap 400": "NSE:NIFTY MIDSMALLCAP 400",
 }
 
-# All Sectorial Indices (comprehensive)
-# All Indices (combined - only verified working symbols)
+# Thematic Indices
+NIFTY_THEMATIC = {
+    "NIFTY 50": "NSE:NIFTY 50",
+    
+    # Defence & Manufacturing
+    "Nifty India Defence": "NSE:NIFTY INDIA DEFENCE",
+    "Nifty India Manufacturing": "NSE:NIFTY INDIA MANUFACTURING",
+    
+    # Digital & Technology
+    "Nifty India Digital": "NSE:NIFTY INDIA DIGITAL",
+    
+    # Housing & Infrastructure
+    "Nifty Housing": "NSE:NIFTY HOUSING",
+    "Nifty Core Housing": "NSE:NIFTY CORE HOUSING",
+    "Nifty Infra & Logistics": "NSE:NIFTY INDIA INFRASTRUCTURE & LOGISTICS",
+    "Nifty Transport & Logistics": "NSE:NIFTY TRANSPORTATION & LOGISTICS",
+    
+    # Consumption & Tourism
+    "Nifty India Tourism": "NSE:NIFTY INDIA TOURISM",
+    "Nifty Rural": "NSE:NIFTY RURAL",
+    "Nifty Non-Cyclical Consumer": "NSE:NIFTY NON-CYCLICAL CONSUMER",
+    
+    # Others
+    "Nifty Capital Markets": "NSE:NIFTY CAPITAL MARKETS",
+    "Nifty Chemicals": "NSE:NIFTY CHEMICALS",
+    "Nifty EV & New Age Auto": "NSE:NIFTY EV & NEW AGE AUTOMOTIVE",
+    "Nifty Mobility": "NSE:NIFTY MOBILITY",
+}
+
+# All Indices Combined (Sectors + Broad Market + Thematic)
 NIFTY_ALL_SECTORS = {
     # Benchmark
-    "NIFTY 50": "^NSEI",
+    "NIFTY 50": "NSE:NIFTY 50",
     
-    # Sectorial
-    "Bank Nifty": "^NSEBANK",
-    "Nifty IT": "^CNXIT",
-    "Nifty Pharma": "^CNXPHARMA",
-    "Nifty FMCG": "^CNXFMCG",
-    "Nifty Auto": "^CNXAUTO",
-    "Nifty Metal": "^CNXMETAL",
-    "Nifty Realty": "^CNXREALTY",
-    "Nifty Energy": "^CNXENERGY",
-    "Nifty PSU Bank": "^CNXPSUBANK",
-    "Nifty Media": "^CNXMEDIA",
-    "Nifty Infra": "^CNXINFRA",
+    # === SECTORIAL ===
+    # Banking & Finance
+    "Bank Nifty": "NSE:NIFTY BANK",
+    "Nifty PSU Bank": "NSE:NIFTY PSU BANK",
+    "Nifty Pvt Bank": "NSE:NIFTY PRIVATE BANK",
+    "Nifty Finance": "NSE:NIFTY FINANCIAL SERVICES",
     
-    # Broad Market
-    "Nifty Next 50": "^NSMIDCP",
-    "Nifty 100": "^CNX100",
-    "Nifty 200": "^CNX200",
+    # Technology
+    "Nifty IT": "NSE:NIFTY IT",
     
-    # Midcap & Smallcap
-    "Nifty Midcap 150": "NIFTYMIDCAP150.NS",
-    "Nifty Mid Select": "NIFTY_MID_SELECT.NS",
-    "Nifty Smallcap 250": "NIFTYSMLCAP250.NS",
+    # Healthcare
+    "Nifty Pharma": "NSE:NIFTY PHARMA",
+    "Nifty Healthcare": "NSE:NIFTY HEALTHCARE INDEX",
+    
+    # Consumer
+    "Nifty FMCG": "NSE:NIFTY FMCG",
+    "Nifty Consumer Durables": "NSE:NIFTY CONSUMER DURABLES",
+    "Nifty India Consumption": "NSE:NIFTY INDIA CONSUMPTION",
+    
+    # Industrial & Manufacturing
+    "Nifty Auto": "NSE:NIFTY AUTO",
+    "Nifty Metal": "NSE:NIFTY METAL",
+    "Nifty Realty": "NSE:NIFTY REALTY",
+    "Nifty Infra": "NSE:NIFTY INFRASTRUCTURE",
+    
+    # Energy & Resources
+    "Nifty Energy": "NSE:NIFTY ENERGY",
+    "Nifty Oil & Gas": "NSE:NIFTY OIL & GAS",
+    
+    # Others
+    "Nifty Media": "NSE:NIFTY MEDIA",
+    "Nifty Commodities": "NSE:NIFTY COMMODITIES",
+    "Nifty MNC": "NSE:NIFTY MNC",
+    "Nifty Services": "NSE:NIFTY SERVICES SECTOR",
+    "Nifty PSE": "NSE:NIFTY PSE",
+    "Nifty CPSE": "NSE:NIFTY CPSE",
+    
+    # === BROAD MARKET ===
+    "Nifty Next 50": "NSE:NIFTY NEXT 50",
+    "Nifty 100": "NSE:NIFTY 100",
+    "Nifty 200": "NSE:NIFTY 200",
+    "Nifty 500": "NSE:NIFTY 500",
+    "Nifty Total Market": "NSE:NIFTY TOTAL MARKET",
+    
+    # Midcap
+    "Nifty Midcap 50": "NSE:NIFTY MIDCAP 50",
+    "Nifty Midcap 100": "NSE:NIFTY MIDCAP 100",
+    "Nifty Midcap 150": "NSE:NIFTY MIDCAP 150",
+    "Nifty Midcap Select": "NSE:NIFTY MIDCAP SELECT",
+    
+    # Smallcap
+    "Nifty Smallcap 50": "NSE:NIFTY SMALLCAP 50",
+    "Nifty Smallcap 100": "NSE:NIFTY SMALLCAP 100",
+    "Nifty Smallcap 250": "NSE:NIFTY SMALLCAP 250",
+    
+    # Microcap & Combined
+    "Nifty Microcap 250": "NSE:NIFTY MICROCAP 250",
+    "Nifty LargeMidcap 250": "NSE:NIFTY LARGEMIDCAP 250",
+    "Nifty MidSmallcap 400": "NSE:NIFTY MIDSMALLCAP 400",
+    
+    # === THEMATIC ===
+    "Nifty India Defence": "NSE:NIFTY INDIA DEFENCE",
+    "Nifty India Manufacturing": "NSE:NIFTY INDIA MANUFACTURING",
+    "Nifty India Digital": "NSE:NIFTY INDIA DIGITAL",
+    "Nifty Housing": "NSE:NIFTY HOUSING",
+    "Nifty Capital Markets": "NSE:NIFTY CAPITAL MARKETS",
+    "Nifty Chemicals": "NSE:NIFTY CHEMICALS",
+    "Nifty Transport & Logistics": "NSE:NIFTY TRANSPORTATION & LOGISTICS",
+    "Nifty EV & New Age Auto": "NSE:NIFTY EV & NEW AGE AUTOMOTIVE",
 }
 
 
@@ -94,19 +209,89 @@ class SectorRelativeStrength:
         self.sectors = sectors if sectors is not None else NIFTY_SECTORS_MAIN
         self.benchmark = "NIFTY 50"
         self.benchmark_symbol = "^NSEI"
+        self.nse_fetcher = None  # Lazy init
     
-    def fetch_index_data(self, symbol: str, period: str = "6mo", interval: str = "1d") -> pd.DataFrame:
-        """Fetch historical data for an index"""
+    def _get_nse_fetcher(self):
+        """Get NSE fetcher (lazy initialization)"""
+        if self.nse_fetcher is None:
+            self.nse_fetcher = get_nse_fetcher()
+        return self.nse_fetcher
+    
+    def _is_nse_symbol(self, symbol: str) -> bool:
+        """Check if symbol should use NSE fallback"""
+        return symbol.startswith("NSE:")
+    
+    def _get_nse_index_name(self, symbol: str) -> str:
+        """Extract NSE index name from symbol"""
+        return symbol.replace("NSE:", "")
+    
+    def fetch_index_data(self, symbol: str, period: str = "6mo", interval: str = "1d", index_name: str = None) -> pd.DataFrame:
+        """
+        Fetch historical data for an index
+        
+        Tries yfinance first, falls back to NSE India if:
+        - Symbol starts with "NSE:" (NSE-only index)
+        - yfinance returns empty data
+        
+        Args:
+            symbol: Index symbol (Yahoo format or NSE:INDEX_NAME)
+            period: Data period (e.g., "6mo", "1y")
+            interval: Data interval (e.g., "1d", "1h")
+            index_name: Human-readable index name (for NSE lookup)
+            
+        Returns:
+            DataFrame with OHLC data
+        """
+        # Check if this is an NSE-only symbol
+        if self._is_nse_symbol(symbol):
+            nse_index = self._get_nse_index_name(symbol)
+            print(f"Using NSE fallback for {nse_index}")
+            return self._fetch_from_nse(nse_index)
+        
+        # Try yfinance first
         try:
             ticker = yf.Ticker(symbol)
             df = ticker.history(period=period, interval=interval)
+            
+            # Check if we got valid data
+            if df.empty or len(df) < 2:
+                print(f"yfinance returned empty for {symbol}, trying NSE fallback...")
+                # Try NSE fallback using index_name
+                if index_name:
+                    return self._fetch_from_nse(index_name)
+                return pd.DataFrame()
+            
             return df
+            
         except Exception as e:
-            print(f"Error fetching {symbol}: {e}")
+            print(f"yfinance error for {symbol}: {e}")
+            # Try NSE fallback
+            if index_name:
+                print(f"Trying NSE fallback for {index_name}...")
+                return self._fetch_from_nse(index_name)
             return pd.DataFrame()
     
-    def fetch_intraday_data(self, symbol: str) -> pd.DataFrame:
-        """Fetch intraday data (1hr intervals) for last 7 days"""
+    def _fetch_from_nse(self, index_name: str) -> pd.DataFrame:
+        """Fetch data from NSE India"""
+        try:
+            nse = self._get_nse_fetcher()
+            df = nse.get_index_historical(index_name, days=180)
+            return df
+        except Exception as e:
+            print(f"NSE fetch error for {index_name}: {e}")
+            return pd.DataFrame()
+    
+    def fetch_intraday_data(self, symbol: str, index_name: str = None) -> pd.DataFrame:
+        """
+        Fetch intraday data (1hr intervals) for last 7 days
+        
+        Note: NSE doesn't provide historical intraday data,
+        so this only works for yfinance symbols.
+        """
+        # NSE symbols don't have intraday history
+        if self._is_nse_symbol(symbol):
+            return pd.DataFrame()
+        
         try:
             ticker = yf.Ticker(symbol)
             df = ticker.history(period="7d", interval="1h")
@@ -323,28 +508,34 @@ class SectorRelativeStrength:
             if progress_callback:
                 progress_callback((i + 1) / len(sector_items), f"Analyzing {name}...")
             
-            df = self.fetch_index_data(symbol, period="6mo")
+            # Pass index_name for NSE fallback lookup
+            df = self.fetch_index_data(symbol, period="6mo", index_name=name)
             
             if df.empty:
+                print(f"No data for {name} ({symbol}), skipping...")
                 continue
             
             returns = self.calculate_returns(df, lookback=lookback)
             
-            # Add intraday returns
-            if include_intraday:
-                intraday_df = self.fetch_intraday_data(symbol)
+            # Add intraday returns (NSE symbols won't have intraday)
+            if include_intraday and not self._is_nse_symbol(symbol):
+                intraday_df = self.fetch_intraday_data(symbol, index_name=name)
                 intraday_returns = self.calculate_intraday_returns(intraday_df, lookback=lookback)
                 returns.update(intraday_returns)
             
             relative = self.calculate_relative_strength(returns, benchmark_returns)
             
+            # Determine display symbol
+            display_symbol = symbol if not self._is_nse_symbol(symbol) else f"NSE:{name}"
+            
             results.append({
                 'name': name,
-                'symbol': symbol,
+                'symbol': display_symbol,
                 'price': float(df['Close'].iloc[-1]),
                 'returns': returns,
                 'relative': relative,
-                'is_benchmark': False
+                'is_benchmark': False,
+                'data_source': 'NSE' if self._is_nse_symbol(symbol) else 'Yahoo'
             })
         
         return results

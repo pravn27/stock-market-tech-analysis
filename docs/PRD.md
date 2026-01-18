@@ -1,11 +1,12 @@
 # ASTA - Stock Market Technical Analysis
 ## Project Requirements Document (PRD)
 
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Last Updated:** January 18, 2026  
 **Status:** Active Development
 
 ### Changelog
+- **v1.2.0**: Added NSE India as fallback data source for indices not available on Yahoo Finance
 - **v1.1.0**: Added Lookback Period feature for configurable historical comparison
 - **v1.0.0**: Initial release with sector and stock relative strength analysis
 
@@ -96,7 +97,9 @@ Quick identification of sector and stock momentum relative to the broader market
 ├─────────────────────────────────────────────────────────────────┤
 │                      DATA LAYER                                  │
 │  ┌─────────────────────────────────────────────────────────┐    │
-│  │              yfinance API                                │    │
+│  │              Data Sources                                │    │
+│  │  - Primary: yfinance (Yahoo Finance)                     │    │
+│  │  - Fallback: NSE India (for missing indices)            │    │
 │  │  - Real-time and historical price data                   │    │
 │  │  - Index data (NIFTY 50, sector indices)                │    │
 │  │  - Stock data (NSE listed stocks)                        │    │
@@ -182,9 +185,12 @@ stock-market-tech-analysis/
 
 ### 3.3 Data Sources
 
-| Source | Type | Data Provided |
-|--------|------|---------------|
-| Yahoo Finance (yfinance) | External API | Real-time & historical prices, index data |
+| Source | Type | Priority | Data Provided |
+|--------|------|----------|---------------|
+| Yahoo Finance (yfinance) | External API | Primary | Real-time & historical prices, index data |
+| NSE India | Web API | Fallback | Indices not available on Yahoo Finance (Nifty Finance, Pvt Bank, Midcap 50/100, Smallcap 50/100, Nifty 500) |
+
+**Fallback Logic:** When Yahoo Finance doesn't have data for an index (returns empty or fails), the system automatically tries NSE India as a fallback source.
 
 ### 3.4 Development Tools
 

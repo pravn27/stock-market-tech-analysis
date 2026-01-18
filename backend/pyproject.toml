@@ -1,6 +1,6 @@
 [project]
 name = "asta-backend"
-version = "1.1.0"
+version = "1.2.0"
 description = "ASTA - Stock Market Technical Analysis Backend API"
 requires-python = ">=3.13"
 dependencies = [
@@ -8,9 +8,10 @@ dependencies = [
     "numpy>=2.4.1",
     "pandas>=2.3.3",
     "pydantic>=2.12.5",
+    "requests>=2.32.0",   # For NSE India fallback
     "ta>=0.11.0",
     "uvicorn>=0.40.0",
-    "yfinance>=1.0",
+    "yfinance>=1.0",      # Primary data source
 ]
 
 [project.scripts]

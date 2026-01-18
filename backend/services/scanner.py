@@ -4,7 +4,7 @@ Scanner Service - Business logic for sector and stock analysis
 
 from core.sector_scanner import (
     SectorRelativeStrength, StockRelativeStrength,
-    NIFTY_SECTORS_MAIN, NIFTY_BROAD_INDICES, NIFTY_ALL_SECTORS
+    NIFTY_SECTORS_MAIN, NIFTY_BROAD_INDICES, NIFTY_ALL_SECTORS, NIFTY_THEMATIC
 )
 from core.sector_stocks import SECTOR_STOCKS_MAP
 
@@ -49,6 +49,7 @@ class ScannerService:
         return {
             'sectorial': list(NIFTY_SECTORS_MAIN.keys()),
             'broad_market': list(NIFTY_BROAD_INDICES.keys()),
+            'thematic': list(NIFTY_THEMATIC.keys()),
             'all': list(NIFTY_ALL_SECTORS.keys())
         }
     
@@ -68,7 +69,7 @@ class ScannerService:
         Analyze sector performance vs NIFTY 50
         
         Args:
-            index_group: 'sectorial', 'broad_market', or 'all'
+            index_group: 'sectorial', 'broad_market', 'thematic', or 'all'
             timeframe: '1h', '4h', 'daily', 'weekly', 'monthly', '3m'
             lookback: Number of periods back to compare (1 = previous, 2 = 2 periods back, etc.)
         """
@@ -76,6 +77,7 @@ class ScannerService:
         indices_map = {
             'sectorial': NIFTY_SECTORS_MAIN,
             'broad_market': NIFTY_BROAD_INDICES,
+            'thematic': NIFTY_THEMATIC,
             'all': NIFTY_ALL_SECTORS
         }
         indices = indices_map.get(index_group, NIFTY_SECTORS_MAIN)
