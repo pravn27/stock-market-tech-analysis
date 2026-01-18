@@ -16,8 +16,9 @@ const PerformanceOverview = () => {
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [limit, setLimit] = useState(5);
+  const [lookback, setLookback] = useState(1);
   const [showNeutral, setShowNeutral] = useState(true);
-  
+
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalSector, setModalSector] = useState(null);
@@ -28,7 +29,7 @@ const PerformanceOverview = () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await getTopPerformers(limit, 'all');
+      const result = await getTopPerformers(limit, 'all', lookback);
       setData(result);
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
@@ -42,10 +43,10 @@ const PerformanceOverview = () => {
     setModalOpen(true);
     setStocksLoading(true);
     setStocksData(null);
-    
+
     try {
-      // Fetch stocks for all timeframes (using weekly as base, data has all)
-      const result = await getSectorStocks(sectorName, 'weekly', 1);
+      // Fetch stocks with same lookback as main data
+      const result = await getSectorStocks(sectorName, 'weekly', lookback);
       setStocksData(result);
     } catch (err) {
       console.error('Failed to fetch stocks:', err);
@@ -86,10 +87,10 @@ const PerformanceOverview = () => {
   // Build unified sector list with all timeframe data
   const buildSectorRows = (category) => {
     if (!data || !data[category]) return [];
-    
+
     // Get all unique sectors from first timeframe that has data
     const sectorsMap = new Map();
-    
+
     TIMEFRAMES.forEach(tf => {
       const items = data[category][tf] || [];
       items.forEach((item, idx) => {
@@ -103,7 +104,7 @@ const PerformanceOverview = () => {
         sectorsMap.get(item.name).values[tf] = item.rs;
       });
     });
-    
+
     // Convert to array and limit
     return Array.from(sectorsMap.values()).slice(0, limit);
   };
@@ -111,7 +112,7 @@ const PerformanceOverview = () => {
   // Render heatmap table for a category
   const renderHeatmapTable = (category, title, icon, colorClass) => {
     const rows = buildSectorRows(category);
-    
+
     if (rows.length === 0) {
       return (
         <div className={`heatmap-section ${colorClass}`}>
@@ -124,7 +125,7 @@ const PerformanceOverview = () => {
         </div>
       );
     }
-    
+
     return (
       <div className={`heatmap-section ${colorClass}`}>
         <div className="heatmap-header">
@@ -144,8 +145,8 @@ const PerformanceOverview = () => {
             </thead>
             <tbody>
               {rows.map((row, idx) => (
-                <tr 
-                  key={row.name} 
+                <tr
+                  key={row.name}
                   className="heatmap-row"
                   onClick={() => openStocksModal(row.name)}
                 >
@@ -155,8 +156,8 @@ const PerformanceOverview = () => {
                     <span className="sector-arrow">▶</span>
                   </td>
                   {TIMEFRAMES.map(tf => (
-                    <td 
-                      key={tf} 
+                    <td
+                      key={tf}
                       className={`rs-cell ${getRsColor(row.values[tf])}`}
                     >
                       {formatRs(row.values[tf])}
@@ -174,7 +175,7 @@ const PerformanceOverview = () => {
   // Render stocks modal
   const renderModal = () => {
     if (!modalOpen) return null;
-    
+
     return (
       <div className="modal-overlay" onClick={closeModal}>
         <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -182,12 +183,12 @@ const PerformanceOverview = () => {
             <h3>📈 {modalSector} - Top {limit} Stocks</h3>
             <button className="modal-close" onClick={closeModal}>✕</button>
           </div>
-          
+
           <div className="modal-body">
             {stocksLoading && (
               <div className="modal-loading">Loading stocks...</div>
             )}
-            
+
             {!stocksLoading && stocksData && stocksData.stocks && (
               <>
                 <div className="modal-table-wrapper">
@@ -206,8 +207,8 @@ const PerformanceOverview = () => {
                           <td className="stock-cell">
                             <span className="stock-rank">{idx + 1}</span>
                             <span className={`stock-indicator ${stock.status}`}>
-                              {stock.status === 'outperforming' ? '🟢' : 
-                               stock.status === 'underperforming' ? '🔴' : '⚪'}
+                              {stock.status === 'outperforming' ? '🟢' :
+                                stock.status === 'underperforming' ? '🔴' : '⚪'}
                             </span>
                             <span className="stock-name">{stock.name}</span>
                           </td>
@@ -215,8 +216,8 @@ const PerformanceOverview = () => {
                             const tfKey = TF_KEY_MAP[tf];
                             const rs = stock.relative_strength?.[tfKey];
                             return (
-                              <td 
-                                key={tf} 
+                              <td
+                                key={tf}
                                 className={`rs-cell ${getRsColor(rs)}`}
                               >
                                 {formatRs(rs)}
@@ -228,7 +229,7 @@ const PerformanceOverview = () => {
                     </tbody>
                   </table>
                 </div>
-                
+
                 <div className="modal-legend">
                   <span>🟢 Outperforming (RS &gt; 1%)</span>
                   <span>⚪ Neutral</span>
@@ -236,7 +237,7 @@ const PerformanceOverview = () => {
                 </div>
               </>
             )}
-            
+
             {!stocksLoading && (!stocksData || !stocksData.stocks) && (
               <div className="modal-empty">No stocks data available</div>
             )}
@@ -252,7 +253,10 @@ const PerformanceOverview = () => {
       <div className="perf-heatmap-header">
         <div className="perf-heatmap-title">
           <h2>📊 Performance Overview</h2>
-          <p>All sectors vs NIFTY 50 across timeframes</p>
+          <p>
+            All sectors vs NIFTY 50 across timeframes
+            {data && <span className="lookback-badge">Lookback: {data.lookback || lookback} period{(data.lookback || lookback) > 1 ? 's' : ''}</span>}
+          </p>
         </div>
       </div>
 
@@ -268,7 +272,20 @@ const PerformanceOverview = () => {
             onChange={(e) => setLimit(Math.max(1, Math.min(20, parseInt(e.target.value) || 5)))}
           />
         </div>
-        
+
+        <div className="control-group">
+          <label>Lookback</label>
+          <input
+            type="number"
+            min="1"
+            max="99"
+            value={lookback}
+            onChange={(e) => setLookback(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))}
+            title="Compare current vs N periods back (1=previous, 2=2 periods back)"
+          />
+          <span className="lookback-hint">periods</span>
+        </div>
+
         <label className="toggle-neutral">
           <input
             type="checkbox"
@@ -277,7 +294,7 @@ const PerformanceOverview = () => {
           />
           <span>Show Neutral</span>
         </label>
-        
+
         <button className="refresh-btn" onClick={fetchData} disabled={loading}>
           {loading ? 'Loading...' : '↻ Refresh'}
         </button>
@@ -308,7 +325,7 @@ const PerformanceOverview = () => {
           {renderHeatmapTable('outperforming', 'Outperforming', '🟢', 'section-green')}
           {showNeutral && renderHeatmapTable('neutral', 'Neutral', '⚪', 'section-gray')}
           {renderHeatmapTable('underperforming', 'Underperforming', '🔴', 'section-red')}
-          
+
           <div className="perf-help">
             💡 Click any sector row to see its top stocks across all timeframes
           </div>

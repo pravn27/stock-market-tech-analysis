@@ -454,7 +454,7 @@ class ScannerService:
         }
     
     @staticmethod
-    def get_top_performers(limit: int = 3, include: str = 'all') -> Dict:
+    def get_top_performers(limit: int = 3, include: str = 'all', lookback: int = 1) -> Dict:
         """
         Get top N outperforming, underperforming, and neutral sectors/indices
         across ALL timeframes (3M, M, W, D, 4H, 1H)
@@ -462,6 +462,7 @@ class ScannerService:
         Args:
             limit: Number of top items per category (default 3)
             include: 'sectorial', 'broad_market', 'thematic', or 'all'
+            lookback: Number of periods back to compare (1 = previous, 2 = 2 periods back, etc.)
         """
         # Select index group
         indices_map = {
@@ -485,7 +486,7 @@ class ScannerService:
         
         # Run scanner once to get all data
         scanner = SectorRelativeStrength(indices)
-        results = scanner.analyze_all_sectors(include_intraday=True, lookback=1)
+        results = scanner.analyze_all_sectors(include_intraday=True, lookback=lookback)
         
         if not results:
             return None
@@ -520,6 +521,7 @@ class ScannerService:
             'timeframes': list(tf_labels.values()),
             'limit': limit,
             'include': include,
+            'lookback': lookback,
             'timestamp': datetime.now().isoformat()
         }
         
