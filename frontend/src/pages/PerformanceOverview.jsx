@@ -33,6 +33,8 @@ const PerformanceOverview = () => {
   const [modalSector, setModalSector] = useState(null);
   const [stocksData, setStocksData] = useState(null);
   const [stocksLoading, setStocksLoading] = useState(false);
+  const [modalSortColumn, setModalSortColumn] = useState('W');
+  const [modalSortDirection, setModalSortDirection] = useState('desc');
 
   const fetchData = async () => {
     setLoading(true);
@@ -131,6 +133,43 @@ const PerformanceOverview = () => {
     setModalOpen(false);
     setModalSector(null);
     setStocksData(null);
+    setModalSortColumn('W');
+    setModalSortDirection('desc');
+  };
+
+  // Handle modal column sort
+  const handleModalSort = (column) => {
+    if (modalSortColumn === column) {
+      setModalSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
+    } else {
+      setModalSortColumn(column);
+      setModalSortDirection('desc');
+    }
+  };
+
+  // Sort stocks in modal
+  const sortedStocks = useMemo(() => {
+    if (!stocksData?.stocks) return [];
+
+    const tfKey = TF_KEY_MAP[modalSortColumn];
+    
+    return [...stocksData.stocks].sort((a, b) => {
+      const aVal = a.relative_strength?.[tfKey] ?? -999;
+      const bVal = b.relative_strength?.[tfKey] ?? -999;
+
+      if (modalSortDirection === 'desc') {
+        return bVal - aVal;
+      }
+      return aVal - bVal;
+    });
+  }, [stocksData, modalSortColumn, modalSortDirection]);
+
+  // Render modal sort indicator
+  const renderModalSortIndicator = (column) => {
+    if (modalSortColumn !== column) {
+      return <span className="sort-icon inactive">↕</span>;
+    }
+    return <span className="sort-icon active">{modalSortDirection === 'desc' ? '↓' : '↑'}</span>;
   };
 
   // Get RS color based on value
@@ -172,9 +211,10 @@ const PerformanceOverview = () => {
 
     return (
       <div className="modal-overlay" onClick={closeModal}>
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
-            <h3>📈 {modalSector} - Top Stocks</h3>
+            <h3>📈 {modalSector} - {sortedStocks.length} Stocks</h3>
+            <span className="modal-sort-info">Sorted by {modalSortColumn} {modalSortDirection === 'desc' ? '↓' : '↑'}</span>
             <button className="modal-close" onClick={closeModal}>✕</button>
           </div>
 
@@ -183,23 +223,30 @@ const PerformanceOverview = () => {
               <div className="modal-loading">Loading stocks...</div>
             )}
 
-            {!stocksLoading && stocksData && stocksData.stocks && (
+            {!stocksLoading && sortedStocks.length > 0 && (
               <>
                 <div className="modal-table-wrapper">
                   <table className="stocks-modal-table">
                     <thead>
                       <tr>
+                        <th className="rank-col">#</th>
                         <th className="stock-col">Stock</th>
                         {TIMEFRAMES.map(tf => (
-                          <th key={tf} className="tf-col">{tf}</th>
+                          <th
+                            key={tf}
+                            className={`tf-col sortable ${modalSortColumn === tf ? 'sorted' : ''}`}
+                            onClick={() => handleModalSort(tf)}
+                          >
+                            {tf} {renderModalSortIndicator(tf)}
+                          </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {stocksData.stocks.slice(0, 10).map((stock, idx) => (
+                      {sortedStocks.map((stock, idx) => (
                         <tr key={stock.symbol} className={`stock-row ${stock.status}`}>
+                          <td className="rank-cell">{idx + 1}</td>
                           <td className="stock-cell">
-                            <span className="stock-rank">{idx + 1}</span>
                             <span className={`stock-indicator ${stock.status}`}>
                               {stock.status === 'outperforming' ? '🟢' :
                                 stock.status === 'underperforming' ? '🔴' : '⚪'}
@@ -212,7 +259,7 @@ const PerformanceOverview = () => {
                             return (
                               <td
                                 key={tf}
-                                className={`rs-cell ${getRsColor(rs)}`}
+                                className={`rs-cell ${getRsColor(rs)} ${modalSortColumn === tf ? 'sorted-col' : ''}`}
                               >
                                 {formatRs(rs)}
                               </td>
@@ -232,8 +279,8 @@ const PerformanceOverview = () => {
               </>
             )}
 
-            {!stocksLoading && (!stocksData || !stocksData.stocks) && (
-              <div className="modal-empty">No stocks data available</div>
+            {!stocksLoading && sortedStocks.length === 0 && (
+              <div className="modal-empty">No stocks data available for this sector</div>
             )}
           </div>
         </div>

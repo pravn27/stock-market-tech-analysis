@@ -1486,6 +1486,11 @@ body {
   animation: slideUp 0.3s ease;
 }
 
+.modal-content.modal-large {
+  max-width: 1100px;
+  max-height: 85vh;
+}
+
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -1503,6 +1508,13 @@ body {
 .modal-header h3 {
   font-size: 1.1rem;
   font-weight: 600;
+  flex: 1;
+}
+
+.modal-sort-info {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-right: 1rem;
 }
 
 .modal-close {
@@ -1560,6 +1572,35 @@ body {
   font-size: 0.8rem;
   position: sticky;
   top: 0;
+  z-index: 10;
+}
+
+.stocks-modal-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.stocks-modal-table th.sortable:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary);
+}
+
+.stocks-modal-table th.sorted {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--primary);
+}
+
+.stocks-modal-table .rank-col {
+  width: 40px;
+  text-align: center;
+}
+
+.stocks-modal-table .rank-cell {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-align: center;
 }
 
 .stocks-modal-table .stock-col {
