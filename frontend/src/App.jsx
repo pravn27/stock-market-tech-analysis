@@ -5,17 +5,19 @@
 
 import React, { useState } from 'react';
 import Header from './components/Header';
+import Nifty50 from './pages/Nifty50';
 import SectorPerformance from './pages/SectorPerformance';
 import SectorStocks from './pages/SectorStocks';
 import './App.css';
 
 function App() {
-  const [activePage, setActivePage] = useState('sectors');
+  const [activePage, setActivePage] = useState('nifty50');
 
   return (
     <div className="app">
       <Header activePage={activePage} onPageChange={setActivePage} />
       <main className="main-content">
+        {activePage === 'nifty50' && <Nifty50 />}
         {activePage === 'sectors' && <SectorPerformance />}
         {activePage === 'stocks' && <SectorStocks />}
       </main>

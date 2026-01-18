@@ -48,3 +48,34 @@ async def get_sector_stock_list(sector_name: str):
         "stocks": stocks,
         "total": len(stocks)
     }
+
+
+@router.get("/nifty50/heavyweights")
+async def get_nifty50_heavyweights(
+    timeframe: str = Query("weekly", description="Timeframe: 1h, 4h, daily, weekly, monthly"),
+    lookback: int = Query(1, ge=1, le=99, description="Lookback periods: 1=previous, 2=2 periods back"),
+    top_only: bool = Query(False, description="If true, only top 20 heavyweights")
+):
+    """
+    Get Nifty 50 heavyweight stocks with weightage and relative performance
+    
+    Shows which stocks are driving the NIFTY 50 index movement.
+    Stocks are sorted by weightage (heaviest first).
+    
+    Returns:
+    - Weightage percentage for each stock
+    - Performance relative to NIFTY 50
+    - Total weightage of outperforming/underperforming stocks
+    """
+    try:
+        result = ScannerService.analyze_nifty50_heavyweights(timeframe, lookback, top_only)
+        if not result:
+            raise HTTPException(
+                status_code=500, 
+                detail="Failed to analyze Nifty 50 heavyweights"
+            )
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -52,4 +52,17 @@ export const getIndexGroups = async () => {
   return response.data;
 };
 
+/**
+ * Get Nifty 50 heavyweight stocks with weightage
+ * @param {string} timeframe - Timeframe: 1h, 4h, daily, weekly, monthly
+ * @param {number} lookback - Periods back to compare (1=previous, 2=2 periods back, etc.)
+ * @param {boolean} topOnly - If true, only top 20 heavyweights
+ */
+export const getNifty50Heavyweights = async (timeframe = 'weekly', lookback = 1, topOnly = false) => {
+  const response = await api.get('/stocks/nifty50/heavyweights', {
+    params: { timeframe, lookback, top_only: topOnly }
+  });
+  return response.data;
+};
+
 export default api;

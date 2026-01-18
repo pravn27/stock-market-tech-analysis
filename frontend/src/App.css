@@ -560,3 +560,106 @@ body {
     font-size: 1.25rem;
   }
 }
+
+/* ============ Nifty 50 Page ============ */
+.nifty50-page .page-desc {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+/* Weightage Summary Cards */
+.weightage-summary {
+  display: flex;
+  gap: 1rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+}
+
+.weightage-summary .summary-card {
+  flex: 1;
+  min-width: 180px;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.weightage-summary .summary-card.outperforming {
+  border-left: 4px solid var(--positive);
+}
+
+.weightage-summary .summary-card.neutral {
+  border-left: 4px solid var(--neutral);
+}
+
+.weightage-summary .summary-card.underperforming {
+  border-left: 4px solid var(--negative);
+}
+
+.weightage-summary .label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.weightage-summary .count {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.weightage-summary .weightage {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.weightage-summary .summary-card.outperforming .count {
+  color: var(--positive);
+}
+
+.weightage-summary .summary-card.underperforming .count {
+  color: var(--negative);
+}
+
+/* Nifty50 Table */
+.nifty50-table .weightage {
+  position: relative;
+  min-width: 100px;
+}
+
+.nifty50-table .weightage-bar {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 20px;
+  background: linear-gradient(90deg, rgba(30, 64, 175, 0.4), rgba(30, 64, 175, 0.1));
+  border-radius: 2px;
+  z-index: 0;
+}
+
+.nifty50-table .weightage-value {
+  position: relative;
+  z-index: 1;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.nifty50-table td.weightage {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+/* Responsive for Nifty50 */
+@media (max-width: 768px) {
+  .weightage-summary {
+    flex-direction: column;
+  }
+
+  .weightage-summary .summary-card {
+    min-width: 100%;
+  }
+}
