@@ -39,8 +39,8 @@ const SectorPerformance = () => {
   return (
     <div className="page sector-performance">
       <div className="page-header">
-        <h2>Sector Performance</h2>
-        <p className="page-desc">Relative strength of sectors vs NIFTY 50</p>
+        <h2>Indices & Sector Performance</h2>
+        <p className="page-desc">Relative strength of indices & sectors vs NIFTY 50</p>
       </div>
 
       <Filters
@@ -62,7 +62,7 @@ const SectorPerformance = () => {
         </div>
       )}
 
-      {loading && <Loader message="Fetching sector data..." />}
+      {loading && <Loader message="Fetching indices & sector data..." />}
 
       {!loading && !error && data && (
         <>

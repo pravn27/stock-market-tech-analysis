@@ -56,7 +56,7 @@ const DataTable = ({
         <thead>
           <tr>
             {showRank && <th>#</th>}
-            <th>{type === 'sector' ? 'Sector' : 'Stock'}</th>
+            <th>{type === 'sector' ? 'Index / Sector' : 'Stock'}</th>
             <th>Symbol</th>
             <th>Price</th>
             <th>Return</th>

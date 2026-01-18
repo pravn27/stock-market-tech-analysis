@@ -54,12 +54,8 @@ const SectorStocks = () => {
     }
   };
 
-  // Fetch data when sector changes
-  useEffect(() => {
-    if (selectedSector) {
-      fetchData();
-    }
-  }, [selectedSector]);
+  // Note: Removed auto-fetch on sector change
+  // User must click "Refresh" button to load data
 
   if (sectorsLoading) {
     return <Loader message="Loading sectors..." />;
@@ -68,8 +64,8 @@ const SectorStocks = () => {
   return (
     <div className="page sector-stocks">
       <div className="page-header">
-        <h2>Sector Stocks</h2>
-        <p className="page-desc">Individual stock performance within sectors</p>
+        <h2>Indices & Sector Stocks</h2>
+        <p className="page-desc">Individual stock performance within indices & sectors</p>
       </div>
 
       <Filters

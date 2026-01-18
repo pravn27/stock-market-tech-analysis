@@ -39,13 +39,13 @@ const Filters = ({
       
       {showSectorSelect && (
         <div className="filter-group">
-          <label>Sector</label>
+          <label>Index / Sector</label>
           <select 
             value={selectedSector} 
             onChange={(e) => onSectorChange(e.target.value)}
             disabled={loading}
           >
-            <option value="">Select Sector</option>
+            <option value="">Select Index / Sector</option>
             {sectors.map(s => (
               <option key={s} value={s}>{s}</option>
             ))}

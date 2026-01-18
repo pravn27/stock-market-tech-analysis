@@ -14,13 +14,13 @@ const Header = ({ activePage, onPageChange }) => {
             className={`nav-btn ${activePage === 'sectors' ? 'active' : ''}`}
             onClick={() => onPageChange('sectors')}
           >
-            Sector Performance
+            Indices & Sector Performance
           </button>
           <button 
             className={`nav-btn ${activePage === 'stocks' ? 'active' : ''}`}
             onClick={() => onPageChange('stocks')}
           >
-            Sector Stocks
+            Indices & Sector Stocks
           </button>
         </nav>
       </div>
