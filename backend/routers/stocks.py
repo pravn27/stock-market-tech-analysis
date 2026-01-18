@@ -3,7 +3,7 @@ Stock Analysis API Routes
 """
 
 from fastapi import APIRouter, HTTPException, Query
-from backend.services.scanner import ScannerService
+from services.scanner import ScannerService
 
 router = APIRouter(prefix="/stocks", tags=["Stocks"])
 

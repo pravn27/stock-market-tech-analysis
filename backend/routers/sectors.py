@@ -4,7 +4,7 @@ Sector Analysis API Routes
 
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
-from backend.services.scanner import ScannerService
+from services.scanner import ScannerService
 
 router = APIRouter(prefix="/sectors", tags=["Sectors"])
 

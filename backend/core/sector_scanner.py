@@ -11,75 +11,53 @@ from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
 
 
-# NSE Sector Indices (Yahoo Finance symbols)
-NIFTY_SECTORS = {
-    # Benchmark
-    "NIFTY 50": "^NSEI",
-    
-    # Major Sectors
-    "Bank Nifty": "^NSEBANK",
-    "Nifty IT": "^CNXIT",
-    "Nifty Pharma": "^CNXPHARMA",
-    "Nifty FMCG": "^CNXFMCG",
-    "Nifty Finance": "^CNXFINANCE",
-    "Nifty Auto": "^CNXAUTO",
-    "Nifty Metal": "^CNXMETAL",
-    "Nifty Realty": "^CNXREALTY",
-    "Nifty Energy": "^CNXENERGY",
-    "Nifty Infra": "^CNXINFRA",
-    "Nifty PSE": "^CNXPSE",
-    "Nifty Media": "^CNXMEDIA",
-    "Nifty PSU Bank": "^CNXPSUBANK",
-    "Nifty Pvt Bank": "^NIFTYPVTBANK",
-    
-    # Broader Market
-    "Nifty Next 50": "^NSMIDCP",
-    "Nifty Midcap 100": "^CNXMIDCAP",
-    "Nifty Smallcap 100": "^CNXSMALLCAP",
-}
+# NOTE: Many Yahoo Finance NSE index symbols are deprecated or don't work.
+# Only verified working symbols are included in the lists below.
+#
+# Working symbols format:
+# - ^NSEI, ^NSEBANK, ^CNXIT, etc. (caret prefix)
+# - NIFTYMIDCAP150.NS, NIFTY_MID_SELECT.NS (suffix format)
+#
+# Non-working symbols (as of Jan 2026):
+# - ^CNXFINANCE, ^NIFTYPVTBANK, ^CNXMIDCAP, ^CNXSMALLCAP, ^CNX500, etc.
 
-# Simplified list for faster scanning
+
+# Sectorial Indices (only verified working Yahoo Finance symbols)
 NIFTY_SECTORS_MAIN = {
     "NIFTY 50": "^NSEI",
     "Bank Nifty": "^NSEBANK",
     "Nifty IT": "^CNXIT",
     "Nifty Pharma": "^CNXPHARMA",
     "Nifty FMCG": "^CNXFMCG",
-    "Nifty Finance": "^CNXFINANCE",
     "Nifty Auto": "^CNXAUTO",
     "Nifty Metal": "^CNXMETAL",
     "Nifty Realty": "^CNXREALTY",
     "Nifty Energy": "^CNXENERGY",
     "Nifty PSU Bank": "^CNXPSUBANK",
-    "Nifty Pvt Bank": "^NIFTYPVTBANK",
-    "Nifty Midcap 100": "^CNXMIDCAP",
+    "Nifty Infra": "^CNXINFRA",
+    "Nifty Media": "^CNXMEDIA",
 }
 
-# Broader Market Indices
+# Broader Market Indices (using .NS suffix format that works with yfinance)
 NIFTY_BROAD_INDICES = {
     # Benchmark
     "NIFTY 50": "^NSEI",
     
     # Broad Market
-    "Nifty Junior (Next 50)": "^NSMIDCP",
+    "Nifty Next 50": "^NSMIDCP",
     "Nifty 100": "^CNX100",
     "Nifty 200": "^CNX200",
-    "Nifty 500": "^CNX500",
-    "India VIX": "^INDIAVIX",
     
     # Midcap Indices
-    "Nifty Midcap 50": "^NIFTYMIDCAP50",
-    "Nifty Midcap 100": "^CNXMIDCAP",
     "Nifty Midcap 150": "NIFTYMIDCAP150.NS",
     "Nifty Mid Select": "NIFTY_MID_SELECT.NS",
     
     # Smallcap Indices
-    "Nifty Smallcap 50": "^NIFTYSMLCAP50",
-    "Nifty Smallcap 100": "^CNXSMALLCAP",
     "Nifty Smallcap 250": "NIFTYSMLCAP250.NS",
 }
 
 # All Sectorial Indices (comprehensive)
+# All Indices (combined - only verified working symbols)
 NIFTY_ALL_SECTORS = {
     # Benchmark
     "NIFTY 50": "^NSEI",
@@ -89,34 +67,23 @@ NIFTY_ALL_SECTORS = {
     "Nifty IT": "^CNXIT",
     "Nifty Pharma": "^CNXPHARMA",
     "Nifty FMCG": "^CNXFMCG",
-    "Nifty Finance": "^CNXFINANCE",
     "Nifty Auto": "^CNXAUTO",
     "Nifty Metal": "^CNXMETAL",
     "Nifty Realty": "^CNXREALTY",
     "Nifty Energy": "^CNXENERGY",
     "Nifty PSU Bank": "^CNXPSUBANK",
-    "Nifty Pvt Bank": "^NIFTYPVTBANK",
     "Nifty Media": "^CNXMEDIA",
     "Nifty Infra": "^CNXINFRA",
-    "Nifty PSE": "^CNXPSE",
-    "Nifty Commodities": "^CNXCOMMODITIES",
-    "Nifty Consumption": "^CNXCONSUMPTION",
-    "Nifty Healthcare": "NIFTY_HEALTHCARE.NS",
-    "Nifty Oil & Gas": "NIFTY_OIL_AND_GAS.NS",
     
     # Broad Market
-    "Nifty Junior": "^NSMIDCP",
+    "Nifty Next 50": "^NSMIDCP",
     "Nifty 100": "^CNX100",
     "Nifty 200": "^CNX200",
-    "Nifty 500": "^CNX500",
     
-    # Midcap
-    "Nifty Midcap 50": "^NIFTYMIDCAP50",
-    "Nifty Midcap 100": "^CNXMIDCAP",
-    
-    # Smallcap
-    "Nifty Smallcap 50": "^NIFTYSMLCAP50",
-    "Nifty Smallcap 100": "^CNXSMALLCAP",
+    # Midcap & Smallcap
+    "Nifty Midcap 150": "NIFTYMIDCAP150.NS",
+    "Nifty Mid Select": "NIFTY_MID_SELECT.NS",
+    "Nifty Smallcap 250": "NIFTYSMLCAP250.NS",
 }
 
 
@@ -569,7 +536,7 @@ class StockRelativeStrength:
         Returns:
             Dict with benchmark, sector stocks analysis
         """
-        from backend.core.sector_stocks import SECTOR_STOCKS_MAP
+        from core.sector_stocks import SECTOR_STOCKS_MAP
         
         results = {
             'sector_name': sector_name,

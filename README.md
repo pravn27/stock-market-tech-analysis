@@ -1,12 +1,14 @@
 # ASTA - Stock Market Technical Analysis
 
-A modular stock market technical analysis application with **FastAPI Backend** and **ReactJS Frontend**.
+A modular stock market technical analysis application with **FastAPI Backend** and **ReactJS Frontend** as separate services.
 
 ## Architecture
 
 ```
 stock-market-tech-analysis/
-├── backend/                    # FastAPI Backend Service
+├── backend/                    # 🐍 FastAPI Backend Service
+│   ├── pyproject.toml          # Python dependencies
+│   ├── run.py                  # Server runner
 │   ├── main.py                 # FastAPI app entry point
 │   ├── models.py               # Pydantic models
 │   ├── core/                   # Core analysis modules
@@ -17,16 +19,20 @@ stock-market-tech-analysis/
 │   │   └── stocks.py           # Stock endpoints
 │   └── services/               # Business logic layer
 │       └── scanner.py          # Scanner service
-├── frontend/                   # ReactJS Frontend
+│
+├── frontend/                   # ⚛️ ReactJS Frontend
+│   ├── package.json            # Node dependencies
 │   ├── src/
 │   │   ├── api/                # API client
 │   │   ├── components/         # Reusable UI components
 │   │   ├── pages/              # Page components
 │   │   ├── App.jsx             # Main app
 │   │   └── App.css             # Styles
-│   └── package.json
-├── run_api.py                  # Backend server runner
-└── pyproject.toml              # Python dependencies
+│   └── vite.config.js
+│
+└── docs/                       # 📚 Documentation
+    ├── PRD.md                  # Project Requirements Document
+    └── CURSOR_CONTEXT.md       # Cursor AI context
 ```
 
 ## Features
@@ -34,6 +40,7 @@ stock-market-tech-analysis/
 ### Sector Performance
 - Compare NIFTY sectors vs NIFTY 50 benchmark
 - Multiple timeframes: 1 Hour, 4 Hour, Daily, Weekly, Monthly, 3 Month
+- **Lookback Period**: Compare with N candles back (configurable)
 - Categorized view: Outperforming, Neutral, Underperforming
 - Ranked view by relative strength
 
@@ -49,36 +56,42 @@ stock-market-tech-analysis/
 - Node.js 18+
 - [uv](https://docs.astral.sh/uv/) package manager
 
-### 1. Install Backend Dependencies
+---
+
+### 🐍 Backend Setup
 
 ```bash
+# Navigate to backend folder
+cd backend
+
+# Install dependencies
 uv sync
+
+# Start the API server
+uv run python run.py
 ```
 
-### 2. Start Backend API
+**Backend runs at:** http://localhost:8000  
+**API Docs:** http://localhost:8000/docs
+
+---
+
+### ⚛️ Frontend Setup
 
 ```bash
-uv run python run_api.py
-```
-
-Backend runs at: http://localhost:8000
-
-API Docs: http://localhost:8000/docs
-
-### 3. Install Frontend Dependencies
-
-```bash
+# Navigate to frontend folder
 cd frontend
+
+# Install dependencies
 npm install
-```
 
-### 4. Start Frontend
-
-```bash
+# Start development server
 npm run dev
 ```
 
-Frontend runs at: http://localhost:5173
+**Frontend runs at:** http://localhost:5173
+
+---
 
 ## API Endpoints
 
@@ -91,35 +104,18 @@ Frontend runs at: http://localhost:5173
 
 ### Query Parameters
 
-- `group`: Index group (`sectorial`, `broad_market`, `all`)
-- `timeframe`: Analysis timeframe (`1h`, `4h`, `daily`, `weekly`, `monthly`, `3m`)
-
-## Development
-
-### Backend
-```bash
-# Run with auto-reload
-uv run python run_api.py
-```
-
-### Frontend
-```bash
-cd frontend
-npm run dev
-```
+| Parameter | Values | Description |
+|-----------|--------|-------------|
+| `group` | `sectorial`, `broad_market`, `all` | Index group to analyze |
+| `timeframe` | `1h`, `4h`, `daily`, `weekly`, `monthly`, `3m` | Analysis timeframe |
+| `lookback` | `1-99` (default: 1) | Periods back to compare |
 
 ## Tech Stack
 
-**Backend:**
-- FastAPI
-- Pydantic
-- yfinance
-- pandas, ta (technical analysis)
-
-**Frontend:**
-- React (Vite)
-- Axios
-- CSS (no frameworks - clean & simple)
+| Service | Technologies |
+|---------|-------------|
+| **Backend** | FastAPI, Pydantic, yfinance, pandas, uvicorn |
+| **Frontend** | React (Vite), Axios, CSS |
 
 ## Documentation
 
@@ -128,4 +124,9 @@ npm run dev
 | [docs/PRD.md](docs/PRD.md) | Complete Project Requirements Document |
 | [docs/CURSOR_CONTEXT.md](docs/CURSOR_CONTEXT.md) | Quick reference for Cursor AI |
 
-Use `docs/CURSOR_CONTEXT.md` as context when building new features with Cursor AI.
+---
+
+**Development Tips:**
+- Backend auto-reloads on file changes
+- Frontend has HMR (Hot Module Replacement)
+- Use `docs/CURSOR_CONTEXT.md` as context when building new features with Cursor AI

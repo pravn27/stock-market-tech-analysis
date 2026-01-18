@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 
-from backend.routers import sectors, stocks
+from routers import sectors, stocks
 
 # Create FastAPI app
 app = FastAPI(
