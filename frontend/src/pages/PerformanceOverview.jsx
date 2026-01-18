@@ -71,11 +71,11 @@ const PerformanceOverview = () => {
     return 'neutral';
   };
 
-  // Format RS value with 2 decimal places
+  // Format RS value with 2 decimal places and % symbol
   const formatRs = (value) => {
     if (value === null || value === undefined) return '-';
     const sign = value > 0 ? '+' : '';
-    return `${sign}${value.toFixed(2)}`;
+    return `${sign}${value.toFixed(2)}%`;
   };
 
   // Get sector data for a specific timeframe
