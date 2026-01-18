@@ -21,7 +21,6 @@ const PerformanceOverview = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
-  const [limit, setLimit] = useState(10);
   const [lookback, setLookback] = useState(1);
   const [indexGroup, setIndexGroup] = useState('all');
 
@@ -87,11 +86,11 @@ const PerformanceOverview = () => {
     return Array.from(sectorsMap.values());
   }, [data]);
 
-  // Sort and limit sectors
+  // Sort sectors
   const sortedSectors = useMemo(() => {
     if (allSectors.length === 0) return [];
 
-    const sorted = [...allSectors].sort((a, b) => {
+    return [...allSectors].sort((a, b) => {
       const aVal = a.values[sortColumn] ?? -999;
       const bVal = b.values[sortColumn] ?? -999;
 
@@ -100,9 +99,7 @@ const PerformanceOverview = () => {
       }
       return aVal - bVal;
     });
-
-    return sorted.slice(0, limit);
-  }, [allSectors, sortColumn, sortDirection, limit]);
+  }, [allSectors, sortColumn, sortDirection]);
 
   // Handle column sort
   const handleSort = (column) => {
@@ -251,7 +248,7 @@ const PerformanceOverview = () => {
         <div className="perf-overview-title">
           <h2>📊 Performance Overview</h2>
           <p>
-            {INDEX_GROUPS.find(g => g.value === indexGroup)?.label || 'All'} vs NIFTY 50 • Sorted by {sortColumn} {sortDirection === 'desc' ? '↓' : '↑'}
+            {INDEX_GROUPS.find(g => g.value === indexGroup)?.label || 'All'} vs NIFTY 50 • {sortedSectors.length} indices • Sorted by {sortColumn} {sortDirection === 'desc' ? '↓' : '↑'}
             {data && <span className="lookback-badge">Lookback: {data.lookback || lookback}</span>}
           </p>
         </div>
@@ -269,17 +266,6 @@ const PerformanceOverview = () => {
               <option key={g.value} value={g.value}>{g.label}</option>
             ))}
           </select>
-        </div>
-
-        <div className="control-group">
-          <label>Show Top</label>
-          <input
-            type="number"
-            min="1"
-            max="50"
-            value={limit}
-            onChange={(e) => setLimit(Math.max(1, Math.min(50, parseInt(e.target.value) || 10)))}
-          />
         </div>
 
         <div className="control-group">
