@@ -25,12 +25,23 @@ class RSIZone(Enum):
     NOT_CLEAR = "Not Clear"
 
 
-def calculate_rsi(df: pd.DataFrame, period: int = 14) -> pd.Series:
+def calculate_rsi(df: pd.DataFrame, period: int = 14, smoothing: str = 'ema') -> pd.Series:
     """
-    Calculate RSI (Relative Strength Index)
+    Calculate RSI (Relative Strength Index) - TradingView compatible
+    
+    TradingView default settings:
+    - RSI Length: 14
+    - Source: Close
+    - Smoothing Type: EMA
+    - Smoothing Length: 14
     
     RSI = 100 - (100 / (1 + RS))
     RS = Average Gain / Average Loss
+    
+    Args:
+        df: DataFrame with 'Close' column
+        period: RSI period (default 14)
+        smoothing: 'ema' for TradingView style, 'wilder' for traditional
     """
     if df is None or len(df) < period + 1:
         return pd.Series()
@@ -39,16 +50,26 @@ def calculate_rsi(df: pd.DataFrame, period: int = 14) -> pd.Series:
     delta = df['Close'].diff()
     
     # Separate gains and losses
-    gains = delta.where(delta > 0, 0)
-    losses = -delta.where(delta < 0, 0)
+    gains = delta.where(delta > 0, 0.0)
+    losses = (-delta).where(delta < 0, 0.0)
     
-    # Calculate average gains and losses (Wilder's smoothing)
-    avg_gain = gains.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
-    avg_loss = losses.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
+    if smoothing == 'ema':
+        # TradingView style: Standard EMA smoothing
+        # EMA alpha = 2 / (period + 1)
+        avg_gain = gains.ewm(span=period, adjust=False).mean()
+        avg_loss = losses.ewm(span=period, adjust=False).mean()
+    else:
+        # Wilder's smoothing (traditional)
+        # Wilder's alpha = 1 / period
+        avg_gain = gains.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
+        avg_loss = losses.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
     
-    # Calculate RS and RSI
-    rs = avg_gain / avg_loss
+    # Avoid division by zero
+    rs = avg_gain / avg_loss.replace(0, np.nan)
     rsi = 100 - (100 / (1 + rs))
+    
+    # Handle edge cases
+    rsi = rsi.fillna(50)  # Default to neutral if no data
     
     return rsi
 
