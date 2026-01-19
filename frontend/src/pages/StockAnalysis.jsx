@@ -44,6 +44,45 @@ const StockAnalysis = ({ symbol, onBack }) => {
     return colorMap[color] || 'rsi-neutral';
   };
 
+  // Get color class for MACD
+  const getMacdColorClass = (color) => {
+    const colorMap = {
+      'green': 'macd-bullish',
+      'cyan': 'macd-buy',
+      'yellow': 'macd-early-buy',
+      'red': 'macd-bearish',
+      'pink': 'macd-sell',
+      'orange': 'macd-early-sell',
+      'gray': 'macd-neutral'
+    };
+    return colorMap[color] || 'macd-neutral';
+  };
+
+  // Get MACD signal emoji
+  const getMacdEmoji = (signal) => {
+    if (!signal) return '⚪';
+    if (signal.includes('PCO')) return '🟢';
+    if (signal.includes('NCO')) return '🔴';
+    if (signal.includes('Up Tick')) return '📈';
+    if (signal.includes('Down Tick')) return '📉';
+    return '⚪';
+  };
+
+  // Format MACD display - show tick direction
+  const formatMacdDisplay = (macdTf) => {
+    if (!macdTf || macdTf.macd_value === null) return { value: '-', signal: '-' };
+    
+    const tick = macdTf.tick || '';
+    const tickArrow = tick === 'UP' ? '↑' : (tick === 'DOWN' ? '↓' : '');
+    const crossover = macdTf.crossover || '';
+    
+    return {
+      value: macdTf.macd_value?.toFixed(1) || '-',
+      signal: crossover ? `${crossover}${tickArrow}` : tickArrow,
+      action: macdTf.action?.split(' ')[0] || '-'
+    };
+  };
+
   // Get emoji for Dow Theory trend
   const getTrendEmoji = (trend) => {
     if (!trend) return '⚪';
@@ -120,6 +159,7 @@ const StockAnalysis = ({ symbol, onBack }) => {
 
   const dowData = data.checklist?.['1_dow_theory']?.data;
   const rsiData = data.checklist?.['6_indicators']?.indicators?.rsi?.data;
+  const macdData = data.checklist?.['6_indicators']?.indicators?.macd?.data;
   const opportunity = data.opportunity;
   const mtfGroups = data.mtf_groups;
 
@@ -280,10 +320,45 @@ const StockAnalysis = ({ symbol, onBack }) => {
               </td>
             </tr>
 
-            {/* Placeholder rows for future indicators */}
-            <tr className="future-indicator">
-              <td className="item-label">MACD</td>
-              <td colSpan="8" className="coming-soon">Coming Soon...</td>
+            {/* MACD Row */}
+            <tr>
+              <td className="item-label">MACD (12,26,9)</td>
+              {/* Super TIDE */}
+              <td className={`indicator-cell ${getMacdColorClass(macdData?.timeframes?.monthly?.color)}`}>
+                <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.monthly?.signal)}</span>
+                <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.monthly).signal}</span>
+              </td>
+              <td className={`indicator-cell ${getMacdColorClass(macdData?.timeframes?.weekly?.color)}`}>
+                <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.weekly?.signal)}</span>
+                <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.weekly).signal}</span>
+              </td>
+              {/* TIDE */}
+              <td className={`indicator-cell ${getMacdColorClass(macdData?.timeframes?.daily?.color)}`}>
+                <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.daily?.signal)}</span>
+                <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.daily).signal}</span>
+              </td>
+              <td className={`indicator-cell ${getMacdColorClass(macdData?.timeframes?.['4h']?.color)}`}>
+                <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.['4h']?.signal)}</span>
+                <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.['4h']).signal}</span>
+              </td>
+              {/* WAVE */}
+              <td className={`indicator-cell ${getMacdColorClass(macdData?.timeframes?.['4h']?.color)}`}>
+                <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.['4h']?.signal)}</span>
+                <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.['4h']).signal}</span>
+              </td>
+              <td className={`indicator-cell ${getMacdColorClass(macdData?.timeframes?.['1h']?.color)}`}>
+                <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.['1h']?.signal)}</span>
+                <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.['1h']).signal}</span>
+              </td>
+              {/* RIPPLE */}
+              <td className={`indicator-cell ${getMacdColorClass(macdData?.timeframes?.['1h']?.color)}`}>
+                <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.['1h']?.signal)}</span>
+                <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.['1h']).signal}</span>
+              </td>
+              <td className={`indicator-cell ${getMacdColorClass(macdData?.timeframes?.['15m']?.color)}`}>
+                <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.['15m']?.signal)}</span>
+                <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.['15m']).signal}</span>
+              </td>
             </tr>
             <tr className="future-indicator">
               <td className="item-label">Stochastic</td>
@@ -309,17 +384,29 @@ const StockAnalysis = ({ symbol, onBack }) => {
         </table>
       </div>
 
-      {/* RSI Legend */}
-      <div className="indicator-legend">
-        <h4>RSI Zones Legend</h4>
-        <div className="legend-items">
-          <span className="legend-item rsi-bearish">🔴 &gt;78: Unsustainable Bulls</span>
-          <span className="legend-item rsi-bullish">🟢 &gt;60: Bullish Momentum</span>
-          <span className="legend-item rsi-near-bullish">🟡 55-60: Near 60</span>
-          <span className="legend-item rsi-neutral">⚪ 45-55: Near 50 (Neutral)</span>
-          <span className="legend-item rsi-near-bearish">🟠 40-45: Near 40</span>
-          <span className="legend-item rsi-bearish">🔴 &lt;40: Bearish Momentum</span>
-          <span className="legend-item rsi-bullish">🟢 &lt;22: Unsustainable Bears</span>
+      {/* Legends */}
+      <div className="legends-container">
+        {/* RSI Legend */}
+        <div className="indicator-legend">
+          <h4>RSI Zones</h4>
+          <div className="legend-items">
+            <span className="legend-item rsi-bearish">🔴 &gt;78: Overbought</span>
+            <span className="legend-item rsi-bullish">🟢 &gt;60: Bullish</span>
+            <span className="legend-item rsi-neutral">⚪ 45-55: Neutral</span>
+            <span className="legend-item rsi-bearish">🔴 &lt;40: Bearish</span>
+            <span className="legend-item rsi-bullish">🟢 &lt;22: Oversold</span>
+          </div>
+        </div>
+
+        {/* MACD Legend */}
+        <div className="indicator-legend">
+          <h4>MACD Signals</h4>
+          <div className="legend-items">
+            <span className="legend-item macd-bullish">🟢 PCO: Positive Crossover (Buy)</span>
+            <span className="legend-item macd-bearish">🔴 NCO: Negative Crossover (Sell)</span>
+            <span className="legend-item macd-early-buy">📈 ↑: Up Tick (Bullish)</span>
+            <span className="legend-item macd-early-sell">📉 ↓: Down Tick (Bearish)</span>
+          </div>
         </div>
       </div>
     </div>

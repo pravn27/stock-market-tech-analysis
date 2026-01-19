@@ -150,6 +150,7 @@ async def get_stock_full_analysis(
         # Get Technical Indicators
         tech_analyzer = TechnicalAnalyzer()
         rsi_result = tech_analyzer.get_rsi_analysis(symbol)
+        macd_result = tech_analyzer.get_macd_analysis(symbol)
         
         # Get stock info
         stock_info = next((s for s in NIFTY50_STOCKS if s['symbol'] == symbol), None)
@@ -171,8 +172,13 @@ async def get_stock_full_analysis(
                             "name": "RSI (14)",
                             "description": "Relative Strength Index",
                             "data": rsi_result
+                        },
+                        "macd": {
+                            "name": "MACD (12,26,9)",
+                            "description": "Moving Average Convergence Divergence",
+                            "data": macd_result
                         }
-                        # Future: MACD, Stochastic, ADX, DMI, Bollinger, EMAs
+                        # Future: Stochastic, ADX, DMI, Bollinger, EMAs
                     }
                 }
             },
@@ -193,6 +199,35 @@ async def get_rsi_analysis(
     try:
         analyzer = TechnicalAnalyzer()
         result = analyzer.get_rsi_analysis(symbol.upper())
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/macd/{symbol}")
+async def get_macd_analysis(
+    symbol: str,
+    fast: int = Query(12, description="Fast EMA period"),
+    slow: int = Query(26, description="Slow EMA period"),
+    signal: int = Query(9, description="Signal line EMA period"),
+):
+    """
+    Get MACD analysis for a single stock across all timeframes.
+    
+    MACD Components:
+    - MACD Line = EMA(fast) - EMA(slow)
+    - Signal Line = EMA(signal) of MACD Line
+    - Histogram = MACD Line - Signal Line
+    
+    Signal Types:
+    - PCO (Positive Crossover): MACD crosses above Signal - Buy signal
+    - NCO (Negative Crossover): MACD crosses below Signal - Sell signal
+    - Up/Down Tick: Direction of MACD movement
+    - Zone: Position relative to zero line
+    """
+    try:
+        analyzer = TechnicalAnalyzer()
+        result = analyzer.get_macd_analysis(symbol.upper(), fast, slow, signal)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

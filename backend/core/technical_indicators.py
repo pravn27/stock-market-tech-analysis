@@ -25,6 +25,22 @@ class RSIZone(Enum):
     NOT_CLEAR = "Not Clear"
 
 
+class MACDSignal(Enum):
+    """MACD Signal Types"""
+    PCO_ABOVE_ZERO = "PCO Above Zero"       # Positive crossover above zero line - Strong Buy
+    PCO_BELOW_ZERO = "PCO Below Zero"       # Positive crossover below zero line - Early Buy
+    PCO_NEAR_ZERO = "PCO Near Zero"         # Positive crossover near zero line - Buy Signal
+    NCO_BELOW_ZERO = "NCO Below Zero"       # Negative crossover below zero line - Strong Sell
+    NCO_ABOVE_ZERO = "NCO Above Zero"       # Negative crossover above zero line - Early Sell
+    NCO_NEAR_ZERO = "NCO Near Zero"         # Negative crossover near zero line - Sell Signal
+    UPTICK_ABOVE_ZERO = "Up Tick Above Zero"    # MACD rising above zero - Bullish Momentum
+    UPTICK_BELOW_ZERO = "Up Tick Below Zero"    # MACD rising below zero - Potential Reversal
+    DOWNTICK_ABOVE_ZERO = "Down Tick Above Zero" # MACD falling above zero - Weakening
+    DOWNTICK_BELOW_ZERO = "Down Tick Below Zero" # MACD falling below zero - Bearish Momentum
+    NEUTRAL = "Neutral"
+    NO_DATA = "No Data"
+
+
 def calculate_rsi_tradingview(df: pd.DataFrame, period: int = 14) -> pd.Series:
     """
     Calculate RSI (Relative Strength Index) - Exact TradingView/Pine Script method
@@ -185,6 +201,327 @@ def classify_rsi(rsi_value: float) -> Dict:
         'color': 'yellow',
         'action': 'Range Trading',
         'description': f'RSI {rsi_value} - In swing/range zone'
+    }
+
+
+# ============================================================================
+# MACD (Moving Average Convergence Divergence)
+# ============================================================================
+
+def calculate_ema(data: np.ndarray, period: int) -> np.ndarray:
+    """
+    Calculate Exponential Moving Average (EMA)
+    EMA = price * multiplier + EMA_prev * (1 - multiplier)
+    multiplier = 2 / (period + 1)
+    """
+    n = len(data)
+    ema = np.zeros(n)
+    
+    if n < period:
+        return ema
+    
+    # First EMA value is SMA
+    ema[period-1] = np.mean(data[:period])
+    
+    # Calculate EMA
+    multiplier = 2.0 / (period + 1)
+    for i in range(period, n):
+        ema[i] = data[i] * multiplier + ema[i-1] * (1 - multiplier)
+    
+    return ema
+
+
+def calculate_macd(df: pd.DataFrame, fast: int = 12, slow: int = 26, signal: int = 9) -> Dict:
+    """
+    Calculate MACD (Moving Average Convergence Divergence)
+    
+    Components:
+    - MACD Line = EMA(fast) - EMA(slow)  [typically 12 - 26]
+    - Signal Line = EMA(signal) of MACD Line  [typically 9]
+    - Histogram = MACD Line - Signal Line
+    
+    Returns dict with macd_line, signal_line, histogram arrays
+    """
+    if df is None or len(df) < slow + signal:
+        return None
+    
+    close = df['Close'].values
+    n = len(close)
+    
+    # Calculate EMAs
+    ema_fast = calculate_ema(close, fast)
+    ema_slow = calculate_ema(close, slow)
+    
+    # MACD Line = EMA(fast) - EMA(slow)
+    macd_line = np.zeros(n)
+    macd_line[slow-1:] = ema_fast[slow-1:] - ema_slow[slow-1:]
+    
+    # Signal Line = EMA of MACD Line
+    # Start calculating after we have valid MACD values
+    signal_line = np.zeros(n)
+    valid_macd_start = slow - 1
+    macd_for_signal = macd_line[valid_macd_start:]
+    
+    if len(macd_for_signal) >= signal:
+        ema_signal = calculate_ema(macd_for_signal, signal)
+        signal_line[valid_macd_start:] = ema_signal
+    
+    # Histogram = MACD - Signal
+    histogram = macd_line - signal_line
+    
+    return {
+        'macd_line': macd_line,
+        'signal_line': signal_line,
+        'histogram': histogram,
+        'ema_fast': ema_fast,
+        'ema_slow': ema_slow
+    }
+
+
+def classify_macd(macd_data: Dict, zero_threshold: float = 2.0) -> Dict:
+    """
+    Classify MACD into trading signals based on:
+    - Crossover (PCO/NCO)
+    - Position relative to zero line
+    - Tick direction (up/down)
+    
+    Args:
+        macd_data: Dict with macd_line, signal_line, histogram
+        zero_threshold: Range around zero to consider "near zero" (default ±2)
+    
+    Returns:
+        Dict with signal classification
+    """
+    if macd_data is None:
+        return {
+            'macd_value': None,
+            'signal_value': None,
+            'histogram': None,
+            'signal': MACDSignal.NO_DATA.value,
+            'color': 'gray',
+            'action': 'No Data',
+            'description': 'MACD data not available'
+        }
+    
+    macd_line = macd_data['macd_line']
+    signal_line = macd_data['signal_line']
+    histogram = macd_data['histogram']
+    
+    n = len(macd_line)
+    if n < 2:
+        return {
+            'macd_value': None,
+            'signal_value': None,
+            'histogram': None,
+            'signal': MACDSignal.NO_DATA.value,
+            'color': 'gray',
+            'action': 'No Data',
+            'description': 'Insufficient MACD data'
+        }
+    
+    # Current and previous values
+    macd_curr = round(macd_line[-1], 2)
+    macd_prev = round(macd_line[-2], 2)
+    signal_curr = round(signal_line[-1], 2)
+    signal_prev = round(signal_line[-2], 2)
+    hist_curr = round(histogram[-1], 2)
+    
+    # Detect crossover
+    # PCO: MACD crosses above Signal (prev: MACD <= Signal, curr: MACD > Signal)
+    pco = macd_prev <= signal_prev and macd_curr > signal_curr
+    # NCO: MACD crosses below Signal (prev: MACD >= Signal, curr: MACD < Signal)
+    nco = macd_prev >= signal_prev and macd_curr < signal_curr
+    
+    # Tick direction
+    uptick = macd_curr > macd_prev
+    downtick = macd_curr < macd_prev
+    
+    # Position relative to zero
+    above_zero = macd_curr > zero_threshold
+    below_zero = macd_curr < -zero_threshold
+    near_zero = -zero_threshold <= macd_curr <= zero_threshold
+    
+    # Determine signal based on priority: Crossover > Tick
+    
+    # POSITIVE CROSSOVER (PCO) cases
+    if pco:
+        if above_zero:
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.PCO_ABOVE_ZERO.value,
+                'crossover': 'PCO',
+                'tick': 'UP' if uptick else 'DOWN',
+                'zone': 'Above Zero',
+                'color': 'green',
+                'action': 'Strong Buy Signal',
+                'description': f'PCO above zero line - Strong bullish confirmation'
+            }
+        elif near_zero:
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.PCO_NEAR_ZERO.value,
+                'crossover': 'PCO',
+                'tick': 'UP' if uptick else 'DOWN',
+                'zone': 'Near Zero',
+                'color': 'cyan',
+                'action': 'Buy Signal',
+                'description': f'PCO near zero line - Bullish crossover'
+            }
+        else:  # below_zero
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.PCO_BELOW_ZERO.value,
+                'crossover': 'PCO',
+                'tick': 'UP' if uptick else 'DOWN',
+                'zone': 'Below Zero',
+                'color': 'yellow',
+                'action': 'Early Buy Signal',
+                'description': f'PCO below zero line - Potential reversal forming'
+            }
+    
+    # NEGATIVE CROSSOVER (NCO) cases
+    if nco:
+        if below_zero:
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.NCO_BELOW_ZERO.value,
+                'crossover': 'NCO',
+                'tick': 'UP' if uptick else 'DOWN',
+                'zone': 'Below Zero',
+                'color': 'red',
+                'action': 'Strong Sell Signal',
+                'description': f'NCO below zero line - Strong bearish confirmation'
+            }
+        elif near_zero:
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.NCO_NEAR_ZERO.value,
+                'crossover': 'NCO',
+                'tick': 'UP' if uptick else 'DOWN',
+                'zone': 'Near Zero',
+                'color': 'pink',
+                'action': 'Sell Signal',
+                'description': f'NCO near zero line - Bearish crossover'
+            }
+        else:  # above_zero
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.NCO_ABOVE_ZERO.value,
+                'crossover': 'NCO',
+                'tick': 'UP' if uptick else 'DOWN',
+                'zone': 'Above Zero',
+                'color': 'orange',
+                'action': 'Early Sell Signal',
+                'description': f'NCO above zero line - Momentum weakening'
+            }
+    
+    # NO CROSSOVER - Check tick direction
+    if uptick:
+        if above_zero:
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.UPTICK_ABOVE_ZERO.value,
+                'crossover': None,
+                'tick': 'UP',
+                'zone': 'Above Zero',
+                'color': 'green',
+                'action': 'Bullish Momentum',
+                'description': f'MACD rising above zero - Strong bullish momentum'
+            }
+        elif near_zero:
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.UPTICK_BELOW_ZERO.value,
+                'crossover': None,
+                'tick': 'UP',
+                'zone': 'Near Zero',
+                'color': 'yellow',
+                'action': 'Buy Signal (Near Zero)',
+                'description': f'MACD rising near zero - Watch for breakout'
+            }
+        else:  # below_zero
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.UPTICK_BELOW_ZERO.value,
+                'crossover': None,
+                'tick': 'UP',
+                'zone': 'Below Zero',
+                'color': 'yellow',
+                'action': 'Potential Reversal',
+                'description': f'MACD rising below zero - Bearish pressure easing'
+            }
+    
+    if downtick:
+        if below_zero:
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.DOWNTICK_BELOW_ZERO.value,
+                'crossover': None,
+                'tick': 'DOWN',
+                'zone': 'Below Zero',
+                'color': 'red',
+                'action': 'Bearish Momentum',
+                'description': f'MACD falling below zero - Strong bearish momentum'
+            }
+        elif near_zero:
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.DOWNTICK_ABOVE_ZERO.value,
+                'crossover': None,
+                'tick': 'DOWN',
+                'zone': 'Near Zero',
+                'color': 'orange',
+                'action': 'Sell Signal (Near Zero)',
+                'description': f'MACD falling near zero - Watch for breakdown'
+            }
+        else:  # above_zero
+            return {
+                'macd_value': macd_curr,
+                'signal_value': signal_curr,
+                'histogram': hist_curr,
+                'signal': MACDSignal.DOWNTICK_ABOVE_ZERO.value,
+                'crossover': None,
+                'tick': 'DOWN',
+                'zone': 'Above Zero',
+                'color': 'orange',
+                'action': 'Weakening',
+                'description': f'MACD falling above zero - Bullish momentum weakening'
+            }
+    
+    # Neutral (no significant movement)
+    return {
+        'macd_value': macd_curr,
+        'signal_value': signal_curr,
+        'histogram': hist_curr,
+        'signal': MACDSignal.NEUTRAL.value,
+        'crossover': None,
+        'tick': 'FLAT',
+        'zone': 'Above Zero' if above_zero else ('Below Zero' if below_zero else 'Near Zero'),
+        'color': 'gray',
+        'action': 'Neutral',
+        'description': f'MACD neutral - No clear signal'
     }
 
 
@@ -446,17 +783,77 @@ class TechnicalAnalyzer:
         
         return result
     
+    def get_macd_analysis(self, symbol: str, fast: int = 12, slow: int = 26, signal_period: int = 9) -> Dict:
+        """
+        Get MACD analysis across all timeframes
+        
+        Args:
+            symbol: Stock symbol
+            fast: Fast EMA period (default 12)
+            slow: Slow EMA period (default 26)
+            signal_period: Signal line EMA period (default 9)
+        """
+        result = {
+            'symbol': symbol,
+            'indicator': 'MACD',
+            'params': f'({fast},{slow},{signal_period})',
+            'timeframes': {}
+        }
+        
+        for tf_key, tf_config in self.TIMEFRAMES.items():
+            interval = tf_config['interval']
+            period = tf_config['period']
+            
+            # Fetch data
+            df = self.fetch_data(symbol, interval, period)
+            
+            # For weekly and monthly, append current incomplete period
+            if tf_key in ['weekly', 'monthly'] and df is not None:
+                df = self.append_current_period(df, symbol, interval)
+            
+            # Special handling for 4H (aggregate from 1H)
+            if tf_key == '4h' and df is not None:
+                df = self.aggregate_to_4h(df)
+            
+            if df is not None and len(df) >= slow + signal_period:
+                # Calculate MACD
+                macd_data = calculate_macd(df, fast, slow, signal_period)
+                
+                # Classify MACD
+                classification = classify_macd(macd_data)
+                
+                result['timeframes'][tf_key] = {
+                    'label': tf_config['label'],
+                    'group': tf_config['group'],
+                    **classification
+                }
+            else:
+                result['timeframes'][tf_key] = {
+                    'label': tf_config['label'],
+                    'group': tf_config['group'],
+                    'macd_value': None,
+                    'signal_value': None,
+                    'histogram': None,
+                    'signal': 'No Data',
+                    'color': 'gray',
+                    'action': 'N/A',
+                    'description': 'Insufficient data'
+                }
+        
+        return result
+    
     def get_full_analysis(self, symbol: str, dow_theory_data: Dict = None) -> Dict:
         """
         Get complete technical analysis for a stock
-        Including Dow Theory + RSI (and future indicators)
+        Including Dow Theory + RSI + MACD (and future indicators)
         """
         result = {
             'symbol': symbol,
             'checklist': {
                 '1_dow_theory': dow_theory_data,
                 '6_indicators': {
-                    'rsi': self.get_rsi_analysis(symbol)
+                    'rsi': self.get_rsi_analysis(symbol),
+                    'macd': self.get_macd_analysis(symbol)
                 }
             }
         }
