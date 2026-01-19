@@ -1,405 +1,403 @@
 /**
- * Global Markets Page
- * Shows global market indices and sentiment analysis
+ * Global Markets Page - Ant Design Implementation
+ * Shows global market indices in card layout grouped by region
  */
 
-import React, { useState } from 'react';
-import { getGlobalMarkets } from '../api/scanner';
-import { TIMEFRAMES } from '../api/config';
-import Loader from '../components/Loader';
+import { useState, useEffect } from 'react'
+import { 
+  Card, Select, Button, Space, Tag, Typography, Table,
+  Empty, Spin, Alert, Row, Col, Statistic, Progress, Grid, Segmented
+} from 'antd'
+import { 
+  ReloadOutlined, GlobalOutlined, ArrowUpOutlined, 
+  ArrowDownOutlined, RiseOutlined, FallOutlined,
+  AppstoreOutlined, TableOutlined
+} from '@ant-design/icons'
+import { getGlobalMarkets } from '../api/scanner'
 
-const formatPrice = (price) => {
-  if (price === null || price === undefined) return '-';
-  return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-};
+const { Title, Text } = Typography
+const { useBreakpoint } = Grid
 
-const formatChange = (change, changePct) => {
-  if (change === null || changePct === null) return { change: '-', pct: '-', className: '' };
-  const isPositive = change >= 0;
-  return {
-    change: `${isPositive ? '+' : ''}${change.toFixed(2)}`,
-    pct: `${isPositive ? '+' : ''}${changePct.toFixed(2)}%`,
-    className: isPositive ? 'positive' : 'negative'
-  };
-};
+const TIMEFRAMES = [
+  { value: '1h', label: '1 Hour' },
+  { value: '4h', label: '4 Hour' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: '3m', label: '3 Month' },
+]
 
-// Sortable Table Component
-const MarketTable = ({ title, emoji, markets }) => {
-  const [sortColumn, setSortColumn] = React.useState('change_pct');
-  const [sortDirection, setSortDirection] = React.useState('desc');
-
-  if (!markets || markets.length === 0) return null;
-
-  const handleSort = (column) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('desc');
-    }
-  };
-
-  const sortedMarkets = [...markets].sort((a, b) => {
-    let aVal = a[sortColumn];
-    let bVal = b[sortColumn];
-    
-    // Handle null values
-    if (aVal === null || aVal === undefined) aVal = sortDirection === 'asc' ? Infinity : -Infinity;
-    if (bVal === null || bVal === undefined) bVal = sortDirection === 'asc' ? Infinity : -Infinity;
-    
-    // String comparison for text columns
-    if (typeof aVal === 'string') {
-      return sortDirection === 'asc' 
-        ? aVal.localeCompare(bVal) 
-        : bVal.localeCompare(aVal);
-    }
-    
-    // Numeric comparison
-    return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
-  });
-
-  const SortIcon = ({ column }) => {
-    if (sortColumn !== column) return <span className="sort-icon">⇅</span>;
-    return <span className="sort-icon active">{sortDirection === 'asc' ? '▲' : '▼'}</span>;
-  };
-
-  return (
-    <div className="market-section table-view">
-      <h3 className="section-title">{emoji} {title}</h3>
-      <div className="table-container">
-        <table className="market-table">
-          <thead>
-            <tr>
-              <th onClick={() => handleSort('short')} className="sortable">
-                Symbol <SortIcon column="short" />
-              </th>
-              <th onClick={() => handleSort('name')} className="sortable">
-                Name <SortIcon column="name" />
-              </th>
-              <th onClick={() => handleSort('price')} className="sortable text-right">
-                Price <SortIcon column="price" />
-              </th>
-              <th onClick={() => handleSort('change')} className="sortable text-right">
-                Change <SortIcon column="change" />
-              </th>
-              <th onClick={() => handleSort('change_pct')} className="sortable text-right">
-                Change % <SortIcon column="change_pct" />
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedMarkets.map((market) => {
-              const { change, pct, className } = formatChange(market.change, market.change_pct);
-              return (
-                <tr key={market.symbol} className={className}>
-                  <td className="symbol-cell">{market.short}</td>
-                  <td className="name-cell">{market.name}</td>
-                  <td className="price-cell text-right">{formatPrice(market.price)}</td>
-                  <td className={`change-cell text-right ${className}`}>{change}</td>
-                  <td className={`pct-cell text-right ${className}`}>{pct}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-
-const SentimentGauge = ({ sentiment, timeframe }) => {
-  if (!sentiment) return null;
-  
-  const { score, label, breadth, vix, factors } = sentiment;
-  
-  // Determine gauge color based on score
-  const getGaugeColor = (score) => {
-    if (score >= 70) return '#22c55e';
-    if (score >= 55) return '#84cc16';
-    if (score >= 45) return '#eab308';
-    if (score >= 30) return '#f97316';
-    return '#ef4444';
-  };
-  
-  return (
-    <div className="sentiment-card">
-      <div className="sentiment-header">
-        <h3>🌍 Global Market Sentiment</h3>
-        <span className="timeframe-badge">{getTimeframeLabel(timeframe)}</span>
-      </div>
-      
-      <div className="sentiment-gauge">
-        <div className="gauge-container">
-          <div 
-            className="gauge-fill" 
-            style={{ 
-              width: `${score}%`,
-              backgroundColor: getGaugeColor(score)
-            }}
-          />
-          <span className="gauge-score">{score.toFixed(1)}%</span>
-        </div>
-        <div className="gauge-label" style={{ color: getGaugeColor(score) }}>
-          {label}
-        </div>
-      </div>
-      
-      <div className="sentiment-details">
-        <div className="detail-item">
-          <span className="detail-label">📊 Breadth</span>
-          <span className="detail-value">
-            <span className="positive">{breadth.positive}</span>
-            {' / '}
-            <span className="negative">{breadth.negative}</span>
-            {' markets '}
-            ({breadth.percentage}% positive)
-          </span>
-        </div>
-        
-        <div className="detail-item">
-          <span className="detail-label">😰 VIX</span>
-          <span className="detail-value">
-            {vix.value ? `${vix.value.toFixed(2)} - ${vix.status}` : 'N/A'}
-          </span>
-        </div>
-        
-        <div className="detail-item factors">
-          <span className="detail-label">📈 Factors</span>
-          <div className="factor-bars">
-            <div className="factor">
-              <span>Breadth</span>
-              <div className="factor-bar">
-                <div style={{ width: `${factors.breadth_score}%` }} />
-              </div>
-              <span>{factors.breadth_score}</span>
-            </div>
-            <div className="factor">
-              <span>Weighted</span>
-              <div className="factor-bar">
-                <div style={{ width: `${factors.weighted_return_score}%` }} />
-              </div>
-              <span>{factors.weighted_return_score}</span>
-            </div>
-            <div className="factor">
-              <span>VIX</span>
-              <div className="factor-bar">
-                <div style={{ width: `${factors.vix_score}%` }} />
-              </div>
-              <span>{factors.vix_score}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const MarketSection = ({ title, emoji, markets }) => {
-  if (!markets || markets.length === 0) return null;
-  
-  return (
-    <div className="market-section">
-      <h3 className="section-title">{emoji} {title}</h3>
-      <div className="market-grid">
-        {markets.map((market) => {
-          const { change, pct, className } = formatChange(market.change, market.change_pct);
-          return (
-            <div key={market.symbol} className={`market-card ${className}`}>
-              <div className="market-header">
-                <span className="market-short">{market.short}</span>
-                {market.error && <span className="error-badge">!</span>}
-              </div>
-              <div className="market-price">{formatPrice(market.price)}</div>
-              <div className={`market-change ${className}`}>
-                <span className="change-value">{change}</span>
-                <span className="change-pct">{pct}</span>
-              </div>
-              <div className="market-name">{market.name}</div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-// Get timeframe label for display
-const getTimeframeLabel = (tf) => {
-  const labels = {
-    '1h': '1 Hour',
-    '4h': '4 Hours',
-    'daily': 'Daily',
-    'weekly': 'Weekly',
-    'monthly': 'Monthly'
-  };
-  return labels[tf] || tf;
-};
+// Market group configurations
+const MARKET_GROUPS = [
+  { key: 'us_markets', title: 'US Markets', emoji: '🇺🇸' },
+  { key: 'european_markets', title: 'European Markets', emoji: '🇪🇺' },
+  { key: 'asian_markets', title: 'Asian Markets', emoji: '🌏' },
+  { key: 'india_adrs', title: 'India ADRs', emoji: '🇮🇳' },
+]
 
 const GlobalMarkets = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [data, setData] = useState(null);
-  const [timeframe, setTimeframe] = useState('daily');
-  const [viewMode, setViewMode] = useState('card'); // 'card' or 'table'
+  const screens = useBreakpoint()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [data, setData] = useState(null)
+  const [timeframe, setTimeframe] = useState('daily')
+  const [viewMode, setViewMode] = useState('cards')
 
   const fetchData = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const result = await getGlobalMarkets(timeframe);
-      setData(result);
+      const result = await getGlobalMarkets(timeframe)
+      setData(result)
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
+      setError(err.message || 'Failed to fetch global markets data')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [timeframe])
+
+  // Flatten all market groups for sentiment calculation
+  const allIndices = data ? [
+    ...(data.us_markets || []),
+    ...(data.european_markets || []),
+    ...(data.asian_markets || []),
+    ...(data.india_adrs || []),
+  ] : []
+
+  // Calculate sentiment
+  const sentiment = allIndices.reduce((acc, idx) => {
+    if (idx.change_pct > 0) acc.bullish++
+    else if (idx.change_pct < 0) acc.bearish++
+    else acc.neutral++
+    return acc
+  }, { bullish: 0, bearish: 0, neutral: 0 })
+
+  const total = sentiment.bullish + sentiment.bearish + sentiment.neutral
+  const bullishPercent = total > 0 ? Math.round((sentiment.bullish / total) * 100) : 0
+
+  // Table columns for table view
+  const tableColumns = [
+    {
+      title: 'Index',
+      dataIndex: 'short',
+      key: 'short',
+      width: 100,
+      render: (short, record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{short || record.name?.split(' ')[0]}</Text>
+          <Text type="secondary" style={{ fontSize: 11 }}>{record.symbol}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      width: 180,
+      render: (name) => <Text style={{ fontSize: 13 }}>{name}</Text>,
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      align: 'right',
+      width: 120,
+      render: (price) => (
+        <Text style={{ fontFamily: 'monospace', fontWeight: 500 }}>
+          {price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '-'}
+        </Text>
+      ),
+    },
+    {
+      title: 'Change',
+      dataIndex: 'change',
+      key: 'change',
+      align: 'right',
+      width: 100,
+      render: (change) => {
+        if (change === null || change === undefined) return '-'
+        const color = change > 0 ? '#52c41a' : change < 0 ? '#ff4d4f' : '#999'
+        const sign = change > 0 ? '+' : ''
+        return (
+          <Text style={{ color, fontFamily: 'monospace' }}>
+            {sign}{change?.toFixed(2)}
+          </Text>
+        )
+      },
+    },
+    {
+      title: 'Change %',
+      dataIndex: 'change_pct',
+      key: 'change_pct',
+      align: 'center',
+      width: 110,
+      sorter: (a, b) => (a.change_pct || 0) - (b.change_pct || 0),
+      render: (pct) => {
+        if (pct === null || pct === undefined) return '-'
+        const color = pct > 0 ? 'green' : pct < 0 ? 'red' : 'default'
+        const sign = pct > 0 ? '+' : ''
+        const Icon = pct > 0 ? ArrowUpOutlined : pct < 0 ? ArrowDownOutlined : null
+        return (
+          <Tag color={color} style={{ minWidth: 80, textAlign: 'center' }}>
+            {Icon && <Icon />} {sign}{pct?.toFixed(2)}%
+          </Tag>
+        )
+      },
+    },
+  ]
+
+  // Render table view for a market group
+  const renderMarketTable = (group) => {
+    const markets = data?.[group.key] || []
+    if (markets.length === 0) return null
+
+    return (
+      <div key={group.key} style={{ marginBottom: 24 }}>
+        <Card 
+          title={
+            <Space>
+              <span style={{ fontSize: 18 }}>{group.emoji}</span>
+              <span style={{ fontSize: 16, fontWeight: 500 }}>{group.title}</span>
+            </Space>
+          }
+          size="small"
+          bodyStyle={{ padding: 0 }}
+        >
+          <Table
+            columns={tableColumns}
+            dataSource={markets.map((m, i) => ({ ...m, key: i }))}
+            pagination={false}
+            size="small"
+            scroll={{ x: 500 }}
+          />
+        </Card>
+      </div>
+    )
+  }
+
+  // Render individual market card
+  const renderMarketCard = (market) => {
+    const isPositive = market.change_pct > 0
+    const isNegative = market.change_pct < 0
+    const changeColor = isPositive ? '#52c41a' : isNegative ? '#ff4d4f' : '#999'
+    const sign = isPositive ? '+' : ''
+
+    return (
+      <Col xs={12} sm={8} md={6} lg={4} xl={3} key={market.symbol}>
+        <Card 
+          size="small" 
+          hoverable
+          style={{ 
+            borderLeft: `3px solid ${changeColor}`,
+            height: '100%'
+          }}
+          bodyStyle={{ padding: '12px 16px' }}
+        >
+          <Text strong style={{ fontSize: 14, display: 'block' }}>
+            {market.short || market.name?.split(' ')[0]}
+          </Text>
+          <Text style={{ fontSize: 20, fontWeight: 600, display: 'block', marginTop: 4 }}>
+            {market.price?.toLocaleString(undefined, { 
+              minimumFractionDigits: 2, 
+              maximumFractionDigits: 2 
+            }) || '-'}
+          </Text>
+          <div style={{ marginTop: 4 }}>
+            <Text style={{ color: changeColor, fontSize: 13, fontFamily: 'monospace' }}>
+              {sign}{market.change?.toFixed(2) || '0.00'}
+            </Text>
+            <Text style={{ color: changeColor, fontSize: 13, fontFamily: 'monospace', marginLeft: 8 }}>
+              {sign}{market.change_pct?.toFixed(2) || '0.00'}%
+            </Text>
+          </div>
+          <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 4 }}>
+            {market.name}
+          </Text>
+        </Card>
+      </Col>
+    )
+  }
+
+  // Render a market group section
+  const renderMarketGroup = (group) => {
+    const markets = data?.[group.key] || []
+    if (markets.length === 0) return null
+
+    return (
+      <div key={group.key} style={{ marginBottom: 24 }}>
+        <Card 
+          title={
+            <Space>
+              <span style={{ fontSize: 18 }}>{group.emoji}</span>
+              <span style={{ fontSize: 16, fontWeight: 500 }}>{group.title}</span>
+            </Space>
+          }
+          size="small"
+          bodyStyle={{ padding: 16 }}
+        >
+          <Row gutter={[12, 12]}>
+            {markets.map(market => renderMarketCard(market))}
+          </Row>
+        </Card>
+      </div>
+    )
+  }
 
   return (
-    <div className="page global-markets-page">
-      <div className="page-header">
-        <h2>Global Markets Overview</h2>
-        <p className="page-desc">
-          World market indices & sentiment analysis
-        </p>
-      </div>
+    <div>
+      {/* Page Header */}
+      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+        <Col>
+          <Space align="center">
+            <GlobalOutlined style={{ fontSize: 28, color: '#1890ff' }} />
+            <div>
+              <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
+                Global Markets
+              </Title>
+              <Text type="secondary">
+                World indices & market sentiment
+              </Text>
+            </div>
+          </Space>
+        </Col>
+      </Row>
 
-      <div className="filters">
-        <div className="filter-group">
-          <label>Timeframe</label>
-          <select 
-            value={timeframe} 
-            onChange={(e) => setTimeframe(e.target.value)}
-            disabled={loading}
-          >
-            {TIMEFRAMES.map(tf => (
-              <option key={tf.value} value={tf.value}>{tf.label}</option>
-            ))}
-          </select>
-        </div>
+      {/* Filters */}
+      <Card size="small" style={{ marginBottom: 24 }}>
+        <Row gutter={[16, 16]} align="middle" justify="space-between">
+          <Col>
+            <Space wrap>
+              <Segmented
+                value={viewMode}
+                onChange={setViewMode}
+                options={[
+                  { value: 'cards', icon: <AppstoreOutlined />, label: 'Cards' },
+                  { value: 'table', icon: <TableOutlined />, label: 'Table' },
+                ]}
+              />
+              <Select
+                value={timeframe}
+                onChange={setTimeframe}
+                options={TIMEFRAMES}
+                style={{ width: 120 }}
+                size={screens.md ? 'middle' : 'large'}
+              />
+              <Button
+                type="primary"
+                icon={<ReloadOutlined spin={loading} />}
+                onClick={fetchData}
+                loading={loading}
+                size={screens.md ? 'middle' : 'large'}
+              >
+                Refresh
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+      </Card>
 
-        <div className="filter-group">
-          <label>&nbsp;</label>
-          <button 
-            className="btn btn-primary" 
-            onClick={fetchData}
-            disabled={loading}
-          >
-            {loading ? 'Loading...' : 'Refresh'}
-          </button>
-        </div>
-      </div>
+      {/* Sentiment Summary */}
+      {allIndices.length > 0 && (
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Col xs={24} md={8}>
+            <Card size="small">
+              <Statistic
+                title="Market Sentiment"
+                value={bullishPercent}
+                suffix="%"
+                prefix={bullishPercent >= 50 ? <RiseOutlined /> : <FallOutlined />}
+                valueStyle={{ color: bullishPercent >= 50 ? '#52c41a' : '#ff4d4f' }}
+              />
+              <Progress 
+                percent={bullishPercent} 
+                strokeColor={bullishPercent >= 50 ? '#52c41a' : '#ff4d4f'}
+                trailColor={bullishPercent >= 50 ? '#ff4d4f' : '#52c41a'}
+                showInfo={false}
+                style={{ marginTop: 8 }}
+              />
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {bullishPercent >= 50 ? 'Bullish' : 'Bearish'} • {total} indices
+              </Text>
+            </Card>
+          </Col>
+          <Col xs={8} md={5}>
+            <Card size="small">
+              <Statistic
+                title="Bullish"
+                value={sentiment.bullish}
+                valueStyle={{ color: '#52c41a', fontSize: 24 }}
+                prefix={<ArrowUpOutlined />}
+              />
+            </Card>
+          </Col>
+          <Col xs={8} md={5}>
+            <Card size="small">
+              <Statistic
+                title="Neutral"
+                value={sentiment.neutral}
+                valueStyle={{ color: '#999', fontSize: 24 }}
+              />
+            </Card>
+          </Col>
+          <Col xs={8} md={6}>
+            <Card size="small">
+              <Statistic
+                title="Bearish"
+                value={sentiment.bearish}
+                valueStyle={{ color: '#ff4d4f', fontSize: 24 }}
+                prefix={<ArrowDownOutlined />}
+              />
+            </Card>
+          </Col>
+        </Row>
+      )}
 
+      {/* Error Alert */}
       {error && (
-        <div className="error-message">
-          <p>{error}</p>
-          <button onClick={fetchData}>Retry</button>
-        </div>
+        <Alert
+          message="Error"
+          description={error}
+          type="error"
+          showIcon
+          closable
+          style={{ marginBottom: 24 }}
+        />
       )}
 
-      {loading && <Loader message="Fetching global market data..." />}
-
-      {!loading && !error && data && (
-        <>
-          <SentimentGauge sentiment={data.sentiment} timeframe={timeframe} />
-          
-          {/* View Toggle */}
-          <div className="view-toggle">
-            <button 
-              className={viewMode === 'card' ? 'active' : ''}
-              onClick={() => setViewMode('card')}
-            >
-              📊 Cards
-            </button>
-            <button 
-              className={viewMode === 'table' ? 'active' : ''}
-              onClick={() => setViewMode('table')}
-            >
-              📋 Table
-            </button>
+      {/* Loading State */}
+      {loading && (
+        <Card>
+          <div style={{ textAlign: 'center', padding: 60 }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>
+              <Text type="secondary">Loading global markets...</Text>
+            </div>
           </div>
-          
-          <div className="markets-container">
-            {viewMode === 'card' ? (
-              <>
-                <MarketSection 
-                  title="US Markets" 
-                  emoji="🇺🇸" 
-                  markets={data.us_markets} 
-                />
-                
-                <MarketSection 
-                  title="European Markets" 
-                  emoji="🇪🇺" 
-                  markets={data.european_markets} 
-                />
-                
-                <MarketSection 
-                  title="Asian Markets" 
-                  emoji="🌏" 
-                  markets={data.asian_markets} 
-                />
-                
-                <MarketSection 
-                  title="India ADRs" 
-                  emoji="🇮🇳" 
-                  markets={data.india_adrs} 
-                />
-                
-                <MarketSection 
-                  title="Commodities" 
-                  emoji="🪙" 
-                  markets={data.commodities} 
-                />
-              </>
-            ) : (
-              <>
-                <MarketTable 
-                  title="US Markets" 
-                  emoji="🇺🇸" 
-                  markets={data.us_markets} 
-                />
-                
-                <MarketTable 
-                  title="European Markets" 
-                  emoji="🇪🇺" 
-                  markets={data.european_markets} 
-                />
-                
-                <MarketTable 
-                  title="Asian Markets" 
-                  emoji="🌏" 
-                  markets={data.asian_markets} 
-                />
-                
-                <MarketTable 
-                  title="India ADRs" 
-                  emoji="🇮🇳" 
-                  markets={data.india_adrs} 
-                />
-                
-                <MarketTable 
-                  title="Commodities" 
-                  emoji="🪙" 
-                  markets={data.commodities} 
-                />
-              </>
-            )}
-          </div>
-
-          <div className="last-updated">
-            Last updated: {new Date(data.timestamp).toLocaleString()}
-          </div>
-        </>
+        </Card>
       )}
 
-      {!loading && !error && !data && (
-        <div className="no-data">
-          Click Refresh to load global market data
+      {/* Empty State */}
+      {!loading && !error && allIndices.length === 0 && (
+        <Card>
+          <Empty description="No market data available" />
+        </Card>
+      )}
+
+      {/* Market Groups */}
+      {!loading && data && (
+        <div>
+          {viewMode === 'cards' 
+            ? MARKET_GROUPS.map(group => renderMarketGroup(group))
+            : MARKET_GROUPS.map(group => renderMarketTable(group))
+          }
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default GlobalMarkets;
+export default GlobalMarkets

@@ -1,5 +1,5 @@
 """
-ASTA - Stock Market Technical Analysis API
+Stock Market TA - Technical Analysis API
 FastAPI Backend Service
 """
 
@@ -12,7 +12,7 @@ from routers import sectors, stocks, markets, scanner
 
 # Create FastAPI app
 app = FastAPI(
-    title="ASTA - Stock Market TA",
+    title="Stock Market TA",
     description="Stock Market Technical Analysis API - Sector & Stock Relative Strength Scanner",
     version="1.0.0",
     docs_url="/docs",
@@ -52,7 +52,7 @@ app.include_router(scanner.router, prefix="/api")
 async def root():
     """API Root - Health check and info"""
     return {
-        "name": "ASTA - Stock Market TA",
+        "name": "Stock Market TA",
         "version": "1.0.0",
         "status": "running",
         "docs": "/docs",

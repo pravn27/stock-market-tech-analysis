@@ -1,13 +1,21 @@
 /**
- * Checklist Scanner Page
+ * Checklist Scanner Page - Ant Design Implementation
  * PAPA + SMM Multi-Timeframe Analysis
- * Dow Theory + Technical Indicators across Super TIDE, TIDE, WAVE, RIPPLE
  */
 
-import { useState, useEffect } from 'react';
-import { scanDowTheory, getDowTheoryAnalysis } from '../api/scanner';
-import Loader from '../components/Loader';
-import StockAnalysis from './StockAnalysis';
+import { useState } from 'react'
+import { 
+  Card, Table, Select, Button, Space, Tag, Input, 
+  Typography, Empty, Spin, Alert, Row, Col, AutoComplete, Grid
+} from 'antd'
+import { 
+  ReloadOutlined, FileSearchOutlined, SearchOutlined, ArrowRightOutlined
+} from '@ant-design/icons'
+import { scanDowTheory } from '../api/scanner'
+import StockAnalysis from './StockAnalysis'
+
+const { Title, Text } = Typography
+const { useBreakpoint } = Grid
 
 const FILTERS = [
   { value: 'all', label: 'All Stocks' },
@@ -16,412 +24,380 @@ const FILTERS = [
   { value: 'intraday_buy', label: '🔵 Intraday Buy' },
   { value: 'bearish', label: '🔴 Bearish' },
   { value: 'wait', label: '⚪ Wait / No Trade' },
-];
+]
 
-// Nifty 50 + Popular stocks for autocomplete
 const STOCK_LIST = [
-  { symbol: 'RELIANCE', name: 'Reliance Industries' },
-  { symbol: 'TCS', name: 'Tata Consultancy Services' },
-  { symbol: 'HDFCBANK', name: 'HDFC Bank' },
-  { symbol: 'INFY', name: 'Infosys' },
-  { symbol: 'ICICIBANK', name: 'ICICI Bank' },
-  { symbol: 'HINDUNILVR', name: 'Hindustan Unilever' },
-  { symbol: 'SBIN', name: 'State Bank of India' },
-  { symbol: 'BHARTIARTL', name: 'Bharti Airtel' },
-  { symbol: 'ITC', name: 'ITC' },
-  { symbol: 'KOTAKBANK', name: 'Kotak Mahindra Bank' },
-  { symbol: 'LT', name: 'Larsen & Toubro' },
-  { symbol: 'AXISBANK', name: 'Axis Bank' },
-  { symbol: 'ASIANPAINT', name: 'Asian Paints' },
-  { symbol: 'MARUTI', name: 'Maruti Suzuki' },
-  { symbol: 'HCLTECH', name: 'HCL Technologies' },
-  { symbol: 'SUNPHARMA', name: 'Sun Pharmaceutical' },
-  { symbol: 'TITAN', name: 'Titan Company' },
-  { symbol: 'BAJFINANCE', name: 'Bajaj Finance' },
-  { symbol: 'WIPRO', name: 'Wipro' },
-  { symbol: 'ULTRACEMCO', name: 'UltraTech Cement' },
-  { symbol: 'ONGC', name: 'Oil & Natural Gas Corp' },
-  { symbol: 'NTPC', name: 'NTPC' },
-  { symbol: 'POWERGRID', name: 'Power Grid Corp' },
-  { symbol: 'TATAMOTORS', name: 'Tata Motors' },
-  { symbol: 'M&M', name: 'Mahindra & Mahindra' },
-  { symbol: 'JSWSTEEL', name: 'JSW Steel' },
-  { symbol: 'TATASTEEL', name: 'Tata Steel' },
-  { symbol: 'ADANIENT', name: 'Adani Enterprises' },
-  { symbol: 'ADANIPORTS', name: 'Adani Ports' },
-  { symbol: 'COALINDIA', name: 'Coal India' },
-  { symbol: 'BAJAJFINSV', name: 'Bajaj Finserv' },
-  { symbol: 'TECHM', name: 'Tech Mahindra' },
-  { symbol: 'INDUSINDBK', name: 'IndusInd Bank' },
-  { symbol: 'NESTLEIND', name: 'Nestle India' },
-  { symbol: 'DRREDDY', name: 'Dr Reddys Labs' },
-  { symbol: 'CIPLA', name: 'Cipla' },
-  { symbol: 'GRASIM', name: 'Grasim Industries' },
-  { symbol: 'DIVISLAB', name: 'Divis Laboratories' },
-  { symbol: 'BRITANNIA', name: 'Britannia Industries' },
-  { symbol: 'EICHERMOT', name: 'Eicher Motors' },
-  { symbol: 'APOLLOHOSP', name: 'Apollo Hospitals' },
-  { symbol: 'HINDALCO', name: 'Hindalco Industries' },
-  { symbol: 'SBILIFE', name: 'SBI Life Insurance' },
-  { symbol: 'BPCL', name: 'Bharat Petroleum' },
-  { symbol: 'TATACONSUM', name: 'Tata Consumer Products' },
-  { symbol: 'HEROMOTOCO', name: 'Hero MotoCorp' },
-  { symbol: 'BAJAJ-AUTO', name: 'Bajaj Auto' },
-  { symbol: 'HDFCLIFE', name: 'HDFC Life Insurance' },
-  { symbol: 'SHRIRAMFIN', name: 'Shriram Finance' },
-  { symbol: 'LTIM', name: 'LTIMindtree' },
-];
+  { value: 'RELIANCE', label: 'RELIANCE - Reliance Industries' },
+  { value: 'TCS', label: 'TCS - Tata Consultancy Services' },
+  { value: 'HDFCBANK', label: 'HDFCBANK - HDFC Bank' },
+  { value: 'INFY', label: 'INFY - Infosys' },
+  { value: 'ICICIBANK', label: 'ICICIBANK - ICICI Bank' },
+  { value: 'HINDUNILVR', label: 'HINDUNILVR - Hindustan Unilever' },
+  { value: 'SBIN', label: 'SBIN - State Bank of India' },
+  { value: 'BHARTIARTL', label: 'BHARTIARTL - Bharti Airtel' },
+  { value: 'ITC', label: 'ITC - ITC' },
+  { value: 'KOTAKBANK', label: 'KOTAKBANK - Kotak Mahindra Bank' },
+  { value: 'LT', label: 'LT - Larsen & Toubro' },
+  { value: 'AXISBANK', label: 'AXISBANK - Axis Bank' },
+  { value: 'ASIANPAINT', label: 'ASIANPAINT - Asian Paints' },
+  { value: 'MARUTI', label: 'MARUTI - Maruti Suzuki' },
+  { value: 'HCLTECH', label: 'HCLTECH - HCL Technologies' },
+  { value: 'SUNPHARMA', label: 'SUNPHARMA - Sun Pharmaceutical' },
+  { value: 'TITAN', label: 'TITAN - Titan Company' },
+  { value: 'BAJFINANCE', label: 'BAJFINANCE - Bajaj Finance' },
+  { value: 'WIPRO', label: 'WIPRO - Wipro' },
+  { value: 'TATAMOTORS', label: 'TATAMOTORS - Tata Motors' },
+]
 
-const MTF_GROUPS = [
-  { key: 'super_tide', name: 'Super TIDE', timeframes: ['monthly', 'weekly'] },
-  { key: 'tide', name: 'TIDE', timeframes: ['daily', '4h'] },
-  { key: 'wave', name: 'WAVE', timeframes: ['4h', '1h'] },
-  { key: 'ripple', name: 'RIPPLE', timeframes: ['1h', '15m'] },
-];
+const getTrendEmoji = (trend) => {
+  if (!trend) return '⚪'
+  if (trend === 'HH-HL') return '🟢'
+  if (trend === 'LL-LH') return '🔴'
+  if (trend === 'LL→HL') return '🟡'
+  if (trend === 'HH→LH') return '🟠'
+  return '⚪'
+}
 
-const TF_LABELS = {
-  monthly: 'M',
-  weekly: 'W',
-  daily: 'D',
-  '4h': '4H',
-  '1h': '1H',
-  '15m': '15M',
-};
+const getTrendColor = (color) => {
+  const colorMap = {
+    green: 'green',
+    lightgreen: 'lime',
+    red: 'red',
+    orange: 'orange',
+    yellow: 'gold',
+    gray: 'default',
+  }
+  return colorMap[color] || 'default'
+}
+
+const getTrendLabel = (tf) => {
+  if (!tf) return '-'
+  const high = tf.last_high_label || '-'
+  const low = tf.last_low_label || '-'
+  return `${high}/${low}`
+}
 
 const DowTheoryScanner = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [data, setData] = useState(null);
-  const [filter, setFilter] = useState('all');
-  
-  // Single stock input with autocomplete
-  const [symbolInput, setSymbolInput] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState(-1);
-  
-  // View mode: 'scanner' or 'analysis'
-  const [viewMode, setViewMode] = useState('scanner');
-  const [selectedStock, setSelectedStock] = useState(null);
+  const screens = useBreakpoint()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [data, setData] = useState(null)
+  const [filter, setFilter] = useState('all')
+  const [symbolInput, setSymbolInput] = useState('')
+  const [viewMode, setViewMode] = useState('scanner')
+  const [selectedStock, setSelectedStock] = useState(null)
 
   const fetchData = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const result = await scanDowTheory('nifty50', filter, null, 50);
-      setData(result);
+      const result = await scanDowTheory('nifty50', filter, null, 50)
+      setData(result)
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
+      setError(err.response?.data?.detail || err.message || 'Failed to fetch data')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
-
-  const handleInputChange = (e) => {
-    const value = e.target.value.toUpperCase();
-    setSymbolInput(value);
-    setSelectedIndex(-1);
-    
-    if (value.length > 0) {
-      const filtered = STOCK_LIST.filter(
-        stock => 
-          stock.symbol.includes(value) || 
-          stock.name.toUpperCase().includes(value)
-      ).slice(0, 8); // Show max 8 suggestions
-      setSuggestions(filtered);
-      setShowSuggestions(filtered.length > 0);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  };
-
-  const selectSuggestion = (symbol) => {
-    setSymbolInput(symbol);
-    setShowSuggestions(false);
-    setSuggestions([]);
-    openStockAnalysis(symbol);
-  };
-
-  const analyzeSymbol = () => {
-    const symbol = symbolInput.trim().toUpperCase();
-    if (symbol) {
-      setShowSuggestions(false);
-      openStockAnalysis(symbol);
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (!showSuggestions) {
-      if (e.key === 'Enter') {
-        analyzeSymbol();
-      }
-      return;
-    }
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex(prev => Math.min(prev + 1, suggestions.length - 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex(prev => Math.max(prev - 1, -1));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
-        selectSuggestion(suggestions[selectedIndex].symbol);
-      } else {
-        analyzeSymbol();
-      }
-    } else if (e.key === 'Escape') {
-      setShowSuggestions(false);
-    }
-  };
-
-  const openStockAnalysis = (symbol) => {
-    setSelectedStock(symbol);
-    setViewMode('analysis');
-  };
-
-  const backToScanner = () => {
-    setViewMode('scanner');
-    setSelectedStock(null);
-    setSymbolInput('');
-  };
-
-  // Get color class for trend
-  const getTrendColor = (color) => {
-    const colorMap = {
-      green: 'trend-green',
-      lightgreen: 'trend-lightgreen',
-      red: 'trend-red',
-      orange: 'trend-orange',
-      yellow: 'trend-yellow',
-      gray: 'trend-gray',
-      cyan: 'trend-cyan',
-      pink: 'trend-pink',
-    };
-    return colorMap[color] || 'trend-gray';
-  };
-
-  // Get emoji for trend
-  const getTrendEmoji = (trend) => {
-    if (!trend) return '⚪';
-    if (trend === 'HH-HL') return '🟢';
-    if (trend === 'LL-LH') return '🔴';
-    if (trend === 'LL→HL') return '🟡';  // Transition up
-    if (trend === 'HH→LH') return '🟠';  // Transition down
-    if (trend === 'Sideways') return '⚪';
-    return '⚪';
-  };
-
-  // Get trend label display
-  const getTrendLabel = (tf) => {
-    if (!tf) return '-';
-    const high = tf.last_high_label || '-';
-    const low = tf.last_low_label || '-';
-    return `${high}/${low}`;
-  };
-
-  // If viewing stock analysis page
-  if (viewMode === 'analysis' && selectedStock) {
-    return <StockAnalysis symbol={selectedStock} onBack={backToScanner} />;
   }
 
-  // Scanner view
+  const analyzeSymbol = (value) => {
+    const symbol = (value || symbolInput).trim().toUpperCase()
+    if (symbol) {
+      setSelectedStock(symbol)
+      setViewMode('analysis')
+    }
+  }
+
+  const backToScanner = () => {
+    setViewMode('scanner')
+    setSelectedStock(null)
+    setSymbolInput('')
+  }
+
+  if (viewMode === 'analysis' && selectedStock) {
+    return <StockAnalysis symbol={selectedStock} onBack={backToScanner} />
+  }
+
+  // Table columns
+  const columns = [
+    {
+      title: '#',
+      key: 'index',
+      width: 50,
+      align: 'center',
+      render: (_, __, index) => <Text type="secondary">{index + 1}</Text>,
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'symbol',
+      key: 'symbol',
+      width: 120,
+      fixed: screens.md ? false : 'left',
+      render: (symbol) => <Text strong>{symbol}</Text>,
+    },
+    {
+      title: 'M',
+      key: 'monthly',
+      align: 'center',
+      width: 80,
+      render: (_, record) => {
+        const tf = record.timeframes?.monthly
+        return (
+          <Tag color={getTrendColor(tf?.color)}>
+            {getTrendEmoji(tf?.trend)} {getTrendLabel(tf)}
+          </Tag>
+        )
+      },
+    },
+    {
+      title: 'W',
+      key: 'weekly',
+      align: 'center',
+      width: 80,
+      render: (_, record) => {
+        const tf = record.timeframes?.weekly
+        return (
+          <Tag color={getTrendColor(tf?.color)}>
+            {getTrendEmoji(tf?.trend)} {getTrendLabel(tf)}
+          </Tag>
+        )
+      },
+    },
+    {
+      title: 'D',
+      key: 'daily',
+      align: 'center',
+      width: 80,
+      render: (_, record) => {
+        const tf = record.timeframes?.daily
+        return (
+          <Tag color={getTrendColor(tf?.color)}>
+            {getTrendEmoji(tf?.trend)} {getTrendLabel(tf)}
+          </Tag>
+        )
+      },
+    },
+    {
+      title: '4H',
+      key: '4h',
+      align: 'center',
+      width: 80,
+      render: (_, record) => {
+        const tf = record.timeframes?.['4h']
+        return (
+          <Tag color={getTrendColor(tf?.color)}>
+            {getTrendEmoji(tf?.trend)} {getTrendLabel(tf)}
+          </Tag>
+        )
+      },
+    },
+    {
+      title: '1H',
+      key: '1h',
+      align: 'center',
+      width: 80,
+      render: (_, record) => {
+        const tf = record.timeframes?.['1h']
+        return (
+          <Tag color={getTrendColor(tf?.color)}>
+            {getTrendEmoji(tf?.trend)} {getTrendLabel(tf)}
+          </Tag>
+        )
+      },
+    },
+    {
+      title: 'Opportunity',
+      dataIndex: 'opportunity',
+      key: 'opportunity',
+      width: 140,
+      render: (opp) => (
+        <Tag color={getTrendColor(opp?.color)}>
+          {opp?.type || '-'}
+        </Tag>
+      ),
+    },
+    {
+      title: '',
+      key: 'action',
+      width: 50,
+      render: (_, record) => (
+        <Button 
+          type="text" 
+          icon={<ArrowRightOutlined />} 
+          onClick={() => analyzeSymbol(record.symbol)}
+        />
+      ),
+    },
+  ]
+
   return (
-    <div className="dow-scanner">
-      {/* Header */}
-      <div className="dow-header">
-        <div className="dow-title">
-          <h2>📋 Checklist Scanner</h2>
-          <p>PAPA + SMM Multi-Timeframe Analysis</p>
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="dow-controls">
-        {/* Single Stock Analysis */}
-        <div className="control-group symbol-input-group">
-          <label>Analyze Symbol</label>
-          <div className="symbol-autocomplete">
-            <div className="symbol-input-wrapper">
-              <input
-                type="text"
-                value={symbolInput}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                onFocus={() => symbolInput && suggestions.length > 0 && setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                placeholder="Type symbol or name..."
-                className="symbol-input"
-                autoComplete="off"
-              />
-              <button 
-                className="analyze-btn" 
-                onClick={analyzeSymbol}
-                disabled={!symbolInput.trim()}
-              >
-                📊 Analyze
-              </button>
+    <div>
+      {/* Page Header */}
+      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+        <Col>
+          <Space align="center">
+            <FileSearchOutlined style={{ fontSize: 28, color: '#fa8c16' }} />
+            <div>
+              <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
+                Checklist Scanner
+              </Title>
+              <Text type="secondary">
+                PAPA + SMM Multi-Timeframe Analysis
+              </Text>
             </div>
-            {showSuggestions && suggestions.length > 0 && (
-              <ul className="suggestions-list">
-                {suggestions.map((stock, index) => (
-                  <li 
-                    key={stock.symbol}
-                    className={`suggestion-item ${index === selectedIndex ? 'selected' : ''}`}
-                    onClick={() => selectSuggestion(stock.symbol)}
-                  >
-                    <span className="suggestion-symbol">{stock.symbol}</span>
-                    <span className="suggestion-name">{stock.name}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
+          </Space>
+        </Col>
+      </Row>
 
-        <div className="controls-divider">OR</div>
+      {/* Filters */}
+      <Card size="small" style={{ marginBottom: 24 }}>
+        <Row gutter={[16, 16]} align="middle">
+          {/* Symbol Search */}
+          <Col xs={24} sm={12} md={8}>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>ANALYZE SYMBOL</Text>
+              <Space.Compact style={{ width: '100%' }}>
+                <AutoComplete
+                  value={symbolInput}
+                  onChange={setSymbolInput}
+                  onSelect={analyzeSymbol}
+                  options={STOCK_LIST.filter(s => 
+                    s.value.includes(symbolInput.toUpperCase()) || 
+                    s.label.toUpperCase().includes(symbolInput.toUpperCase())
+                  )}
+                  placeholder="Type symbol..."
+                  style={{ flex: 1 }}
+                  size={screens.md ? 'middle' : 'large'}
+                />
+                <Button 
+                  type="primary" 
+                  icon={<SearchOutlined />}
+                  onClick={() => analyzeSymbol()}
+                  disabled={!symbolInput.trim()}
+                  size={screens.md ? 'middle' : 'large'}
+                >
+                  {screens.md ? 'Analyze' : ''}
+                </Button>
+              </Space.Compact>
+            </Space>
+          </Col>
 
-        {/* Bulk Scan */}
-        <div className="control-group bulk-scan-group">
-          <label>Filter</label>
-          <select value={filter} onChange={(e) => setFilter(e.target.value)}>
-            {FILTERS.map(f => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
-          <button className="refresh-btn" onClick={fetchData} disabled={loading}>
-            {loading ? 'Scanning...' : '🔍 Scan Nifty 50'}
-          </button>
-        </div>
-      </div>
+          <Col xs={0} sm={2} md={2}>
+            <div style={{ textAlign: 'center', paddingTop: 20 }}>
+              <Text type="secondary">OR</Text>
+            </div>
+          </Col>
 
-      {/* Error */}
+          {/* Filter */}
+          <Col xs={12} sm={5} md={6}>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>FILTER</Text>
+              <Select
+                value={filter}
+                onChange={setFilter}
+                options={FILTERS}
+                style={{ width: '100%' }}
+                size={screens.md ? 'middle' : 'large'}
+              />
+            </Space>
+          </Col>
+
+          {/* Scan Button */}
+          <Col xs={12} sm={5} md={6}>
+            <div style={{ marginTop: screens.md ? 20 : 0 }}>
+              <Button
+                type="primary"
+                icon={<ReloadOutlined spin={loading} />}
+                onClick={fetchData}
+                loading={loading}
+                size={screens.md ? 'middle' : 'large'}
+                block
+              >
+                {loading ? 'Scanning...' : 'Scan Nifty 50'}
+              </Button>
+            </div>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Error Alert */}
       {error && (
-        <div className="dow-error">
-          <span>{error}</span>
-          <button onClick={fetchData}>Retry</button>
-        </div>
+        <Alert
+          message="Error"
+          description={error}
+          type="error"
+          showIcon
+          closable
+          style={{ marginBottom: 24 }}
+        />
       )}
 
-      {/* Loading */}
-      {loading && <Loader message="Scanning all timeframes... This may take a minute." />}
+      {/* Loading State */}
+      {loading && (
+        <Card>
+          <div style={{ textAlign: 'center', padding: 60 }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>
+              <Text type="secondary">Scanning all timeframes...</Text>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Empty State */}
       {!loading && !error && !data && (
-        <div className="dow-empty">
-          <div className="dow-empty-icon">📊</div>
-          <p>Click <strong>Scan Nifty 50</strong> to analyze stocks</p>
-          <p className="dow-empty-hint">Analysis covers: Monthly, Weekly, Daily, 4H, 1H, 15M timeframes</p>
-        </div>
+        <Card>
+          <Empty
+            description={
+              <Space direction="vertical" size={4}>
+                <Text>No data loaded</Text>
+                <Text type="secondary">Click "Scan Nifty 50" or enter a symbol to analyze</Text>
+              </Space>
+            }
+          />
+        </Card>
       )}
 
       {/* Results Table */}
-      {!loading && data && data.stocks && (
-        <div className="dow-content">
-          <div className="dow-results-header">
-            <span>Found {data.total} stocks</span>
-            <span className="filter-badge">{FILTERS.find(f => f.value === filter)?.label}</span>
-          </div>
+      {!loading && data?.stocks && (
+        <>
+          <Card 
+            title={`Found ${data.total} stocks`}
+            extra={<Tag>{FILTERS.find(f => f.value === filter)?.label}</Tag>}
+            bodyStyle={{ padding: screens.md ? 16 : 8 }}
+          >
+            <Table
+              columns={columns}
+              dataSource={data.stocks.map(s => ({ ...s, key: s.symbol }))}
+              pagination={{ pageSize: 20, size: 'small' }}
+              scroll={{ x: 700 }}
+              size="small"
+              onRow={(record) => ({
+                onClick: () => analyzeSymbol(record.symbol),
+                style: { cursor: 'pointer' },
+              })}
+            />
+          </Card>
 
-          <div className="dow-table-wrapper">
-            <table className="dow-table">
-              <thead>
-                <tr>
-                  <th className="stock-col">Stock</th>
-                  <th className="mtf-col" colSpan="2">Super TIDE<br/><small>M | W</small></th>
-                  <th className="mtf-col" colSpan="2">TIDE<br/><small>D | 4H</small></th>
-                  <th className="mtf-col" colSpan="2">WAVE<br/><small>4H | 1H</small></th>
-                  <th className="mtf-col" colSpan="2">RIPPLE<br/><small>1H | 15M</small></th>
-                  <th className="opp-col">Opportunity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.stocks.map((stock, idx) => {
-                  const tfs = stock.timeframes || {};
-                  const opp = stock.opportunity || {};
-                  
-                  return (
-                    <tr 
-                      key={stock.symbol} 
-                      className="dow-row"
-                      onClick={() => openStockAnalysis(stock.symbol)}
-                    >
-                      <td className="stock-cell">
-                        <span className="stock-rank">{idx + 1}</span>
-                        <span className="stock-name">{stock.symbol}</span>
-                        <span className="stock-arrow">▶</span>
-                      </td>
-                      
-                      {/* Super TIDE: M, W */}
-                      <td className={`trend-cell ${getTrendColor(tfs.monthly?.color)}`}>
-                        <span className="trend-emoji">{getTrendEmoji(tfs.monthly?.trend)}</span>
-                        <span className="trend-label">{getTrendLabel(tfs.monthly)}</span>
-                      </td>
-                      <td className={`trend-cell ${getTrendColor(tfs.weekly?.color)}`}>
-                        <span className="trend-emoji">{getTrendEmoji(tfs.weekly?.trend)}</span>
-                        <span className="trend-label">{getTrendLabel(tfs.weekly)}</span>
-                      </td>
-                      
-                      {/* TIDE: D, 4H */}
-                      <td className={`trend-cell ${getTrendColor(tfs.daily?.color)}`}>
-                        <span className="trend-emoji">{getTrendEmoji(tfs.daily?.trend)}</span>
-                        <span className="trend-label">{getTrendLabel(tfs.daily)}</span>
-                      </td>
-                      <td className={`trend-cell ${getTrendColor(tfs['4h']?.color)}`}>
-                        <span className="trend-emoji">{getTrendEmoji(tfs['4h']?.trend)}</span>
-                        <span className="trend-label">{getTrendLabel(tfs['4h'])}</span>
-                      </td>
-                      
-                      {/* WAVE: 4H, 1H */}
-                      <td className={`trend-cell ${getTrendColor(tfs['4h']?.color)}`}>
-                        <span className="trend-emoji">{getTrendEmoji(tfs['4h']?.trend)}</span>
-                        <span className="trend-label">{getTrendLabel(tfs['4h'])}</span>
-                      </td>
-                      <td className={`trend-cell ${getTrendColor(tfs['1h']?.color)}`}>
-                        <span className="trend-emoji">{getTrendEmoji(tfs['1h']?.trend)}</span>
-                        <span className="trend-label">{getTrendLabel(tfs['1h'])}</span>
-                      </td>
-                      
-                      {/* RIPPLE: 1H, 15M */}
-                      <td className={`trend-cell ${getTrendColor(tfs['1h']?.color)}`}>
-                        <span className="trend-emoji">{getTrendEmoji(tfs['1h']?.trend)}</span>
-                        <span className="trend-label">{getTrendLabel(tfs['1h'])}</span>
-                      </td>
-                      <td className={`trend-cell ${getTrendColor(tfs['15m']?.color)}`}>
-                        <span className="trend-emoji">{getTrendEmoji(tfs['15m']?.trend)}</span>
-                        <span className="trend-label">{getTrendLabel(tfs['15m'])}</span>
-                      </td>
-                      
-                      {/* Opportunity */}
-                      <td className={`opp-cell ${getTrendColor(opp.color)}`}>
-                        <span className="opp-type">{opp.type || '-'}</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="dow-footer">
-            <div className="dow-legend">
-              <span>🟢 HH-HL = Uptrend</span>
-              <span>🟡 LL→HL = Transition Up</span>
-              <span>⚪ Sideways</span>
-              <span>🟠 HH→LH = Transition Down</span>
-              <span>🔴 LL-LH = Downtrend</span>
+          {/* Legend */}
+          <Card size="small" style={{ marginTop: 16 }}>
+            <Row justify="center" gutter={[16, 8]}>
+              <Col><Text>🟢 HH-HL (Uptrend)</Text></Col>
+              <Col><Text>🟡 LL→HL (Reversal Up)</Text></Col>
+              <Col><Text>⚪ Sideways</Text></Col>
+              <Col><Text>🟠 HH→LH (Reversal Down)</Text></Col>
+              <Col><Text>🔴 LL-LH (Downtrend)</Text></Col>
+            </Row>
+            <div style={{ textAlign: 'center', marginTop: 8 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                💡 Click any row for detailed analysis
+              </Text>
             </div>
-            <div className="dow-help">
-              💡 Click any row for detailed pivot analysis • HH=Higher High, HL=Higher Low, LH=Lower High, LL=Lower Low
-            </div>
-          </div>
-        </div>
+          </Card>
+        </>
       )}
-
     </div>
-  );
-};
+  )
+}
 
-export default DowTheoryScanner;
+export default DowTheoryScanner

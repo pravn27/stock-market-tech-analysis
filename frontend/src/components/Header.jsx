@@ -1,61 +1,199 @@
 /**
- * Header Component
+ * Header Component - Ant Design Implementation
+ * Professional navigation with theme toggle
  */
 
-import React from 'react';
+import React, { useState } from 'react'
+import { Layout, Menu, Dropdown, Button, Space, Switch, Typography, Grid } from 'antd'
+import {
+  MenuOutlined,
+  DownOutlined,
+  LineChartOutlined,
+  BarChartOutlined,
+  GlobalOutlined,
+  FileSearchOutlined,
+  BulbOutlined,
+  BulbFilled,
+  StockOutlined,
+  BankOutlined,
+  FundOutlined,
+  AppstoreOutlined,
+  UnorderedListOutlined,
+} from '@ant-design/icons'
+import { useTheme } from '../context/ThemeContext'
 
-const Header = ({ activePage, onPageChange }) => {
+const { Header: AntHeader } = Layout
+const { Text } = Typography
+const { useBreakpoint } = Grid
+
+const AppHeader = ({ activePage, onPageChange }) => {
+  const { isDarkMode, toggleTheme } = useTheme()
+  const screens = useBreakpoint()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Performance dropdown items
+  const performanceItems = [
+    { key: 'overview', label: 'Relative Strength', icon: <LineChartOutlined /> },
+    { key: 'nifty50', label: 'Nifty 50', icon: <StockOutlined /> },
+    { key: 'banknifty', label: 'Bank Nifty', icon: <BankOutlined /> },
+    { key: 'sectors', label: 'Sector Performance', icon: <FundOutlined /> },
+    { key: 'stocks', label: 'Sector Stocks', icon: <AppstoreOutlined /> },
+  ]
+
+  const isPerformanceActive = performanceItems.some(item => item.key === activePage)
+
+  const handleMenuClick = ({ key }) => {
+    onPageChange(key)
+    setMobileMenuOpen(false)
+  }
+
+  // Performance dropdown menu
+  const performanceMenu = {
+    items: performanceItems.map(item => ({
+      key: item.key,
+      label: (
+        <Space>
+          {item.icon}
+          {item.label}
+        </Space>
+      ),
+    })),
+    onClick: handleMenuClick,
+    selectedKeys: [activePage],
+  }
+
+  // Mobile menu items
+  const mobileMenuItems = [
+    {
+      key: 'performance-group',
+      label: 'Performance',
+      type: 'group',
+      children: performanceItems.map(item => ({
+        key: item.key,
+        label: item.label,
+        icon: item.icon,
+      })),
+    },
+    {
+      key: 'tools-group',
+      label: 'Tools',
+      type: 'group',
+      children: [
+        { key: 'dow-scanner', label: 'Checklist Scanner', icon: <FileSearchOutlined /> },
+        { key: 'global', label: 'Global Markets', icon: <GlobalOutlined /> },
+      ],
+    },
+  ]
+
+  // Desktop navigation
+  const renderDesktopNav = () => (
+    <Space size="middle">
+      <Dropdown menu={performanceMenu} trigger={['click']}>
+        <Button 
+          type={isPerformanceActive ? 'primary' : 'text'}
+          icon={<BarChartOutlined />}
+        >
+          Performance <DownOutlined style={{ fontSize: 10 }} />
+        </Button>
+      </Dropdown>
+
+      <Button
+        type={activePage === 'dow-scanner' ? 'primary' : 'text'}
+        icon={<FileSearchOutlined />}
+        onClick={() => onPageChange('dow-scanner')}
+      >
+        Checklist
+      </Button>
+
+      <Button
+        type={activePage === 'global' ? 'primary' : 'text'}
+        icon={<GlobalOutlined />}
+        onClick={() => onPageChange('global')}
+      >
+        Global
+      </Button>
+    </Space>
+  )
+
+  // Mobile menu dropdown
+  const mobileMenu = {
+    items: mobileMenuItems,
+    onClick: handleMenuClick,
+    selectedKeys: [activePage],
+    style: { minWidth: 200 },
+  }
+
   return (
-    <header className="header">
-      <div className="header-content">
-        <h1 className="header-title">Stock Market TA</h1>
-        <nav className="nav">
-          <button 
-            className={`nav-btn ${activePage === 'overview' ? 'active' : ''}`}
-            onClick={() => onPageChange('overview')}
-          >
-            Performance Overview
-          </button>
-          <button 
-            className={`nav-btn ${activePage === 'dow-scanner' ? 'active' : ''}`}
-            onClick={() => onPageChange('dow-scanner')}
-          >
-            📋 Checklist Scanner
-          </button>
-          <button 
-            className={`nav-btn ${activePage === 'global' ? 'active' : ''}`}
-            onClick={() => onPageChange('global')}
-          >
-            Global Markets
-          </button>
-          <button 
-            className={`nav-btn ${activePage === 'nifty50' ? 'active' : ''}`}
-            onClick={() => onPageChange('nifty50')}
-          >
-            Nifty 50
-          </button>
-          <button 
-            className={`nav-btn ${activePage === 'banknifty' ? 'active' : ''}`}
-            onClick={() => onPageChange('banknifty')}
-          >
-            Bank Nifty
-          </button>
-          <button 
-            className={`nav-btn ${activePage === 'sectors' ? 'active' : ''}`}
-            onClick={() => onPageChange('sectors')}
-          >
-            Indices & Sector Performance
-          </button>
-          <button 
-            className={`nav-btn ${activePage === 'stocks' ? 'active' : ''}`}
-            onClick={() => onPageChange('stocks')}
-          >
-            Indices & Sector Stocks
-          </button>
-        </nav>
+    <AntHeader
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: screens.md ? '0 24px' : '0 16px',
+        height: 64,
+        borderBottom: `1px solid ${isDarkMode ? '#303030' : '#f0f0f0'}`,
+        background: isDarkMode ? '#141414' : '#ffffff',
+      }}
+    >
+      {/* Logo */}
+      <div
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 10, 
+          cursor: 'pointer' 
+        }}
+        onClick={() => onPageChange('overview')}
+      >
+        <LineChartOutlined 
+          style={{ 
+            fontSize: 26, 
+            color: '#1890ff' 
+          }} 
+        />
+        <Text 
+          strong 
+          style={{ 
+            fontSize: screens.md ? 18 : 15,
+            whiteSpace: 'nowrap'
+          }}
+        >
+          Stock Market <span style={{ color: '#1890ff' }}>TA</span>
+        </Text>
       </div>
-    </header>
-  );
-};
 
-export default Header;
+      {/* Desktop Navigation */}
+      {screens.md && renderDesktopNav()}
+
+      {/* Right Side - Theme Toggle & Mobile Menu */}
+      <Space>
+        {/* Theme Toggle */}
+        <Button
+          type="text"
+          icon={isDarkMode ? <BulbFilled style={{ color: '#faad14' }} /> : <BulbOutlined />}
+          onClick={toggleTheme}
+          title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        />
+
+        {/* Mobile Menu */}
+        {!screens.md && (
+          <Dropdown 
+            menu={mobileMenu} 
+            trigger={['click']}
+            open={mobileMenuOpen}
+            onOpenChange={setMobileMenuOpen}
+          >
+            <Button type="text" icon={<MenuOutlined />} />
+          </Dropdown>
+        )}
+      </Space>
+    </AntHeader>
+  )
+}
+
+export default AppHeader

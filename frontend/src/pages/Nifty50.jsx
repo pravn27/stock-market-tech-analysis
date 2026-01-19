@@ -1,209 +1,216 @@
 /**
- * Nifty 50 Heavyweight Stocks Page
- * Shows major stocks that drive Nifty 50 index movement with their weightage
+ * Nifty 50 Page - Ant Design Implementation
+ * Shows Nifty 50 heavyweight stocks performance
  */
 
-import React, { useState } from 'react';
-import { getNifty50Heavyweights } from '../api/scanner';
-import { TIMEFRAMES } from '../api/config';
-import BenchmarkCard from '../components/BenchmarkCard';
-import Loader from '../components/Loader';
+import { useState, useEffect } from 'react'
+import { 
+  Card, Table, Select, InputNumber, Button, Space, Tag, 
+  Typography, Empty, Spin, Alert, Row, Col, Grid
+} from 'antd'
+import { 
+  ReloadOutlined, StockOutlined, ArrowUpOutlined, 
+  ArrowDownOutlined, MinusOutlined 
+} from '@ant-design/icons'
+import { getNifty50Stocks } from '../api/scanner'
 
-const formatNumber = (num, decimals = 2) => {
-  if (num === null || num === undefined) return '-';
-  return num.toFixed(decimals);
-};
+const { Title, Text } = Typography
+const { useBreakpoint } = Grid
 
-const formatReturn = (value) => {
-  if (value === null || value === undefined) return '-';
-  const formatted = value.toFixed(2);
-  const className = value > 0 ? 'positive' : value < 0 ? 'negative' : '';
-  return <span className={className}>{value > 0 ? '+' : ''}{formatted}%</span>;
-};
+const TIMEFRAMES = ['3M', 'M', 'W', 'D', '4H', '1H']
+const TF_KEY_MAP = { '3M': 'three_month', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': 'four_hour', '1H': 'one_hour' }
 
-const StatusBadge = ({ status }) => {
-  const className = `status-badge status-${status}`;
-  const label = status === 'outperforming' ? 'Outperforming' : 
-                status === 'underperforming' ? 'Underperforming' : 'Neutral';
-  return <span className={className}>{label}</span>;
-};
+// Get status tag based on value
+const getStatusTag = (value) => {
+  if (value === null || value === undefined) return <Text type="secondary">-</Text>
+  
+  const color = value > 1 ? 'green' : value < -1 ? 'red' : 'default'
+  const sign = value > 0 ? '+' : ''
+  
+  return (
+    <Tag color={color} style={{ minWidth: 70, textAlign: 'center', fontFamily: 'monospace' }}>
+      {sign}{value.toFixed(2)}%
+    </Tag>
+  )
+}
+
+const getStatusIcon = (weeklyRs) => {
+  if (weeklyRs > 1) return <ArrowUpOutlined style={{ color: '#52c41a' }} />
+  if (weeklyRs < -1) return <ArrowDownOutlined style={{ color: '#ff4d4f' }} />
+  return <MinusOutlined style={{ color: '#999' }} />
+}
 
 const Nifty50 = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [data, setData] = useState(null);
-  const [timeframe, setTimeframe] = useState('weekly');
-  const [lookback, setLookback] = useState(1);
-  const [topOnly, setTopOnly] = useState(false);
+  const screens = useBreakpoint()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [data, setData] = useState(null)
+  const [lookback, setLookback] = useState(1)
 
   const fetchData = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const result = await getNifty50Heavyweights(timeframe, lookback, topOnly);
-      setData(result);
+      const result = await getNifty50Stocks(lookback)
+      setData(result)
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
+      setError(err.message || 'Failed to fetch Nifty 50 data')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  // Get timeframe key for display
-  const tfKey = {
-    '1h': 'one_hour',
-    '4h': 'four_hour',
-    'daily': 'daily',
-    'weekly': 'weekly',
-    'monthly': 'monthly',
-    '3m': 'three_month'
-  }[timeframe] || 'weekly';
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const columns = [
+    {
+      title: '#',
+      key: 'index',
+      width: 50,
+      align: 'center',
+      render: (_, __, index) => <Text type="secondary">{index + 1}</Text>,
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'name',
+      key: 'name',
+      fixed: screens.md ? false : 'left',
+      width: screens.md ? 200 : 120,
+      render: (name, record) => (
+        <Space>
+          {getStatusIcon(record.relative_strength?.weekly)}
+          <div>
+            <Text strong>{name}</Text>
+            <div><Text type="secondary" style={{ fontSize: 11 }}>{record.symbol}</Text></div>
+          </div>
+        </Space>
+      ),
+    },
+    ...TIMEFRAMES.map(tf => ({
+      title: tf,
+      key: tf,
+      align: 'center',
+      width: 90,
+      sorter: (a, b) => {
+        const tfKey = TF_KEY_MAP[tf]
+        return (a.relative_strength?.[tfKey] ?? -999) - (b.relative_strength?.[tfKey] ?? -999)
+      },
+      defaultSortOrder: tf === 'W' ? 'descend' : null,
+      render: (_, record) => {
+        const tfKey = TF_KEY_MAP[tf]
+        return getStatusTag(record.relative_strength?.[tfKey])
+      },
+    })),
+  ]
 
   return (
-    <div className="page nifty50-page">
-      <div className="page-header">
-        <h2>Nifty 50 Heavyweight Stocks</h2>
-        <p className="page-desc">
-          Major heavyweight stocks relative comparison for moving of Nifty 50 price
-        </p>
-      </div>
+    <div>
+      {/* Page Header */}
+      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+        <Col>
+          <Space align="center">
+            <StockOutlined style={{ fontSize: 28, color: '#1890ff' }} />
+            <div>
+              <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
+                Nifty 50
+              </Title>
+              <Text type="secondary">
+                Heavyweight stocks relative strength vs NIFTY 50
+                {data?.stocks && (
+                  <Tag color="blue" style={{ marginLeft: 8 }}>{data.stocks.length} stocks</Tag>
+                )}
+              </Text>
+            </div>
+          </Space>
+        </Col>
+      </Row>
 
       {/* Filters */}
-      <div className="filters">
-        <div className="filter-group">
-          <label>Timeframe</label>
-          <select 
-            value={timeframe} 
-            onChange={(e) => setTimeframe(e.target.value)}
-            disabled={loading}
-          >
-            {TIMEFRAMES.map(tf => (
-              <option key={tf.value} value={tf.value}>{tf.label}</option>
-            ))}
-          </select>
-        </div>
+      <Card size="small" style={{ marginBottom: 24 }}>
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} sm={12} md={6}>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>LOOKBACK</Text>
+              <Space>
+                <InputNumber
+                  min={1}
+                  max={99}
+                  value={lookback}
+                  onChange={(val) => setLookback(val || 1)}
+                  style={{ width: 80 }}
+                  size={screens.md ? 'middle' : 'large'}
+                />
+                <Text type="secondary">periods</Text>
+              </Space>
+            </Space>
+          </Col>
+          <Col xs={24} sm={12} md={18}>
+            <div style={{ display: 'flex', justifyContent: screens.md ? 'flex-end' : 'flex-start', marginTop: screens.md ? 20 : 0 }}>
+              <Button
+                type="primary"
+                icon={<ReloadOutlined spin={loading} />}
+                onClick={fetchData}
+                loading={loading}
+                size={screens.md ? 'middle' : 'large'}
+              >
+                Refresh
+              </Button>
+            </div>
+          </Col>
+        </Row>
+      </Card>
 
-        <div className="filter-group">
-          <label>Lookback</label>
-          <input 
-            type="number"
-            className="lookback-input"
-            value={lookback} 
-            onChange={(e) => {
-              const val = parseInt(e.target.value) || 1;
-              setLookback(Math.max(1, Math.min(val, 99)));
-            }}
-            min="1"
-            max="99"
-            disabled={loading}
-            title="Compare with N periods back (1 = previous period)"
-          />
-        </div>
-
-        <div className="filter-group">
-          <label>Show</label>
-          <select 
-            value={topOnly ? 'top20' : 'all'} 
-            onChange={(e) => setTopOnly(e.target.value === 'top20')}
-            disabled={loading}
-          >
-            <option value="all">All 50 Stocks</option>
-            <option value="top20">Top 20 Heavyweights</option>
-          </select>
-        </div>
-
-        <div className="filter-group">
-          <label>&nbsp;</label>
-          <button 
-            className="btn btn-primary" 
-            onClick={fetchData}
-            disabled={loading}
-          >
-            {loading ? 'Loading...' : 'Refresh'}
-          </button>
-        </div>
-      </div>
-
+      {/* Error Alert */}
       {error && (
-        <div className="error-message">
-          <p>{error}</p>
-          <button onClick={fetchData}>Retry</button>
-        </div>
+        <Alert
+          message="Error"
+          description={error}
+          type="error"
+          showIcon
+          closable
+          style={{ marginBottom: 24 }}
+        />
       )}
 
-      {loading && <Loader message="Fetching Nifty 50 heavyweight data..." />}
-
-      {!loading && !error && data && (
-        <>
-          <BenchmarkCard benchmark={data.benchmark} timeframe={timeframe} />
-
-          {/* Weightage Summary */}
-          <div className="weightage-summary">
-            <div className="summary-card outperforming">
-              <span className="label">Outperforming</span>
-              <span className="count">{data.outperforming?.length || 0} stocks</span>
-              <span className="weightage">{data.outperforming_weightage}% weightage</span>
-            </div>
-            <div className="summary-card neutral">
-              <span className="label">Neutral</span>
-              <span className="count">{data.neutral?.length || 0} stocks</span>
-              <span className="weightage">{(data.total_weightage - data.outperforming_weightage - data.underperforming_weightage).toFixed(2)}% weightage</span>
-            </div>
-            <div className="summary-card underperforming">
-              <span className="label">Underperforming</span>
-              <span className="count">{data.underperforming?.length || 0} stocks</span>
-              <span className="weightage">{data.underperforming_weightage}% weightage</span>
+      {/* Loading State */}
+      {loading && (
+        <Card>
+          <div style={{ textAlign: 'center', padding: 60 }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>
+              <Text type="secondary">Loading Nifty 50 stocks...</Text>
             </div>
           </div>
-
-          {/* Data Table */}
-          <div className="table-container">
-            <table className="data-table nifty50-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Stock</th>
-                  <th>Symbol</th>
-                  <th>Weightage %</th>
-                  <th>Price</th>
-                  <th>Return</th>
-                  <th>RS vs Nifty</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.stocks?.map((stock, index) => (
-                  <tr key={stock.symbol}>
-                    <td className="rank">{stock.rank || index + 1}</td>
-                    <td className="name">{stock.name}</td>
-                    <td className="symbol">{stock.symbol.replace('.NS', '')}</td>
-                    <td className="weightage">
-                      <span className="weightage-bar" style={{width: `${Math.min(stock.weightage * 5, 100)}%`}}></span>
-                      <span className="weightage-value">{stock.weightage.toFixed(2)}%</span>
-                    </td>
-                    <td className="price">₹{formatNumber(stock.price)}</td>
-                    <td className="return">{formatReturn(stock.returns?.[tfKey])}</td>
-                    <td className="rs">{formatReturn(stock.relative_strength?.[tfKey])}</td>
-                    <td className="status"><StatusBadge status={stock.status} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="last-updated">
-            Last updated: {new Date(data.timestamp).toLocaleString()}
-          </div>
-        </>
+        </Card>
       )}
 
-      {!loading && !error && !data && (
-        <div className="no-data">
-          Click Refresh to load Nifty 50 heavyweight stocks data
-        </div>
+      {/* Empty State */}
+      {!loading && !error && (!data?.stocks || data.stocks.length === 0) && (
+        <Card>
+          <Empty description="No stocks data available" />
+        </Card>
+      )}
+
+      {/* Data Table */}
+      {!loading && data?.stocks?.length > 0 && (
+        <Card bodyStyle={{ padding: screens.md ? 16 : 8 }}>
+          <Table
+            columns={columns}
+            dataSource={data.stocks.map(s => ({ ...s, key: s.symbol }))}
+            pagination={{ 
+              pageSize: 50,
+              showTotal: (total) => `Total ${total} stocks`,
+              size: 'small',
+            }}
+            scroll={{ x: 800 }}
+            size={screens.md ? 'middle' : 'small'}
+          />
+        </Card>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default Nifty50;
+export default Nifty50

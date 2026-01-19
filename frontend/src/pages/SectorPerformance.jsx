@@ -1,117 +1,240 @@
 /**
- * Sector Performance Page
+ * Sector Performance Page - Ant Design Implementation
+ * Shows sector-wise performance breakdown
  */
 
-import React, { useState, useEffect } from 'react';
-import { getSectorPerformance } from '../api/scanner';
-import Filters from '../components/Filters';
-import BenchmarkCard from '../components/BenchmarkCard';
-import CategoryView from '../components/CategoryView';
-import DataTable from '../components/DataTable';
-import Loader from '../components/Loader';
+import { useState, useEffect } from 'react'
+import { 
+  Card, Table, Select, InputNumber, Button, Space, Tag, 
+  Typography, Empty, Spin, Alert, Row, Col, Grid
+} from 'antd'
+import { 
+  ReloadOutlined, FundOutlined, ArrowUpOutlined, 
+  ArrowDownOutlined, MinusOutlined 
+} from '@ant-design/icons'
+import { getSectorPerformance } from '../api/scanner'
+
+const { Title, Text } = Typography
+const { useBreakpoint } = Grid
+
+const TIMEFRAMES = ['3M', 'M', 'W', 'D', '4H', '1H']
+const TF_KEY_MAP = { '3M': 'three_month', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': 'four_hour', '1H': 'one_hour' }
+
+const CATEGORIES = [
+  { value: 'all', label: 'All Categories' },
+  { value: 'sectorial', label: 'Sectorial' },
+  { value: 'broad_market', label: 'Broad Market' },
+  { value: 'thematic', label: 'Thematic' },
+]
+
+// Get status tag based on value
+const getStatusTag = (value) => {
+  if (value === null || value === undefined) return <Text type="secondary">-</Text>
+  
+  const color = value > 1 ? 'green' : value < -1 ? 'red' : 'default'
+  const sign = value > 0 ? '+' : ''
+  
+  return (
+    <Tag color={color} style={{ minWidth: 70, textAlign: 'center', fontFamily: 'monospace' }}>
+      {sign}{value.toFixed(2)}%
+    </Tag>
+  )
+}
+
+const getStatusIcon = (weeklyRs) => {
+  if (weeklyRs > 1) return <ArrowUpOutlined style={{ color: '#52c41a' }} />
+  if (weeklyRs < -1) return <ArrowDownOutlined style={{ color: '#ff4d4f' }} />
+  return <MinusOutlined style={{ color: '#999' }} />
+}
 
 const SectorPerformance = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [data, setData] = useState(null);
-  const [indexGroup, setIndexGroup] = useState('sectorial');
-  const [timeframe, setTimeframe] = useState('weekly');
-  const [lookback, setLookback] = useState(1);
-  const [viewMode, setViewMode] = useState('category'); // 'category' or 'ranked'
+  const screens = useBreakpoint()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [data, setData] = useState(null)
+  const [category, setCategory] = useState('all')
+  const [lookback, setLookback] = useState(1)
 
   const fetchData = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      const result = await getSectorPerformance(indexGroup, timeframe, lookback);
-      setData(result);
+      const result = await getSectorPerformance(category, lookback)
+      setData(result)
     } catch (err) {
-      setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
+      setError(err.message || 'Failed to fetch sector performance data')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  // Note: No auto-fetch on mount or filter change
-  // User must click "Refresh" button to load data
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const columns = [
+    {
+      title: '#',
+      key: 'index',
+      width: 50,
+      align: 'center',
+      render: (_, __, index) => <Text type="secondary">{index + 1}</Text>,
+    },
+    {
+      title: 'Sector',
+      dataIndex: 'name',
+      key: 'name',
+      fixed: screens.md ? false : 'left',
+      width: screens.md ? 220 : 150,
+      render: (name, record) => (
+        <Space>
+          {getStatusIcon(record.relative_strength?.weekly)}
+          <Text strong>{name}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Category',
+      dataIndex: 'category',
+      key: 'category',
+      width: 120,
+      render: (cat) => <Tag>{cat}</Tag>,
+    },
+    ...TIMEFRAMES.map(tf => ({
+      title: tf,
+      key: tf,
+      align: 'center',
+      width: 90,
+      sorter: (a, b) => {
+        const tfKey = TF_KEY_MAP[tf]
+        return (a.relative_strength?.[tfKey] ?? -999) - (b.relative_strength?.[tfKey] ?? -999)
+      },
+      defaultSortOrder: tf === 'W' ? 'descend' : null,
+      render: (_, record) => {
+        const tfKey = TF_KEY_MAP[tf]
+        return getStatusTag(record.relative_strength?.[tfKey])
+      },
+    })),
+  ]
 
   return (
-    <div className="page sector-performance">
-      <div className="page-header">
-        <h2>Indices & Sector Performance</h2>
-        <p className="page-desc">Relative strength of indices & sectors vs NIFTY 50</p>
-      </div>
+    <div>
+      {/* Page Header */}
+      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+        <Col>
+          <Space align="center">
+            <FundOutlined style={{ fontSize: 28, color: '#1890ff' }} />
+            <div>
+              <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
+                Sector Performance
+              </Title>
+              <Text type="secondary">
+                All sectors categorized by type vs NIFTY 50
+                {data?.sectors && (
+                  <Tag color="blue" style={{ marginLeft: 8 }}>{data.sectors.length} sectors</Tag>
+                )}
+              </Text>
+            </div>
+          </Space>
+        </Col>
+      </Row>
 
-      <Filters
-        showIndexGroup={true}
-        indexGroup={indexGroup}
-        onIndexGroupChange={setIndexGroup}
-        timeframe={timeframe}
-        onTimeframeChange={setTimeframe}
-        lookback={lookback}
-        onLookbackChange={setLookback}
-        onRefresh={fetchData}
-        loading={loading}
-      />
+      {/* Filters */}
+      <Card size="small" style={{ marginBottom: 24 }}>
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} sm={12} md={6}>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>CATEGORY</Text>
+              <Select
+                value={category}
+                onChange={setCategory}
+                options={CATEGORIES}
+                style={{ width: '100%' }}
+                size={screens.md ? 'middle' : 'large'}
+              />
+            </Space>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>LOOKBACK</Text>
+              <Space>
+                <InputNumber
+                  min={1}
+                  max={99}
+                  value={lookback}
+                  onChange={(val) => setLookback(val || 1)}
+                  style={{ width: 80 }}
+                  size={screens.md ? 'middle' : 'large'}
+                />
+                <Text type="secondary">periods</Text>
+              </Space>
+            </Space>
+          </Col>
+          <Col xs={24} sm={24} md={12}>
+            <div style={{ display: 'flex', justifyContent: screens.md ? 'flex-end' : 'flex-start', marginTop: screens.md ? 20 : 0 }}>
+              <Button
+                type="primary"
+                icon={<ReloadOutlined spin={loading} />}
+                onClick={fetchData}
+                loading={loading}
+                size={screens.md ? 'middle' : 'large'}
+              >
+                Refresh
+              </Button>
+            </div>
+          </Col>
+        </Row>
+      </Card>
 
+      {/* Error Alert */}
       {error && (
-        <div className="error-message">
-          <p>{error}</p>
-          <button onClick={fetchData}>Retry</button>
-        </div>
+        <Alert
+          message="Error"
+          description={error}
+          type="error"
+          showIcon
+          closable
+          style={{ marginBottom: 24 }}
+        />
       )}
 
-      {loading && <Loader message="Fetching indices & sector data..." />}
-
-      {!loading && !error && data && (
-        <>
-          <BenchmarkCard benchmark={data.benchmark} timeframe={timeframe} />
-
-          <div className="view-toggle">
-            <button 
-              className={viewMode === 'category' ? 'active' : ''}
-              onClick={() => setViewMode('category')}
-            >
-              Categorized
-            </button>
-            <button 
-              className={viewMode === 'ranked' ? 'active' : ''}
-              onClick={() => setViewMode('ranked')}
-            >
-              Ranked
-            </button>
+      {/* Loading State */}
+      {loading && (
+        <Card>
+          <div style={{ textAlign: 'center', padding: 60 }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>
+              <Text type="secondary">Loading sector performance...</Text>
+            </div>
           </div>
-
-          {viewMode === 'category' ? (
-            <CategoryView
-              outperforming={data.outperforming}
-              neutral={data.neutral}
-              underperforming={data.underperforming}
-              type="sector"
-              timeframe={timeframe}
-            />
-          ) : (
-            <DataTable 
-              data={data.sectors} 
-              type="sector" 
-              timeframe={timeframe}
-              showRank={true}
-            />
-          )}
-
-          <div className="last-updated">
-            Last updated: {new Date(data.timestamp).toLocaleString()}
-          </div>
-        </>
+        </Card>
       )}
 
-      {!loading && !error && !data && (
-        <div className="no-data">
-          Select filters and click Refresh to load data
-        </div>
+      {/* Empty State */}
+      {!loading && !error && (!data?.sectors || data.sectors.length === 0) && (
+        <Card>
+          <Empty description="No sector data available" />
+        </Card>
+      )}
+
+      {/* Data Table */}
+      {!loading && data?.sectors?.length > 0 && (
+        <Card bodyStyle={{ padding: screens.md ? 16 : 8 }}>
+          <Table
+            columns={columns}
+            dataSource={data.sectors.map(s => ({ ...s, key: s.symbol || s.name }))}
+            pagination={{ 
+              pageSize: 50,
+              showTotal: (total) => `Total ${total} sectors`,
+              size: 'small',
+            }}
+            scroll={{ x: 900 }}
+            size={screens.md ? 'middle' : 'small'}
+          />
+        </Card>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default SectorPerformance;
+export default SectorPerformance

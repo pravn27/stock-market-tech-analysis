@@ -1,427 +1,442 @@
 /**
- * Performance Overview Page - Unified Sortable Table
+ * Performance Overview Page - Ant Design Implementation
  * Shows all sectors across ALL timeframes in one sortable table
  */
 
-import { useState, useMemo } from 'react';
-import { getTopPerformers, getSectorStocks } from '../api/scanner';
-import Loader from '../components/Loader';
+import { useState, useMemo } from 'react'
+import { 
+  Card, Table, Select, InputNumber, Button, Space, Tag, Modal, 
+  Typography, Empty, Spin, Alert, Row, Col, Tooltip, Grid
+} from 'antd'
+import { 
+  ReloadOutlined, BarChartOutlined, ArrowUpOutlined, 
+  ArrowDownOutlined, MinusOutlined 
+} from '@ant-design/icons'
+import { getTopPerformers, getSectorStocks } from '../api/scanner'
 
-const TIMEFRAMES = ['3M', 'M', 'W', 'D', '4H', '1H'];
-const TF_KEY_MAP = { '3M': 'three_month', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': 'four_hour', '1H': 'one_hour' };
+const { Title, Text } = Typography
+const { useBreakpoint } = Grid
+
+const TIMEFRAMES = ['3M', 'M', 'W', 'D', '4H', '1H']
+const TF_KEY_MAP = { '3M': 'three_month', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': 'four_hour', '1H': 'one_hour' }
 
 const INDEX_GROUPS = [
   { value: 'all', label: 'All Indices' },
   { value: 'sectorial', label: 'Sectorial' },
   { value: 'broad_market', label: 'Broad Market' },
   { value: 'thematic', label: 'Thematic' }
-];
+]
+
+// Get status tag based on value
+const getStatusTag = (value) => {
+  if (value === null || value === undefined) return <Text type="secondary">-</Text>
+  
+  const color = value > 1 ? 'green' : value < -1 ? 'red' : 'default'
+  const sign = value > 0 ? '+' : ''
+  
+  return (
+    <Tag color={color} style={{ minWidth: 70, textAlign: 'center', fontFamily: 'monospace' }}>
+      {sign}{value.toFixed(2)}%
+    </Tag>
+  )
+}
+
+// Get status icon
+const getStatusIcon = (weeklyRs) => {
+  if (weeklyRs > 1) return <ArrowUpOutlined style={{ color: '#52c41a' }} />
+  if (weeklyRs < -1) return <ArrowDownOutlined style={{ color: '#ff4d4f' }} />
+  return <MinusOutlined style={{ color: '#999' }} />
+}
 
 const PerformanceOverview = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [data, setData] = useState(null);
-  const [lookback, setLookback] = useState(1);
-  const [indexGroup, setIndexGroup] = useState('all');
-
-  // Sorting state
-  const [sortColumn, setSortColumn] = useState('W');
-  const [sortDirection, setSortDirection] = useState('desc');
+  const screens = useBreakpoint()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [data, setData] = useState(null)
+  const [lookback, setLookback] = useState(1)
+  const [indexGroup, setIndexGroup] = useState('all')
 
   // Modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalSector, setModalSector] = useState(null);
-  const [stocksData, setStocksData] = useState(null);
-  const [stocksLoading, setStocksLoading] = useState(false);
-  const [modalSortColumn, setModalSortColumn] = useState('W');
-  const [modalSortDirection, setModalSortDirection] = useState('desc');
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalSector, setModalSector] = useState(null)
+  const [stocksData, setStocksData] = useState(null)
+  const [stocksLoading, setStocksLoading] = useState(false)
 
   const fetchData = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
-      // Fetch more data than limit to allow sorting across all
-      const result = await getTopPerformers(100, indexGroup, lookback);
-      setData(result);
+      const result = await getTopPerformers(100, indexGroup, lookback)
+      setData(result)
     } catch (err) {
-      // Handle FastAPI validation errors (422) which return array of error objects
-      const detail = err.response?.data?.detail;
-      let errorMsg = 'Failed to fetch data';
+      const detail = err.response?.data?.detail
+      let errorMsg = 'Failed to fetch data'
       if (typeof detail === 'string') {
-        errorMsg = detail;
+        errorMsg = detail
       } else if (Array.isArray(detail) && detail[0]?.msg) {
-        errorMsg = detail[0].msg;
+        errorMsg = detail[0].msg
       } else if (err.message) {
-        errorMsg = err.message;
+        errorMsg = err.message
       }
-      setError(errorMsg);
+      setError(errorMsg)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   // Build unified sector list from all categories
   const allSectors = useMemo(() => {
-    if (!data) return [];
+    if (!data || typeof data !== 'object') return []
 
-    const sectorsMap = new Map();
+    const sectorsMap = new Map()
+    const categories = ['outperforming', 'neutral', 'underperforming']
 
-    // Combine all categories
-    ['outperforming', 'neutral', 'underperforming'].forEach(category => {
-      if (!data[category]) return;
+    categories.forEach(category => {
+      const categoryData = data[category]
+      if (!categoryData || typeof categoryData !== 'object') return
 
       TIMEFRAMES.forEach(tf => {
-        const items = data[category][tf] || [];
+        const items = categoryData[tf]
+        if (!Array.isArray(items)) return
+        
         items.forEach(item => {
+          if (!item || !item.name) return
+          
           if (!sectorsMap.has(item.name)) {
             sectorsMap.set(item.name, {
+              key: item.name,
               name: item.name,
-              symbol: item.symbol,
+              symbol: item.symbol || '',
               values: {}
-            });
+            })
           }
-          sectorsMap.get(item.name).values[tf] = item.rs;
-        });
-      });
-    });
+          sectorsMap.get(item.name).values[tf] = item.rs
+        })
+      })
+    })
 
-    return Array.from(sectorsMap.values());
-  }, [data]);
-
-  // Sort sectors
-  const sortedSectors = useMemo(() => {
-    if (allSectors.length === 0) return [];
-
-    return [...allSectors].sort((a, b) => {
-      const aVal = a.values[sortColumn] ?? -999;
-      const bVal = b.values[sortColumn] ?? -999;
-
-      if (sortDirection === 'desc') {
-        return bVal - aVal;
-      }
-      return aVal - bVal;
-    });
-  }, [allSectors, sortColumn, sortDirection]);
-
-  // Handle column sort
-  const handleSort = (column) => {
-    if (sortColumn === column) {
-      setSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('desc');
-    }
-  };
+    return Array.from(sectorsMap.values())
+  }, [data])
 
   const openStocksModal = async (sectorName) => {
-    setModalSector(sectorName);
-    setModalOpen(true);
-    setStocksLoading(true);
-    setStocksData(null);
+    setModalSector(sectorName)
+    setModalOpen(true)
+    setStocksLoading(true)
+    setStocksData(null)
 
     try {
-      const result = await getSectorStocks(sectorName, 'weekly', lookback);
-      setStocksData(result);
+      const result = await getSectorStocks(sectorName, 'weekly', lookback)
+      setStocksData(result)
     } catch (err) {
-      console.error('Failed to fetch stocks:', err);
+      console.error('Failed to fetch stocks:', err)
     } finally {
-      setStocksLoading(false);
+      setStocksLoading(false)
     }
-  };
+  }
 
-  const closeModal = () => {
-    setModalOpen(false);
-    setModalSector(null);
-    setStocksData(null);
-    setModalSortColumn('W');
-    setModalSortDirection('desc');
-  };
+  // Main table columns
+  const columns = [
+    {
+      title: '#',
+      key: 'index',
+      width: 50,
+      align: 'center',
+      render: (_, __, index) => <Text type="secondary">{index + 1}</Text>,
+    },
+    {
+      title: 'Index / Sector',
+      dataIndex: 'name',
+      key: 'name',
+      fixed: screens.md ? false : 'left',
+      width: screens.md ? 220 : 150,
+      render: (name, record) => (
+        <Space>
+          {getStatusIcon(record.values?.['W'])}
+          <Text strong style={{ cursor: 'pointer' }} onClick={() => openStocksModal(name)}>
+            {name}
+          </Text>
+        </Space>
+      ),
+    },
+    ...TIMEFRAMES.map(tf => ({
+      title: tf,
+      key: tf,
+      align: 'center',
+      width: 90,
+      sorter: (a, b) => (a.values?.[tf] ?? -999) - (b.values?.[tf] ?? -999),
+      defaultSortOrder: tf === 'W' ? 'descend' : null,
+      render: (_, record) => getStatusTag(record.values?.[tf]),
+    })),
+  ]
 
-  // Handle modal column sort
-  const handleModalSort = (column) => {
-    if (modalSortColumn === column) {
-      setModalSortDirection(prev => prev === 'desc' ? 'asc' : 'desc');
-    } else {
-      setModalSortColumn(column);
-      setModalSortDirection('desc');
-    }
-  };
-
-  // Sort stocks in modal
-  const sortedStocks = useMemo(() => {
-    if (!stocksData?.stocks) return [];
-
-    const tfKey = TF_KEY_MAP[modalSortColumn];
-    
-    return [...stocksData.stocks].sort((a, b) => {
-      const aVal = a.relative_strength?.[tfKey] ?? -999;
-      const bVal = b.relative_strength?.[tfKey] ?? -999;
-
-      if (modalSortDirection === 'desc') {
-        return bVal - aVal;
-      }
-      return aVal - bVal;
-    });
-  }, [stocksData, modalSortColumn, modalSortDirection]);
-
-  // Render modal sort indicator
-  const renderModalSortIndicator = (column) => {
-    if (modalSortColumn !== column) {
-      return <span className="sort-icon inactive">↕</span>;
-    }
-    return <span className="sort-icon active">{modalSortDirection === 'desc' ? '↓' : '↑'}</span>;
-  };
-
-  // Get RS color based on value
-  const getRsColor = (value) => {
-    if (value === null || value === undefined) return 'neutral';
-    if (value > 3) return 'strong-positive';
-    if (value > 1) return 'positive';
-    if (value < -3) return 'strong-negative';
-    if (value < -1) return 'negative';
-    return 'neutral';
-  };
-
-  // Format RS value with 2 decimal places and % symbol
-  const formatRs = (value) => {
-    if (value === null || value === undefined) return '-';
-    const sign = value > 0 ? '+' : '';
-    return `${sign}${value.toFixed(2)}%`;
-  };
-
-  // Get status based on Weekly RS
-  const getStatus = (weeklyRs) => {
-    if (weeklyRs === null || weeklyRs === undefined) return 'neutral';
-    if (weeklyRs > 1) return 'outperforming';
-    if (weeklyRs < -1) return 'underperforming';
-    return 'neutral';
-  };
-
-  // Render sort indicator
-  const renderSortIndicator = (column) => {
-    if (sortColumn !== column) {
-      return <span className="sort-icon inactive">↕</span>;
-    }
-    return <span className="sort-icon active">{sortDirection === 'desc' ? '↓' : '↑'}</span>;
-  };
-
-  // Render stocks modal
-  const renderModal = () => {
-    if (!modalOpen) return null;
-
-    return (
-      <div className="modal-overlay" onClick={closeModal}>
-        <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <h3>📈 {modalSector} - {sortedStocks.length} Stocks</h3>
-            <span className="modal-sort-info">Sorted by {modalSortColumn} {modalSortDirection === 'desc' ? '↓' : '↑'}</span>
-            <button className="modal-close" onClick={closeModal}>✕</button>
-          </div>
-
-          <div className="modal-body">
-            {stocksLoading && (
-              <div className="modal-loading">Loading stocks...</div>
-            )}
-
-            {!stocksLoading && sortedStocks.length > 0 && (
-              <>
-                <div className="modal-table-wrapper">
-                  <table className="stocks-modal-table">
-                    <thead>
-                      <tr>
-                        <th className="rank-col">#</th>
-                        <th className="stock-col">Stock</th>
-                        {TIMEFRAMES.map(tf => (
-                          <th
-                            key={tf}
-                            className={`tf-col sortable ${modalSortColumn === tf ? 'sorted' : ''}`}
-                            onClick={() => handleModalSort(tf)}
-                          >
-                            {tf} {renderModalSortIndicator(tf)}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedStocks.map((stock, idx) => (
-                        <tr key={stock.symbol} className={`stock-row ${stock.status}`}>
-                          <td className="rank-cell">{idx + 1}</td>
-                          <td className="stock-cell">
-                            <span className={`stock-indicator ${stock.status}`}>
-                              {stock.status === 'outperforming' ? '🟢' :
-                                stock.status === 'underperforming' ? '🔴' : '⚪'}
-                            </span>
-                            <span className="stock-name">{stock.name}</span>
-                          </td>
-                          {TIMEFRAMES.map(tf => {
-                            const tfKey = TF_KEY_MAP[tf];
-                            const rs = stock.relative_strength?.[tfKey];
-                            return (
-                              <td
-                                key={tf}
-                                className={`rs-cell ${getRsColor(rs)} ${modalSortColumn === tf ? 'sorted-col' : ''}`}
-                              >
-                                {formatRs(rs)}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="modal-legend">
-                  <span>🟢 Outperforming (RS &gt; 1%)</span>
-                  <span>⚪ Neutral</span>
-                  <span>🔴 Underperforming (RS &lt; -1%)</span>
-                </div>
-              </>
-            )}
-
-            {!stocksLoading && sortedStocks.length === 0 && (
-              <div className="modal-empty">No stocks data available for this sector</div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // Stocks modal columns
+  const stockColumns = [
+    {
+      title: '#',
+      key: 'index',
+      width: 50,
+      align: 'center',
+      render: (_, __, index) => <Text type="secondary">{index + 1}</Text>,
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'name',
+      key: 'name',
+      width: 180,
+      render: (name, record) => (
+        <Space>
+          {getStatusIcon(record.relative_strength?.weekly)}
+          <Text strong>{name}</Text>
+        </Space>
+      ),
+    },
+    ...TIMEFRAMES.map(tf => ({
+      title: tf,
+      key: tf,
+      align: 'center',
+      width: 85,
+      sorter: (a, b) => {
+        const tfKey = TF_KEY_MAP[tf]
+        return (a.relative_strength?.[tfKey] ?? -999) - (b.relative_strength?.[tfKey] ?? -999)
+      },
+      defaultSortOrder: tf === 'W' ? 'descend' : null,
+      render: (_, record) => {
+        const tfKey = TF_KEY_MAP[tf]
+        return getStatusTag(record.relative_strength?.[tfKey])
+      },
+    })),
+  ]
 
   return (
-    <div className="perf-overview">
-      {/* Header */}
-      <div className="perf-overview-header">
-        <div className="perf-overview-title">
-          <h2>📊 Performance Overview</h2>
-          <p>
-            {INDEX_GROUPS.find(g => g.value === indexGroup)?.label || 'All'} vs NIFTY 50 • {sortedSectors.length} indices • Sorted by {sortColumn} {sortDirection === 'desc' ? '↓' : '↑'}
-            {data && <span className="lookback-badge">Lookback: {data.lookback || lookback}</span>}
-          </p>
-        </div>
-      </div>
+    <div>
+      {/* Page Header */}
+      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+        <Col>
+          <Space align="center">
+            <BarChartOutlined style={{ fontSize: 28, color: '#1890ff' }} />
+            <div>
+              <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
+                Performance Overview
+              </Title>
+              <Text type="secondary">
+                {INDEX_GROUPS.find(g => g.value === indexGroup)?.label || 'All'} vs NIFTY 50
+                {data && (
+                  <Tag color="blue" style={{ marginLeft: 8 }}>
+                    Lookback: {data.lookback || lookback}
+                  </Tag>
+                )}
+              </Text>
+            </div>
+          </Space>
+        </Col>
+      </Row>
 
-      {/* Controls */}
-      <div className="perf-overview-controls">
-        <div className="control-group">
-          <label>Index Group</label>
-          <select
-            value={indexGroup}
-            onChange={(e) => setIndexGroup(e.target.value)}
-          >
-            {INDEX_GROUPS.map(g => (
-              <option key={g.value} value={g.value}>{g.label}</option>
-            ))}
-          </select>
-        </div>
+      {/* Filters */}
+      <Card size="small" style={{ marginBottom: 24 }}>
+        <Row gutter={[16, 16]} align="middle">
+          <Col xs={24} sm={12} md={6}>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>INDEX GROUP</Text>
+              <Select
+                value={indexGroup}
+                onChange={setIndexGroup}
+                options={INDEX_GROUPS}
+                style={{ width: '100%' }}
+                size={screens.md ? 'middle' : 'large'}
+              />
+            </Space>
+          </Col>
+          <Col xs={24} sm={12} md={6}>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>LOOKBACK</Text>
+              <Space>
+                <InputNumber
+                  min={1}
+                  max={99}
+                  value={lookback}
+                  onChange={(val) => setLookback(val || 1)}
+                  style={{ width: 80 }}
+                  size={screens.md ? 'middle' : 'large'}
+                />
+                <Text type="secondary">periods</Text>
+              </Space>
+            </Space>
+          </Col>
+          <Col xs={24} sm={24} md={12}>
+            <div style={{ display: 'flex', justifyContent: screens.md ? 'flex-end' : 'flex-start', marginTop: screens.md ? 20 : 0 }}>
+              <Button
+                type="primary"
+                icon={<ReloadOutlined spin={loading} />}
+                onClick={fetchData}
+                loading={loading}
+                size={screens.md ? 'middle' : 'large'}
+                style={{ minWidth: 120 }}
+              >
+                {loading ? 'Loading...' : 'Refresh'}
+              </Button>
+            </div>
+          </Col>
+        </Row>
+      </Card>
 
-        <div className="control-group">
-          <label>Lookback</label>
-          <input
-            type="number"
-            min="1"
-            max="99"
-            value={lookback}
-            onChange={(e) => setLookback(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))}
-            title="Compare current vs N periods back"
-          />
-          <span className="lookback-hint">periods</span>
-        </div>
-
-        <button className="refresh-btn" onClick={fetchData} disabled={loading}>
-          {loading ? 'Loading...' : '↻ Refresh'}
-        </button>
-      </div>
-
-      {/* Error */}
+      {/* Error Alert */}
       {error && (
-        <div className="perf-error">
-          <span>{error}</span>
-          <button onClick={fetchData}>Retry</button>
-        </div>
+        <Alert
+          message="Error"
+          description={error}
+          type="error"
+          showIcon
+          closable
+          style={{ marginBottom: 24 }}
+          action={
+            <Button size="small" onClick={fetchData}>
+              Retry
+            </Button>
+          }
+        />
       )}
 
-      {/* Loading */}
-      {loading && <Loader message="Loading all timeframes..." />}
+      {/* Loading State */}
+      {loading && (
+        <Card>
+          <div style={{ textAlign: 'center', padding: 60 }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>
+              <Text type="secondary">Loading all timeframes...</Text>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Empty State */}
       {!loading && !error && !data && (
-        <div className="perf-empty">
-          <div className="perf-empty-icon">📊</div>
-          <p>Click <strong>Refresh</strong> to load sector performance</p>
-        </div>
+        <Card>
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              <Space direction="vertical" size={4}>
+                <Text>No data loaded</Text>
+                <Text type="secondary">Click Refresh to load sector performance across all timeframes</Text>
+              </Space>
+            }
+          >
+            <Button type="primary" onClick={fetchData}>
+              Load Data
+            </Button>
+          </Empty>
+        </Card>
       )}
 
-      {/* Unified Table */}
+      {/* Data Table */}
       {!loading && data && (
-        <div className="perf-overview-content">
-          <div className="perf-table-wrapper">
-            <table className="perf-table">
-              <thead>
-                <tr>
-                  <th className="rank-col">#</th>
-                  <th className="sector-col">Index / Sector</th>
-                  {TIMEFRAMES.map(tf => (
-                    <th
-                      key={tf}
-                      className={`tf-col sortable ${sortColumn === tf ? 'sorted' : ''}`}
-                      onClick={() => handleSort(tf)}
-                    >
-                      {tf} {renderSortIndicator(tf)}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {sortedSectors.map((row, idx) => {
-                  const status = getStatus(row.values['W']);
-                  return (
-                    <tr
-                      key={row.name}
-                      className={`perf-row ${status}`}
-                      onClick={() => openStocksModal(row.name)}
-                    >
-                      <td className="rank-cell">{idx + 1}</td>
-                      <td className="sector-cell">
-                        <span className={`status-dot ${status}`}>
-                          {status === 'outperforming' ? '🟢' :
-                            status === 'underperforming' ? '🔴' : '⚪'}
-                        </span>
-                        <span className="sector-name">{row.name}</span>
-                        <span className="sector-arrow">▶</span>
-                      </td>
-                      {TIMEFRAMES.map(tf => (
-                        <td
-                          key={tf}
-                          className={`rs-cell ${getRsColor(row.values[tf])} ${sortColumn === tf ? 'sorted-col' : ''}`}
-                        >
-                          {formatRs(row.values[tf])}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <>
+          <Card bodyStyle={{ padding: screens.md ? 16 : 8 }}>
+            <Table
+              columns={columns}
+              dataSource={allSectors}
+              pagination={false}
+              scroll={{ x: 800 }}
+              size={screens.md ? 'middle' : 'small'}
+              onRow={(record) => ({
+                onClick: () => openStocksModal(record.name),
+                style: { cursor: 'pointer' },
+              })}
+              rowClassName={(record) => {
+                const w = record.values?.['W']
+                if (w > 1) return 'ant-table-row-success'
+                if (w < -1) return 'ant-table-row-error'
+                return ''
+              }}
+            />
+          </Card>
 
-          <div className="perf-footer">
-            <div className="perf-legend">
-              <span>🟢 Outperforming (RS &gt; 1%)</span>
-              <span>⚪ Neutral (-1% to +1%)</span>
-              <span>🔴 Underperforming (RS &lt; -1%)</span>
+          {/* Legend */}
+          <Card size="small" style={{ marginTop: 16 }}>
+            <Row justify="center" gutter={[24, 8]}>
+              <Col>
+                <Space>
+                  <ArrowUpOutlined style={{ color: '#52c41a' }} />
+                  <Text>Outperforming (RS &gt; 1%)</Text>
+                </Space>
+              </Col>
+              <Col>
+                <Space>
+                  <MinusOutlined style={{ color: '#999' }} />
+                  <Text>Neutral (-1% to +1%)</Text>
+                </Space>
+              </Col>
+              <Col>
+                <Space>
+                  <ArrowDownOutlined style={{ color: '#ff4d4f' }} />
+                  <Text>Underperforming (RS &lt; -1%)</Text>
+                </Space>
+              </Col>
+            </Row>
+            <div style={{ textAlign: 'center', marginTop: 8 }}>
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                💡 Click any row to see top stocks • Click column headers to sort
+              </Text>
             </div>
-            <div className="perf-help">
-              💡 Click any row to see top stocks • Click column headers to sort
-            </div>
-          </div>
-        </div>
+          </Card>
+        </>
       )}
 
-      {/* Modal */}
-      {renderModal()}
-    </div>
-  );
-};
+      {/* Stocks Modal */}
+      <Modal
+        title={`📈 ${modalSector} - Stocks`}
+        open={modalOpen}
+        onCancel={() => setModalOpen(false)}
+        footer={null}
+        width={screens.md ? 1000 : '95%'}
+        centered
+      >
+        {stocksLoading && (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>
+              <Text type="secondary">Loading stocks...</Text>
+            </div>
+          </div>
+        )}
 
-export default PerformanceOverview;
+        {!stocksLoading && stocksData?.stocks?.length > 0 && (
+          <>
+            <Table
+              columns={stockColumns}
+              dataSource={stocksData.stocks.map(s => ({ ...s, key: s.symbol }))}
+              pagination={{ pageSize: 20, size: 'small' }}
+              scroll={{ x: 700 }}
+              size="small"
+            />
+            <Row justify="center" gutter={[16, 8]} style={{ marginTop: 16 }}>
+              <Col>
+                <Space>
+                  <ArrowUpOutlined style={{ color: '#52c41a' }} />
+                  <Text type="secondary">Outperforming</Text>
+                </Space>
+              </Col>
+              <Col>
+                <Space>
+                  <MinusOutlined style={{ color: '#999' }} />
+                  <Text type="secondary">Neutral</Text>
+                </Space>
+              </Col>
+              <Col>
+                <Space>
+                  <ArrowDownOutlined style={{ color: '#ff4d4f' }} />
+                  <Text type="secondary">Underperforming</Text>
+                </Space>
+              </Col>
+            </Row>
+          </>
+        )}
+
+        {!stocksLoading && (!stocksData?.stocks || stocksData.stocks.length === 0) && (
+          <Empty description="No stocks data available" />
+        )}
+      </Modal>
+    </div>
+  )
+}
+
+export default PerformanceOverview

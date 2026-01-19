@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ASTA Backend - Run the FastAPI server
+Stock Market TA Backend - Run the FastAPI server
 
 Usage:
     cd backend

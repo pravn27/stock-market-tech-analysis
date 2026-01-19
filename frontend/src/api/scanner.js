@@ -164,4 +164,9 @@ export const getRSIAnalysis = async (symbol) => {
   return response.data;
 };
 
+// Aliases for backward compatibility
+export const getNifty50Stocks = getNifty50Heavyweights;
+export const getBankNiftyStocks = getBankNiftyHeavyweights;
+export const getSectorList = getSectorsList;
+
 export default api;
