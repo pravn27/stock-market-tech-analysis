@@ -18,6 +18,60 @@ const FILTERS = [
   { value: 'wait', label: '⚪ Wait / No Trade' },
 ];
 
+// Nifty 50 + Popular stocks for autocomplete
+const STOCK_LIST = [
+  { symbol: 'RELIANCE', name: 'Reliance Industries' },
+  { symbol: 'TCS', name: 'Tata Consultancy Services' },
+  { symbol: 'HDFCBANK', name: 'HDFC Bank' },
+  { symbol: 'INFY', name: 'Infosys' },
+  { symbol: 'ICICIBANK', name: 'ICICI Bank' },
+  { symbol: 'HINDUNILVR', name: 'Hindustan Unilever' },
+  { symbol: 'SBIN', name: 'State Bank of India' },
+  { symbol: 'BHARTIARTL', name: 'Bharti Airtel' },
+  { symbol: 'ITC', name: 'ITC' },
+  { symbol: 'KOTAKBANK', name: 'Kotak Mahindra Bank' },
+  { symbol: 'LT', name: 'Larsen & Toubro' },
+  { symbol: 'AXISBANK', name: 'Axis Bank' },
+  { symbol: 'ASIANPAINT', name: 'Asian Paints' },
+  { symbol: 'MARUTI', name: 'Maruti Suzuki' },
+  { symbol: 'HCLTECH', name: 'HCL Technologies' },
+  { symbol: 'SUNPHARMA', name: 'Sun Pharmaceutical' },
+  { symbol: 'TITAN', name: 'Titan Company' },
+  { symbol: 'BAJFINANCE', name: 'Bajaj Finance' },
+  { symbol: 'WIPRO', name: 'Wipro' },
+  { symbol: 'ULTRACEMCO', name: 'UltraTech Cement' },
+  { symbol: 'ONGC', name: 'Oil & Natural Gas Corp' },
+  { symbol: 'NTPC', name: 'NTPC' },
+  { symbol: 'POWERGRID', name: 'Power Grid Corp' },
+  { symbol: 'TATAMOTORS', name: 'Tata Motors' },
+  { symbol: 'M&M', name: 'Mahindra & Mahindra' },
+  { symbol: 'JSWSTEEL', name: 'JSW Steel' },
+  { symbol: 'TATASTEEL', name: 'Tata Steel' },
+  { symbol: 'ADANIENT', name: 'Adani Enterprises' },
+  { symbol: 'ADANIPORTS', name: 'Adani Ports' },
+  { symbol: 'COALINDIA', name: 'Coal India' },
+  { symbol: 'BAJAJFINSV', name: 'Bajaj Finserv' },
+  { symbol: 'TECHM', name: 'Tech Mahindra' },
+  { symbol: 'INDUSINDBK', name: 'IndusInd Bank' },
+  { symbol: 'NESTLEIND', name: 'Nestle India' },
+  { symbol: 'DRREDDY', name: 'Dr Reddys Labs' },
+  { symbol: 'CIPLA', name: 'Cipla' },
+  { symbol: 'GRASIM', name: 'Grasim Industries' },
+  { symbol: 'DIVISLAB', name: 'Divis Laboratories' },
+  { symbol: 'BRITANNIA', name: 'Britannia Industries' },
+  { symbol: 'EICHERMOT', name: 'Eicher Motors' },
+  { symbol: 'APOLLOHOSP', name: 'Apollo Hospitals' },
+  { symbol: 'HINDALCO', name: 'Hindalco Industries' },
+  { symbol: 'SBILIFE', name: 'SBI Life Insurance' },
+  { symbol: 'BPCL', name: 'Bharat Petroleum' },
+  { symbol: 'TATACONSUM', name: 'Tata Consumer Products' },
+  { symbol: 'HEROMOTOCO', name: 'Hero MotoCorp' },
+  { symbol: 'BAJAJ-AUTO', name: 'Bajaj Auto' },
+  { symbol: 'HDFCLIFE', name: 'HDFC Life Insurance' },
+  { symbol: 'SHRIRAMFIN', name: 'Shriram Finance' },
+  { symbol: 'LTIM', name: 'LTIMindtree' },
+];
+
 const MTF_GROUPS = [
   { key: 'super_tide', name: 'Super TIDE', timeframes: ['monthly', 'weekly'] },
   { key: 'tide', name: 'TIDE', timeframes: ['daily', '4h'] },
@@ -40,8 +94,11 @@ const DowTheoryScanner = () => {
   const [data, setData] = useState(null);
   const [filter, setFilter] = useState('all');
   
-  // Single stock input
+  // Single stock input with autocomplete
   const [symbolInput, setSymbolInput] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   
   // View mode: 'scanner' or 'analysis'
   const [viewMode, setViewMode] = useState('scanner');
@@ -60,16 +117,63 @@ const DowTheoryScanner = () => {
     }
   };
 
+  const handleInputChange = (e) => {
+    const value = e.target.value.toUpperCase();
+    setSymbolInput(value);
+    setSelectedIndex(-1);
+    
+    if (value.length > 0) {
+      const filtered = STOCK_LIST.filter(
+        stock => 
+          stock.symbol.includes(value) || 
+          stock.name.toUpperCase().includes(value)
+      ).slice(0, 8); // Show max 8 suggestions
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const selectSuggestion = (symbol) => {
+    setSymbolInput(symbol);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    openStockAnalysis(symbol);
+  };
+
   const analyzeSymbol = () => {
     const symbol = symbolInput.trim().toUpperCase();
     if (symbol) {
+      setShowSuggestions(false);
       openStockAnalysis(symbol);
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      analyzeSymbol();
+  const handleKeyDown = (e) => {
+    if (!showSuggestions) {
+      if (e.key === 'Enter') {
+        analyzeSymbol();
+      }
+      return;
+    }
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => Math.max(prev - 1, -1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (selectedIndex >= 0 && suggestions[selectedIndex]) {
+        selectSuggestion(suggestions[selectedIndex].symbol);
+      } else {
+        analyzeSymbol();
+      }
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
     }
   };
 
@@ -81,6 +185,7 @@ const DowTheoryScanner = () => {
   const backToScanner = () => {
     setViewMode('scanner');
     setSelectedStock(null);
+    setSymbolInput('');
   };
 
   // Get color class for trend
@@ -138,40 +243,58 @@ const DowTheoryScanner = () => {
         {/* Single Stock Analysis */}
         <div className="control-group symbol-input-group">
           <label>Analyze Symbol</label>
-          <div className="symbol-input-wrapper">
-            <input
-              type="text"
-              value={symbolInput}
-              onChange={(e) => setSymbolInput(e.target.value.toUpperCase())}
-              onKeyPress={handleKeyPress}
-              placeholder="e.g. RELIANCE"
-              className="symbol-input"
-            />
-            <button 
-              className="analyze-btn" 
-              onClick={analyzeSymbol}
-              disabled={!symbolInput.trim()}
-            >
-              📊 Analyze
-            </button>
+          <div className="symbol-autocomplete">
+            <div className="symbol-input-wrapper">
+              <input
+                type="text"
+                value={symbolInput}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                onFocus={() => symbolInput && suggestions.length > 0 && setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                placeholder="Type symbol or name..."
+                className="symbol-input"
+                autoComplete="off"
+              />
+              <button 
+                className="analyze-btn" 
+                onClick={analyzeSymbol}
+                disabled={!symbolInput.trim()}
+              >
+                📊 Analyze
+              </button>
+            </div>
+            {showSuggestions && suggestions.length > 0 && (
+              <ul className="suggestions-list">
+                {suggestions.map((stock, index) => (
+                  <li 
+                    key={stock.symbol}
+                    className={`suggestion-item ${index === selectedIndex ? 'selected' : ''}`}
+                    onClick={() => selectSuggestion(stock.symbol)}
+                  >
+                    <span className="suggestion-symbol">{stock.symbol}</span>
+                    <span className="suggestion-name">{stock.name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
         <div className="controls-divider">OR</div>
 
         {/* Bulk Scan */}
-        <div className="control-group">
+        <div className="control-group bulk-scan-group">
           <label>Filter</label>
           <select value={filter} onChange={(e) => setFilter(e.target.value)}>
             {FILTERS.map(f => (
               <option key={f.value} value={f.value}>{f.label}</option>
             ))}
           </select>
+          <button className="refresh-btn" onClick={fetchData} disabled={loading}>
+            {loading ? 'Scanning...' : '🔍 Scan Nifty 50'}
+          </button>
         </div>
-
-        <button className="refresh-btn" onClick={fetchData} disabled={loading}>
-          {loading ? 'Scanning...' : '🔍 Scan Nifty 50'}
-        </button>
       </div>
 
       {/* Error */}

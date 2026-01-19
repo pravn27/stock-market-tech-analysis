@@ -1770,7 +1770,6 @@ body {
 }
 
 .dow-controls .refresh-btn {
-  margin-left: auto;
   padding: 0.6rem 1.5rem;
   background: var(--primary);
   color: white;
@@ -1791,31 +1790,36 @@ body {
   cursor: not-allowed;
 }
 
-/* Symbol Input */
+/* Symbol Input with Autocomplete */
 .symbol-input-group {
-  flex-direction: column !important;
-  align-items: flex-start !important;
+  flex: 0 0 auto;
+}
+
+.symbol-autocomplete {
+  position: relative;
 }
 
 .symbol-input-wrapper {
   display: flex;
   gap: 0.5rem;
+  align-items: center;
 }
 
 .symbol-input {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1rem;
   background: var(--bg-input);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text-primary);
   font-size: 0.9rem;
-  width: 150px;
+  width: 200px;
   text-transform: uppercase;
 }
 
 .symbol-input::placeholder {
   color: var(--text-muted);
   text-transform: none;
+  font-size: 0.85rem;
 }
 
 .symbol-input:focus {
@@ -1823,8 +1827,59 @@ body {
   border-color: var(--primary);
 }
 
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  width: 300px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-top: 4px;
+  z-index: 1000;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  list-style: none;
+  padding: 0;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid var(--border);
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item.selected {
+  background: var(--bg-input);
+}
+
+.suggestion-symbol {
+  font-weight: 700;
+  color: var(--positive);
+  min-width: 100px;
+}
+
+.suggestion-name {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .analyze-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.25rem;
   background: var(--positive);
   color: white;
   border: none;
@@ -1847,9 +1902,18 @@ body {
 
 .controls-divider {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
-  padding: 0 0.5rem;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.bulk-scan-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
 }
 
 /* Error & Empty */
