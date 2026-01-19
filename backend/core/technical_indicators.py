@@ -194,13 +194,14 @@ class TechnicalAnalyzer:
     """
     
     # Timeframe configurations
+    # Note: For RSI accuracy, we need sufficient historical data for proper convergence
     TIMEFRAMES = {
         'monthly': {'interval': '1mo', 'period': '5y', 'label': 'M', 'group': 'super_tide'},
         'weekly': {'interval': '1wk', 'period': '2y', 'label': 'W', 'group': 'super_tide'},
-        'daily': {'interval': '1d', 'period': '6mo', 'label': 'D', 'group': 'tide'},
-        '4h': {'interval': '1h', 'period': '60d', 'label': '4H', 'group': 'tide'},
-        '1h': {'interval': '1h', 'period': '30d', 'label': '1H', 'group': 'wave'},
-        '15m': {'interval': '15m', 'period': '7d', 'label': '15M', 'group': 'ripple'},
+        'daily': {'interval': '1d', 'period': '1y', 'label': 'D', 'group': 'tide'},
+        '4h': {'interval': '1h', 'period': '730d', 'label': '4H', 'group': 'tide'},  # Max for 1H data
+        '1h': {'interval': '1h', 'period': '60d', 'label': '1H', 'group': 'wave'},
+        '15m': {'interval': '15m', 'period': '60d', 'label': '15M', 'group': 'ripple'},
     }
     
     def __init__(self):
@@ -223,18 +224,54 @@ class TechnicalAnalyzer:
             return None
     
     def aggregate_to_4h(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Aggregate 1-hour data to 4-hour candles"""
+        """
+        Aggregate 1-hour data to 4-hour candles - TradingView style
+        
+        For Indian markets (NSE), TradingView creates 4H candles based on market sessions:
+        - Candle 1: 9:15-13:15 (first 4 hours of market)
+        - Candle 2: 13:15-close (remaining hours)
+        
+        This matches how TradingView displays 4H candles for Indian stocks.
+        """
         if df is None or df.empty:
             return None
         
-        df_4h = df.resample('4H').agg({
-            'Open': 'first',
-            'High': 'max',
-            'Low': 'min',
-            'Close': 'last',
-            'Volume': 'sum'
-        }).dropna()
+        result = []
+        df_copy = df.copy()
+        df_copy['date'] = df_copy.index.date
         
+        for date, group in df_copy.groupby('date'):
+            hours = group.index.hour
+            
+            # First 4H candle: 9:15-13:15 (hours 9, 10, 11, 12)
+            first_candle = group[(hours >= 9) & (hours < 13)]
+            if len(first_candle) >= 1:
+                result.append({
+                    'datetime': first_candle.index[0],
+                    'Open': first_candle['Open'].iloc[0],
+                    'High': first_candle['High'].max(),
+                    'Low': first_candle['Low'].min(),
+                    'Close': first_candle['Close'].iloc[-1],
+                    'Volume': first_candle['Volume'].sum()
+                })
+            
+            # Second 4H candle: 13:15-close (hours 13, 14, 15+)
+            second_candle = group[hours >= 13]
+            if len(second_candle) >= 1:
+                result.append({
+                    'datetime': second_candle.index[0],
+                    'Open': second_candle['Open'].iloc[0],
+                    'High': second_candle['High'].max(),
+                    'Low': second_candle['Low'].min(),
+                    'Close': second_candle['Close'].iloc[-1],
+                    'Volume': second_candle['Volume'].sum()
+                })
+        
+        if not result:
+            return None
+            
+        df_4h = pd.DataFrame(result)
+        df_4h.set_index('datetime', inplace=True)
         return df_4h
     
     def get_rsi_analysis(self, symbol: str) -> Dict:
