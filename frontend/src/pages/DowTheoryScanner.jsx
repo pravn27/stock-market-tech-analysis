@@ -1,7 +1,7 @@
 /**
- * Dow Theory Scanner Page
- * Multi-Timeframe Analysis: Super TIDE, TIDE, WAVE, RIPPLE
- * Shows "Where Do You Stand?" in the overall trend context
+ * Checklist Scanner Page
+ * PAPA + SMM Multi-Timeframe Analysis
+ * Dow Theory + Technical Indicators across Super TIDE, TIDE, WAVE, RIPPLE
  */
 
 import { useState, useEffect } from 'react';
@@ -112,8 +112,8 @@ const DowTheoryScanner = () => {
       {/* Header */}
       <div className="dow-header">
         <div className="dow-title">
-          <h2>📊 Dow Theory Scanner</h2>
-          <p>Multi-Timeframe Analysis: Where Do You Stand?</p>
+          <h2>📋 Checklist Scanner</h2>
+          <p>PAPA + SMM Multi-Timeframe Analysis</p>
         </div>
       </div>
 

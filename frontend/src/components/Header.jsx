@@ -20,7 +20,7 @@ const Header = ({ activePage, onPageChange }) => {
             className={`nav-btn ${activePage === 'dow-scanner' ? 'active' : ''}`}
             onClick={() => onPageChange('dow-scanner')}
           >
-            📊 Dow Theory
+            📋 Checklist Scanner
           </button>
           <button 
             className={`nav-btn ${activePage === 'global' ? 'active' : ''}`}
