@@ -40,6 +40,9 @@ const DowTheoryScanner = () => {
   const [data, setData] = useState(null);
   const [filter, setFilter] = useState('all');
   
+  // Single stock input
+  const [symbolInput, setSymbolInput] = useState('');
+  
   // View mode: 'scanner' or 'analysis'
   const [viewMode, setViewMode] = useState('scanner');
   const [selectedStock, setSelectedStock] = useState(null);
@@ -54,6 +57,19 @@ const DowTheoryScanner = () => {
       setError(err.response?.data?.detail || err.message || 'Failed to fetch data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const analyzeSymbol = () => {
+    const symbol = symbolInput.trim().toUpperCase();
+    if (symbol) {
+      openStockAnalysis(symbol);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      analyzeSymbol();
     }
   };
 
@@ -119,6 +135,31 @@ const DowTheoryScanner = () => {
 
       {/* Controls */}
       <div className="dow-controls">
+        {/* Single Stock Analysis */}
+        <div className="control-group symbol-input-group">
+          <label>Analyze Symbol</label>
+          <div className="symbol-input-wrapper">
+            <input
+              type="text"
+              value={symbolInput}
+              onChange={(e) => setSymbolInput(e.target.value.toUpperCase())}
+              onKeyPress={handleKeyPress}
+              placeholder="e.g. RELIANCE"
+              className="symbol-input"
+            />
+            <button 
+              className="analyze-btn" 
+              onClick={analyzeSymbol}
+              disabled={!symbolInput.trim()}
+            >
+              📊 Analyze
+            </button>
+          </div>
+        </div>
+
+        <div className="controls-divider">OR</div>
+
+        {/* Bulk Scan */}
         <div className="control-group">
           <label>Filter</label>
           <select value={filter} onChange={(e) => setFilter(e.target.value)}>

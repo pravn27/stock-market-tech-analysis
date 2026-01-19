@@ -1791,6 +1791,67 @@ body {
   cursor: not-allowed;
 }
 
+/* Symbol Input */
+.symbol-input-group {
+  flex-direction: column !important;
+  align-items: flex-start !important;
+}
+
+.symbol-input-wrapper {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.symbol-input {
+  padding: 0.5rem 1rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  width: 150px;
+  text-transform: uppercase;
+}
+
+.symbol-input::placeholder {
+  color: var(--text-muted);
+  text-transform: none;
+}
+
+.symbol-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.analyze-btn {
+  padding: 0.5rem 1rem;
+  background: var(--positive);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.analyze-btn:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.analyze-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.controls-divider {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0 0.5rem;
+}
+
 /* Error & Empty */
 .dow-error {
   display: flex;
