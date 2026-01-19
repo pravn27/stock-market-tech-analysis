@@ -228,6 +228,9 @@ class TechnicalAnalyzer:
         Append current incomplete period (week/month) to match TradingView's live RSI.
         Yahoo Finance only returns completed candles, but TradingView shows RSI 
         including the current incomplete candle.
+        
+        Weekly candles: Start from Monday (like TradingView)
+        Monthly candles: Start from 1st of month
         """
         if df is None or df.empty:
             return df
@@ -237,28 +240,58 @@ class TechnicalAnalyzer:
             ticker = yf.Ticker(yf_symbol)
             
             if interval == '1wk':
-                # Get daily data for current week
-                daily_df = ticker.history(period='7d', interval='1d')
+                # Get daily data for the last 2 weeks to ensure we capture current week
+                daily_df = ticker.history(period='14d', interval='1d')
                 if daily_df.empty:
                     return df
                 
-                # Get the last completed week's end date
-                last_week_end = df.index[-1]
+                # Find current week's Monday
+                # TradingView weekly candles start on Monday
+                from datetime import datetime, timedelta
+                import pytz
                 
-                # Filter daily data after the last completed week
-                current_week_data = daily_df[daily_df.index > last_week_end]
+                # Get today's date in IST
+                ist = pytz.timezone('Asia/Kolkata')
+                today = datetime.now(ist).date()
+                
+                # Find this week's Monday (weekday() returns 0 for Monday)
+                days_since_monday = today.weekday()
+                current_week_monday = today - timedelta(days=days_since_monday)
+                
+                # Convert daily_df index to dates for comparison
+                daily_df_dates = daily_df.index.tz_convert('Asia/Kolkata').date if daily_df.index.tz else daily_df.index.date
+                
+                # Filter daily data from this week's Monday onwards
+                current_week_mask = [d >= current_week_monday for d in daily_df_dates]
+                current_week_data = daily_df[current_week_mask]
                 
                 if len(current_week_data) > 0:
-                    # Create current week's candle
-                    current_candle = pd.DataFrame({
-                        'Open': [current_week_data['Open'].iloc[0]],
-                        'High': [current_week_data['High'].max()],
-                        'Low': [current_week_data['Low'].min()],
-                        'Close': [current_week_data['Close'].iloc[-1]],
-                        'Volume': [current_week_data['Volume'].sum()]
-                    }, index=[current_week_data.index[-1]])
+                    # Check if the last weekly candle in df already includes this week
+                    last_weekly_date = df.index[-1]
+                    if hasattr(last_weekly_date, 'tz_convert'):
+                        last_weekly_date = last_weekly_date.tz_convert('Asia/Kolkata')
+                    last_weekly_monday = last_weekly_date.date() - timedelta(days=last_weekly_date.weekday())
                     
-                    df = pd.concat([df, current_candle])
+                    # Only append if this is a new week not in the existing data
+                    if current_week_monday > last_weekly_monday:
+                        # Create current week's candle (Monday-based)
+                        current_candle = pd.DataFrame({
+                            'Open': [current_week_data['Open'].iloc[0]],
+                            'High': [current_week_data['High'].max()],
+                            'Low': [current_week_data['Low'].min()],
+                            'Close': [current_week_data['Close'].iloc[-1]],
+                            'Volume': [current_week_data['Volume'].sum()]
+                        }, index=[current_week_data.index[-1]])
+                        
+                        df = pd.concat([df, current_candle])
+                    else:
+                        # Update the last candle with current week's data
+                        # This handles the case where Yahoo's week boundary differs from Monday
+                        all_this_week = daily_df[[d >= last_weekly_monday for d in daily_df_dates]]
+                        if len(all_this_week) > 0:
+                            df.iloc[-1, df.columns.get_loc('High')] = max(df.iloc[-1]['High'], all_this_week['High'].max())
+                            df.iloc[-1, df.columns.get_loc('Low')] = min(df.iloc[-1]['Low'], all_this_week['Low'].min())
+                            df.iloc[-1, df.columns.get_loc('Close')] = all_this_week['Close'].iloc[-1]
             
             elif interval == '1mo':
                 # Get daily data for current month
@@ -266,23 +299,44 @@ class TechnicalAnalyzer:
                 if daily_df.empty:
                     return df
                 
-                # Get the last completed month's end date
-                last_month_end = df.index[-1]
+                from datetime import datetime
+                import pytz
                 
-                # Filter daily data after the last completed month
-                current_month_data = daily_df[daily_df.index > last_month_end]
+                # Get current month's first day
+                ist = pytz.timezone('Asia/Kolkata')
+                today = datetime.now(ist).date()
+                current_month_start = today.replace(day=1)
+                
+                # Convert daily_df index to dates
+                daily_df_dates = daily_df.index.tz_convert('Asia/Kolkata').date if daily_df.index.tz else daily_df.index.date
+                
+                # Filter daily data from this month
+                current_month_mask = [d >= current_month_start for d in daily_df_dates]
+                current_month_data = daily_df[current_month_mask]
                 
                 if len(current_month_data) > 0:
-                    # Create current month's candle
-                    current_candle = pd.DataFrame({
-                        'Open': [current_month_data['Open'].iloc[0]],
-                        'High': [current_month_data['High'].max()],
-                        'Low': [current_month_data['Low'].min()],
-                        'Close': [current_month_data['Close'].iloc[-1]],
-                        'Volume': [current_month_data['Volume'].sum()]
-                    }, index=[current_month_data.index[-1]])
+                    # Check if last monthly candle already includes this month
+                    last_monthly_date = df.index[-1]
+                    if hasattr(last_monthly_date, 'tz_convert'):
+                        last_monthly_date = last_monthly_date.tz_convert('Asia/Kolkata')
+                    last_month_start = last_monthly_date.date().replace(day=1)
                     
-                    df = pd.concat([df, current_candle])
+                    if current_month_start > last_month_start:
+                        # Create new month's candle
+                        current_candle = pd.DataFrame({
+                            'Open': [current_month_data['Open'].iloc[0]],
+                            'High': [current_month_data['High'].max()],
+                            'Low': [current_month_data['Low'].min()],
+                            'Close': [current_month_data['Close'].iloc[-1]],
+                            'Volume': [current_month_data['Volume'].sum()]
+                        }, index=[current_month_data.index[-1]])
+                        
+                        df = pd.concat([df, current_candle])
+                    else:
+                        # Update last candle with current month's latest data
+                        df.iloc[-1, df.columns.get_loc('High')] = max(df.iloc[-1]['High'], current_month_data['High'].max())
+                        df.iloc[-1, df.columns.get_loc('Low')] = min(df.iloc[-1]['Low'], current_month_data['Low'].min())
+                        df.iloc[-1, df.columns.get_loc('Close')] = current_month_data['Close'].iloc[-1]
             
             return df
         except Exception as e:
