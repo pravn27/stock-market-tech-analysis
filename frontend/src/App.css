@@ -2655,16 +2655,85 @@ body {
   color: var(--text-muted);
 }
 
-/* Tooltip styles for indicator cells */
+/* Custom Tooltip styles for indicator cells */
 .indicator-cell.has-tooltip {
   cursor: help;
   position: relative;
 }
 
 .indicator-cell.has-tooltip:hover {
-  opacity: 0.9;
-  transform: scale(1.02);
-  transition: all 0.15s ease;
+  opacity: 0.95;
+  z-index: 100;
+}
+
+.custom-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  min-width: 180px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  margin-bottom: 8px;
+}
+
+.custom-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: var(--border);
+}
+
+.indicator-cell.has-tooltip:hover .custom-tooltip {
+  display: block;
+  animation: tooltipFadeIn 0.15s ease;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.2rem 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.tooltip-row span:first-child {
+  color: var(--text-muted);
+}
+
+.tooltip-row span:last-child {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tooltip-action {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-align: center;
 }
 
 /* Trend Color Classes */

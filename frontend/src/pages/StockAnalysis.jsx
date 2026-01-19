@@ -345,64 +345,88 @@ ${description}`;
             <tr>
               <td className="item-label">MACD (12,26,9)</td>
               {/* Super TIDE */}
-              <td 
-                className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.monthly?.color)}`}
-                title={formatMacdDisplay(macdData?.timeframes?.monthly).tooltip}
-              >
+              <td className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.monthly?.color)}`}>
                 <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.monthly?.signal)}</span>
                 <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.monthly).signal}</span>
+                <div className="custom-tooltip">
+                  <div className="tooltip-row"><span>MACD:</span><span>{macdData?.timeframes?.monthly?.macd_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Signal:</span><span>{macdData?.timeframes?.monthly?.signal_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Zone:</span><span>{macdData?.timeframes?.monthly?.zone || '-'}</span></div>
+                  <div className="tooltip-action">{macdData?.timeframes?.monthly?.action || '-'}</div>
+                </div>
               </td>
-              <td 
-                className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.weekly?.color)}`}
-                title={formatMacdDisplay(macdData?.timeframes?.weekly).tooltip}
-              >
+              <td className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.weekly?.color)}`}>
                 <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.weekly?.signal)}</span>
                 <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.weekly).signal}</span>
+                <div className="custom-tooltip">
+                  <div className="tooltip-row"><span>MACD:</span><span>{macdData?.timeframes?.weekly?.macd_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Signal:</span><span>{macdData?.timeframes?.weekly?.signal_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Zone:</span><span>{macdData?.timeframes?.weekly?.zone || '-'}</span></div>
+                  <div className="tooltip-action">{macdData?.timeframes?.weekly?.action || '-'}</div>
+                </div>
               </td>
               {/* TIDE */}
-              <td 
-                className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.daily?.color)}`}
-                title={formatMacdDisplay(macdData?.timeframes?.daily).tooltip}
-              >
+              <td className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.daily?.color)}`}>
                 <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.daily?.signal)}</span>
                 <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.daily).signal}</span>
+                <div className="custom-tooltip">
+                  <div className="tooltip-row"><span>MACD:</span><span>{macdData?.timeframes?.daily?.macd_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Signal:</span><span>{macdData?.timeframes?.daily?.signal_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Zone:</span><span>{macdData?.timeframes?.daily?.zone || '-'}</span></div>
+                  <div className="tooltip-action">{macdData?.timeframes?.daily?.action || '-'}</div>
+                </div>
               </td>
-              <td 
-                className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.['4h']?.color)}`}
-                title={formatMacdDisplay(macdData?.timeframes?.['4h']).tooltip}
-              >
+              <td className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.['4h']?.color)}`}>
                 <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.['4h']?.signal)}</span>
                 <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.['4h']).signal}</span>
+                <div className="custom-tooltip">
+                  <div className="tooltip-row"><span>MACD:</span><span>{macdData?.timeframes?.['4h']?.macd_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Signal:</span><span>{macdData?.timeframes?.['4h']?.signal_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Zone:</span><span>{macdData?.timeframes?.['4h']?.zone || '-'}</span></div>
+                  <div className="tooltip-action">{macdData?.timeframes?.['4h']?.action || '-'}</div>
+                </div>
               </td>
               {/* WAVE */}
-              <td 
-                className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.['4h']?.color)}`}
-                title={formatMacdDisplay(macdData?.timeframes?.['4h']).tooltip}
-              >
+              <td className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.['4h']?.color)}`}>
                 <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.['4h']?.signal)}</span>
                 <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.['4h']).signal}</span>
+                <div className="custom-tooltip">
+                  <div className="tooltip-row"><span>MACD:</span><span>{macdData?.timeframes?.['4h']?.macd_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Signal:</span><span>{macdData?.timeframes?.['4h']?.signal_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Zone:</span><span>{macdData?.timeframes?.['4h']?.zone || '-'}</span></div>
+                  <div className="tooltip-action">{macdData?.timeframes?.['4h']?.action || '-'}</div>
+                </div>
               </td>
-              <td 
-                className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.['1h']?.color)}`}
-                title={formatMacdDisplay(macdData?.timeframes?.['1h']).tooltip}
-              >
+              <td className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.['1h']?.color)}`}>
                 <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.['1h']?.signal)}</span>
                 <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.['1h']).signal}</span>
+                <div className="custom-tooltip">
+                  <div className="tooltip-row"><span>MACD:</span><span>{macdData?.timeframes?.['1h']?.macd_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Signal:</span><span>{macdData?.timeframes?.['1h']?.signal_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Zone:</span><span>{macdData?.timeframes?.['1h']?.zone || '-'}</span></div>
+                  <div className="tooltip-action">{macdData?.timeframes?.['1h']?.action || '-'}</div>
+                </div>
               </td>
               {/* RIPPLE */}
-              <td 
-                className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.['1h']?.color)}`}
-                title={formatMacdDisplay(macdData?.timeframes?.['1h']).tooltip}
-              >
+              <td className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.['1h']?.color)}`}>
                 <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.['1h']?.signal)}</span>
                 <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.['1h']).signal}</span>
+                <div className="custom-tooltip">
+                  <div className="tooltip-row"><span>MACD:</span><span>{macdData?.timeframes?.['1h']?.macd_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Signal:</span><span>{macdData?.timeframes?.['1h']?.signal_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Zone:</span><span>{macdData?.timeframes?.['1h']?.zone || '-'}</span></div>
+                  <div className="tooltip-action">{macdData?.timeframes?.['1h']?.action || '-'}</div>
+                </div>
               </td>
-              <td 
-                className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.['15m']?.color)}`}
-                title={formatMacdDisplay(macdData?.timeframes?.['15m']).tooltip}
-              >
+              <td className={`indicator-cell has-tooltip ${getMacdColorClass(macdData?.timeframes?.['15m']?.color)}`}>
                 <span className="cell-emoji">{getMacdEmoji(macdData?.timeframes?.['15m']?.signal)}</span>
                 <span className="cell-value">{formatMacdDisplay(macdData?.timeframes?.['15m']).signal}</span>
+                <div className="custom-tooltip">
+                  <div className="tooltip-row"><span>MACD:</span><span>{macdData?.timeframes?.['15m']?.macd_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Signal:</span><span>{macdData?.timeframes?.['15m']?.signal_value?.toFixed(2) || '-'}</span></div>
+                  <div className="tooltip-row"><span>Zone:</span><span>{macdData?.timeframes?.['15m']?.zone || '-'}</span></div>
+                  <div className="tooltip-action">{macdData?.timeframes?.['15m']?.action || '-'}</div>
+                </div>
               </td>
             </tr>
             <tr className="future-indicator">
