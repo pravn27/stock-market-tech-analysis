@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { scanDowTheory, getDowTheoryAnalysis } from '../api/scanner';
 import Loader from '../components/Loader';
+import StockAnalysis from './StockAnalysis';
 
 const FILTERS = [
   { value: 'all', label: 'All Stocks' },
@@ -39,10 +40,9 @@ const DowTheoryScanner = () => {
   const [data, setData] = useState(null);
   const [filter, setFilter] = useState('all');
   
-  // Single stock detail modal
+  // View mode: 'scanner' or 'analysis'
+  const [viewMode, setViewMode] = useState('scanner');
   const [selectedStock, setSelectedStock] = useState(null);
-  const [stockDetail, setStockDetail] = useState(null);
-  const [detailLoading, setDetailLoading] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -57,24 +57,14 @@ const DowTheoryScanner = () => {
     }
   };
 
-  const openStockDetail = async (symbol) => {
+  const openStockAnalysis = (symbol) => {
     setSelectedStock(symbol);
-    setDetailLoading(true);
-    setStockDetail(null);
-    
-    try {
-      const result = await getDowTheoryAnalysis(symbol);
-      setStockDetail(result);
-    } catch (err) {
-      console.error('Failed to fetch stock detail:', err);
-    } finally {
-      setDetailLoading(false);
-    }
+    setViewMode('analysis');
   };
 
-  const closeStockDetail = () => {
+  const backToScanner = () => {
+    setViewMode('scanner');
     setSelectedStock(null);
-    setStockDetail(null);
   };
 
   // Get color class for trend
@@ -111,93 +101,12 @@ const DowTheoryScanner = () => {
     return `${high}/${low}`;
   };
 
-  // Render single stock detail modal
-  const renderDetailModal = () => {
-    if (!selectedStock) return null;
+  // If viewing stock analysis page
+  if (viewMode === 'analysis' && selectedStock) {
+    return <StockAnalysis symbol={selectedStock} onBack={backToScanner} />;
+  }
 
-    return (
-      <div className="modal-overlay" onClick={closeStockDetail}>
-        <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <h3>📈 {selectedStock} - Dow Theory Analysis</h3>
-            <button className="modal-close" onClick={closeStockDetail}>✕</button>
-          </div>
-
-          <div className="modal-body">
-            {detailLoading && (
-              <div className="modal-loading">Analyzing timeframes...</div>
-            )}
-
-            {!detailLoading && stockDetail && (
-              <div className="dow-detail">
-                {/* MTF Groups Summary */}
-                <div className="dow-mtf-summary">
-                  {MTF_GROUPS.map(group => {
-                    const groupData = stockDetail.mtf_groups?.[group.key];
-                    if (!groupData) return null;
-                    
-                    return (
-                      <div key={group.key} className={`mtf-group-card ${getTrendColor(groupData.color)}`}>
-                        <div className="mtf-group-name">{groupData.name}</div>
-                        <div className="mtf-group-trend">{groupData.trend}</div>
-                        <div className="mtf-group-purpose">{groupData.purpose}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Opportunity */}
-                {stockDetail.opportunity && (
-                  <div className={`dow-opportunity ${getTrendColor(stockDetail.opportunity.color)}`}>
-                    <div className="opp-type">{stockDetail.opportunity.type}</div>
-                    <div className="opp-strategy">Strategy: {stockDetail.opportunity.strategy}</div>
-                    <div className="opp-desc">{stockDetail.opportunity.description}</div>
-                  </div>
-                )}
-
-                {/* Timeframe Details Table */}
-                <div className="dow-tf-table">
-                  <h4>Timeframe Breakdown</h4>
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Timeframe</th>
-                        <th>Trend</th>
-                        <th>Confidence</th>
-                        <th>Swing Highs</th>
-                        <th>Swing Lows</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(stockDetail.timeframes || {}).map(([key, tf]) => (
-                        <tr key={key} className={getTrendColor(tf.color)}>
-                          <td className="tf-label">{tf.label}</td>
-                          <td className="tf-trend">
-                            {getTrendEmoji(tf.trend)} {tf.trend}
-                          </td>
-                          <td className="tf-confidence">{tf.confidence}%</td>
-                          <td className="tf-swings">{tf.swings?.highs?.join(' → ') || '-'}</td>
-                          <td className="tf-swings">{tf.swings?.lows?.join(' → ') || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Legend */}
-                <div className="dow-legend">
-                  <span>🟢 HH-HL = Uptrend</span>
-                  <span>🔴 LL-LH = Downtrend</span>
-                  <span>🟡 HLs-LHs = Sideways</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
+  // Scanner view
   return (
     <div className="dow-scanner">
       {/* Header */}
@@ -273,7 +182,7 @@ const DowTheoryScanner = () => {
                     <tr 
                       key={stock.symbol} 
                       className="dow-row"
-                      onClick={() => openStockDetail(stock.symbol)}
+                      onClick={() => openStockAnalysis(stock.symbol)}
                     >
                       <td className="stock-cell">
                         <span className="stock-rank">{idx + 1}</span>
@@ -347,8 +256,6 @@ const DowTheoryScanner = () => {
         </div>
       )}
 
-      {/* Detail Modal */}
-      {renderDetailModal()}
     </div>
   );
 };

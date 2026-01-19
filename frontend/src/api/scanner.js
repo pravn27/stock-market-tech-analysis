@@ -145,4 +145,23 @@ export const getDowTheorySummary = async () => {
   return response.data;
 };
 
+/**
+ * Get FULL stock analysis (PAPA + SMM Checklist)
+ * Includes Dow Theory + RSI + future indicators
+ * @param {string} symbol - Stock symbol
+ */
+export const getStockAnalysis = async (symbol) => {
+  const response = await api.get(`/scanner/stock/${symbol}/analysis`);
+  return response.data;
+};
+
+/**
+ * Get RSI analysis for a stock
+ * @param {string} symbol - Stock symbol
+ */
+export const getRSIAnalysis = async (symbol) => {
+  const response = await api.get(`/scanner/rsi/${symbol}`);
+  return response.data;
+};
+
 export default api;

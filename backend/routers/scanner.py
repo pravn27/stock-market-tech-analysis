@@ -5,6 +5,7 @@ Scanner Router - Dow Theory and Technical Analysis Scanners
 from fastapi import APIRouter, Query, HTTPException
 from typing import List, Optional
 from core.dow_theory import DowTheoryAnalyzer, DowTheoryScanner
+from core.technical_indicators import TechnicalAnalyzer
 from core.nifty50_stocks import NIFTY50_STOCKS
 
 router = APIRouter(prefix="/scanner", tags=["Scanner"])
@@ -117,5 +118,81 @@ async def get_dow_theory_summary():
             "summary": summary,
             "timestamp": results[0].get('timestamp') if results else None
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/stock/{symbol}/analysis")
+async def get_stock_full_analysis(
+    symbol: str,
+):
+    """
+    Get FULL technical analysis for a single stock (PAPA + SMM Checklist).
+    
+    Returns:
+    - Dow Theory trend analysis (all timeframes)
+    - RSI analysis (all timeframes)
+    - (Future: MACD, Stochastic, ADX, DMI, Bollinger, EMAs)
+    
+    Timeframe Groups:
+    - Super TIDE: Monthly, Weekly
+    - TIDE: Daily, 4Hr
+    - WAVE: 4Hr, 1Hr
+    - RIPPLE: 1Hr, 15Min
+    """
+    try:
+        symbol = symbol.upper()
+        
+        # Get Dow Theory analysis
+        dow_analyzer = DowTheoryAnalyzer()
+        dow_result = dow_analyzer.analyze_stock(symbol)
+        
+        # Get Technical Indicators
+        tech_analyzer = TechnicalAnalyzer()
+        rsi_result = tech_analyzer.get_rsi_analysis(symbol)
+        
+        # Get stock info
+        stock_info = next((s for s in NIFTY50_STOCKS if s['symbol'] == symbol), None)
+        
+        return {
+            "symbol": symbol,
+            "name": stock_info['name'] if stock_info else symbol,
+            "sector": stock_info.get('sector', 'Unknown') if stock_info else 'Unknown',
+            "checklist": {
+                "1_dow_theory": {
+                    "name": "Overall Context / Dow Theory",
+                    "description": "Where do you stand in overall trend?",
+                    "data": dow_result
+                },
+                "6_indicators": {
+                    "name": "Technical Indicators",
+                    "indicators": {
+                        "rsi": {
+                            "name": "RSI (14)",
+                            "description": "Relative Strength Index",
+                            "data": rsi_result
+                        }
+                        # Future: MACD, Stochastic, ADX, DMI, Bollinger, EMAs
+                    }
+                }
+            },
+            "opportunity": dow_result.get('opportunity'),
+            "mtf_groups": dow_result.get('mtf_groups')
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/rsi/{symbol}")
+async def get_rsi_analysis(
+    symbol: str,
+):
+    """
+    Get RSI analysis for a single stock across all timeframes.
+    """
+    try:
+        analyzer = TechnicalAnalyzer()
+        result = analyzer.get_rsi_analysis(symbol.upper())
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

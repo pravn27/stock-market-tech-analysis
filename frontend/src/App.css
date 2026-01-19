@@ -2144,3 +2144,473 @@ body {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+
+/* ============ Stock Analysis Page (PAPA + SMM Checklist) ============ */
+.stock-analysis-page {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.analysis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.analysis-header .back-btn {
+  padding: 0.5rem 1rem;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.analysis-header .back-btn:hover {
+  background: var(--border);
+}
+
+.analysis-header .stock-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.analysis-header .stock-info h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--positive);
+}
+
+.analysis-header .stock-name {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.analysis-header .stock-sector {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding: 0.25rem 0.75rem;
+  background: var(--bg-input);
+  border-radius: 20px;
+}
+
+.analysis-header .refresh-btn {
+  padding: 0.5rem 1rem;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.analysis-header .refresh-btn:hover {
+  background: var(--primary-dark);
+}
+
+/* Opportunity Banner */
+.opportunity-banner {
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.opportunity-banner .opp-type {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.opportunity-banner .opp-strategy {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  background: rgba(255,255,255,0.15);
+  border-radius: 4px;
+}
+
+.opportunity-banner .opp-desc {
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+/* Opportunity Colors */
+.opp-strong-buy {
+  background: linear-gradient(135deg, #16a34a 0%, #166534 100%);
+  color: white;
+}
+
+.opp-buy {
+  background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+  color: white;
+}
+
+.opp-intraday-buy {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+  color: white;
+}
+
+.opp-sell {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: white;
+}
+
+.opp-intraday-sell {
+  background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+  color: white;
+}
+
+.opp-wait {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  color: white;
+}
+
+/* MTF Groups Summary */
+.mtf-groups-summary {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.mtf-group-badge {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 120px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+}
+
+.mtf-group-badge.green {
+  border-color: var(--positive);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.mtf-group-badge.red {
+  border-color: var(--negative);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.mtf-group-badge.lightgreen {
+  border-color: #86efac;
+  background: rgba(134, 239, 172, 0.1);
+}
+
+.mtf-group-badge.orange {
+  border-color: #fb923c;
+  background: rgba(251, 146, 60, 0.1);
+}
+
+.mtf-group-badge.yellow {
+  border-color: #facc15;
+  background: rgba(250, 204, 21, 0.1);
+}
+
+.mtf-group-badge .group-name {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mtf-group-badge .group-trend {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* Checklist Table */
+.checklist-container {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+
+.checklist-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.checklist-table th,
+.checklist-table td {
+  padding: 0.6rem 0.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.checklist-table th {
+  background: var(--bg-dark);
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* Header Group Colors */
+.checklist-item-header {
+  text-align: left !important;
+  width: 200px;
+  min-width: 180px;
+}
+
+.super-tide-header {
+  background: rgba(34, 197, 94, 0.2) !important;
+  color: var(--positive) !important;
+}
+
+.tide-header {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #60a5fa !important;
+}
+
+.wave-header {
+  background: rgba(168, 85, 247, 0.2) !important;
+  color: #c084fc !important;
+}
+
+.ripple-header {
+  background: rgba(251, 191, 36, 0.2) !important;
+  color: #fbbf24 !important;
+}
+
+.tf-labels th {
+  font-size: 0.7rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-input);
+}
+
+/* Section Headers */
+.section-header td {
+  text-align: left !important;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-top: 2px solid var(--border);
+}
+
+.section-header strong {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.section-header .section-desc {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: normal;
+  margin-top: 2px;
+}
+
+/* Item Labels */
+.item-label {
+  text-align: left !important;
+  padding-left: 1.5rem !important;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* Trend Cells */
+.trend-cell .cell-emoji {
+  display: block;
+  font-size: 1rem;
+}
+
+.trend-cell .cell-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Indicator Cells */
+.indicator-cell {
+  transition: all 0.2s;
+}
+
+.indicator-cell .cell-value {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+}
+
+.indicator-cell .cell-zone {
+  display: block;
+  font-size: 0.6rem;
+  font-weight: 500;
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
+/* RSI Color Classes */
+.rsi-bullish {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--positive);
+}
+
+.rsi-near-bullish {
+  background: rgba(134, 239, 172, 0.15);
+  color: #86efac;
+}
+
+.rsi-neutral {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--text-secondary);
+}
+
+.rsi-swing {
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+}
+
+.rsi-near-bearish {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+}
+
+.rsi-bearish {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--negative);
+}
+
+/* Trend Color Classes */
+.trend-up {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.trend-trans-up {
+  background: rgba(250, 204, 21, 0.1);
+}
+
+.trend-down {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.trend-trans-down {
+  background: rgba(251, 146, 60, 0.1);
+}
+
+.trend-sideways {
+  background: rgba(148, 163, 184, 0.1);
+}
+
+.trend-neutral {
+  background: transparent;
+}
+
+/* Future Indicators */
+.future-indicator td {
+  color: var(--text-muted);
+}
+
+.coming-soon {
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: center !important;
+}
+
+/* Spacer */
+.spacer-row td {
+  height: 10px;
+  background: var(--bg-dark);
+  border: none;
+}
+
+/* Legend */
+.indicator-legend {
+  padding: 1rem;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+}
+
+.indicator-legend h4 {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+}
+
+.legend-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.legend-item {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--bg-input);
+  border-radius: 4px;
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .checklist-table {
+    font-size: 0.75rem;
+  }
+  
+  .checklist-table th,
+  .checklist-table td {
+    padding: 0.5rem 0.3rem;
+  }
+  
+  .checklist-item-header {
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stock-analysis-page {
+    padding: 0.75rem;
+  }
+  
+  .analysis-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .analysis-header .stock-info {
+    flex-wrap: wrap;
+  }
+  
+  .opportunity-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .mtf-groups-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .checklist-container {
+    overflow-x: auto;
+  }
+  
+  .checklist-table {
+    min-width: 800px;
+  }
+}
