@@ -223,6 +223,72 @@ class TechnicalAnalyzer:
             print(f"Error fetching {symbol}: {e}")
             return None
     
+    def append_current_period(self, df: pd.DataFrame, symbol: str, interval: str) -> pd.DataFrame:
+        """
+        Append current incomplete period (week/month) to match TradingView's live RSI.
+        Yahoo Finance only returns completed candles, but TradingView shows RSI 
+        including the current incomplete candle.
+        """
+        if df is None or df.empty:
+            return df
+        
+        try:
+            yf_symbol = f"{symbol}.NS" if not symbol.endswith('.NS') else symbol
+            ticker = yf.Ticker(yf_symbol)
+            
+            if interval == '1wk':
+                # Get daily data for current week
+                daily_df = ticker.history(period='7d', interval='1d')
+                if daily_df.empty:
+                    return df
+                
+                # Get the last completed week's end date
+                last_week_end = df.index[-1]
+                
+                # Filter daily data after the last completed week
+                current_week_data = daily_df[daily_df.index > last_week_end]
+                
+                if len(current_week_data) > 0:
+                    # Create current week's candle
+                    current_candle = pd.DataFrame({
+                        'Open': [current_week_data['Open'].iloc[0]],
+                        'High': [current_week_data['High'].max()],
+                        'Low': [current_week_data['Low'].min()],
+                        'Close': [current_week_data['Close'].iloc[-1]],
+                        'Volume': [current_week_data['Volume'].sum()]
+                    }, index=[current_week_data.index[-1]])
+                    
+                    df = pd.concat([df, current_candle])
+            
+            elif interval == '1mo':
+                # Get daily data for current month
+                daily_df = ticker.history(period='1mo', interval='1d')
+                if daily_df.empty:
+                    return df
+                
+                # Get the last completed month's end date
+                last_month_end = df.index[-1]
+                
+                # Filter daily data after the last completed month
+                current_month_data = daily_df[daily_df.index > last_month_end]
+                
+                if len(current_month_data) > 0:
+                    # Create current month's candle
+                    current_candle = pd.DataFrame({
+                        'Open': [current_month_data['Open'].iloc[0]],
+                        'High': [current_month_data['High'].max()],
+                        'Low': [current_month_data['Low'].min()],
+                        'Close': [current_month_data['Close'].iloc[-1]],
+                        'Volume': [current_month_data['Volume'].sum()]
+                    }, index=[current_month_data.index[-1]])
+                    
+                    df = pd.concat([df, current_candle])
+            
+            return df
+        except Exception as e:
+            print(f"Error appending current period: {e}")
+            return df
+    
     def aggregate_to_4h(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Aggregate 1-hour data to 4-hour candles - TradingView style
@@ -291,6 +357,10 @@ class TechnicalAnalyzer:
             
             # Fetch data
             df = self.fetch_data(symbol, interval, period)
+            
+            # For weekly and monthly, append current incomplete period to match TradingView
+            if tf_key in ['weekly', 'monthly'] and df is not None:
+                df = self.append_current_period(df, symbol, interval)
             
             # Special handling for 4H (aggregate from 1H)
             if tf_key == '4h' and df is not None:

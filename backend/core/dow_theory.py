@@ -33,13 +33,14 @@ class TrendType(Enum):
 
 # Timeframe configurations
 # Note: For accurate calculations, we need sufficient historical data
+# pivot_left: bars to left for confirmation, pivot_right: bars to right (smaller to catch recent pivots)
 TIMEFRAMES = {
-    'monthly': {'interval': '1mo', 'period': '5y', 'label': 'M', 'group': 'super_tide', 'pivot_len': 3},
-    'weekly': {'interval': '1wk', 'period': '2y', 'label': 'W', 'group': 'super_tide', 'pivot_len': 3},
-    'daily': {'interval': '1d', 'period': '1y', 'label': 'D', 'group': 'tide', 'pivot_len': 5},
-    '4h': {'interval': '1h', 'period': '730d', 'label': '4H', 'group': 'tide', 'pivot_len': 5},  # Max for 1H
-    '1h': {'interval': '1h', 'period': '60d', 'label': '1H', 'group': 'wave', 'pivot_len': 5},
-    '15m': {'interval': '15m', 'period': '60d', 'label': '15M', 'group': 'ripple', 'pivot_len': 5},
+    'monthly': {'interval': '1mo', 'period': '5y', 'label': 'M', 'group': 'super_tide', 'pivot_left': 2, 'pivot_right': 1},
+    'weekly': {'interval': '1wk', 'period': '2y', 'label': 'W', 'group': 'super_tide', 'pivot_left': 3, 'pivot_right': 1},
+    'daily': {'interval': '1d', 'period': '1y', 'label': 'D', 'group': 'tide', 'pivot_left': 5, 'pivot_right': 2},
+    '4h': {'interval': '1h', 'period': '730d', 'label': '4H', 'group': 'tide', 'pivot_left': 5, 'pivot_right': 2},
+    '1h': {'interval': '1h', 'period': '60d', 'label': '1H', 'group': 'wave', 'pivot_left': 5, 'pivot_right': 2},
+    '15m': {'interval': '15m', 'period': '60d', 'label': '15M', 'group': 'ripple', 'pivot_left': 5, 'pivot_right': 2},
 }
 
 # MTF Groups
@@ -149,6 +150,97 @@ class DowTheoryAnalyzer:
                 })
         
         return pivots
+    
+    def find_recent_extreme(self, df: pd.DataFrame, lookback: int = 10) -> Dict:
+        """
+        Find the most recent swing high and low in the last N bars.
+        This catches swings that may not yet be confirmed as pivots.
+        """
+        if df is None or len(df) < lookback:
+            return {'recent_high': None, 'recent_low': None}
+        
+        recent_df = df.tail(lookback)
+        
+        # Find the highest high and lowest low in recent bars
+        high_idx = recent_df['High'].idxmax()
+        low_idx = recent_df['Low'].idxmin()
+        
+        return {
+            'recent_high': {
+                'price': round(recent_df.loc[high_idx, 'High'], 2),
+                'date': high_idx.strftime('%Y-%m-%d') if hasattr(high_idx, 'strftime') else str(high_idx),
+                'index': df.index.get_loc(high_idx)
+            },
+            'recent_low': {
+                'price': round(recent_df.loc[low_idx, 'Low'], 2),
+                'date': low_idx.strftime('%Y-%m-%d') if hasattr(low_idx, 'strftime') else str(low_idx),
+                'index': df.index.get_loc(low_idx)
+            }
+        }
+    
+    def find_recent_swings(self, df: pd.DataFrame, lookback: int = 20) -> List[Dict]:
+        """
+        Find recent swing points (mini pivots) with smaller confirmation window.
+        This helps detect trend changes that aren't yet confirmed by main pivots.
+        """
+        if df is None or len(df) < lookback:
+            return []
+        
+        swings = []
+        highs = df['High'].values
+        lows = df['Low'].values
+        n = len(df)
+        
+        # Use smaller confirmation (2 bars each side) for recent swings
+        left = 2
+        right = 1  # Only need 1 bar to the right for very recent swings
+        
+        # Find swing highs in the lookback period
+        start_idx = max(0, n - lookback)
+        for i in range(start_idx + left, n - right):
+            is_swing_high = True
+            for j in range(1, left + 1):
+                if highs[i - j] >= highs[i]:
+                    is_swing_high = False
+                    break
+            if is_swing_high:
+                for j in range(1, right + 1):
+                    if i + j < n and highs[i + j] >= highs[i]:
+                        is_swing_high = False
+                        break
+            
+            if is_swing_high:
+                swings.append({
+                    'type': 'high',
+                    'index': i,
+                    'price': round(highs[i], 2),
+                    'date': df.index[i].strftime('%Y-%m-%d') if hasattr(df.index[i], 'strftime') else str(df.index[i])
+                })
+        
+        # Find swing lows in the lookback period
+        for i in range(start_idx + left, n - right):
+            is_swing_low = True
+            for j in range(1, left + 1):
+                if lows[i - j] <= lows[i]:
+                    is_swing_low = False
+                    break
+            if is_swing_low:
+                for j in range(1, right + 1):
+                    if i + j < n and lows[i + j] <= lows[i]:
+                        is_swing_low = False
+                        break
+            
+            if is_swing_low:
+                swings.append({
+                    'type': 'low',
+                    'index': i,
+                    'price': round(lows[i], 2),
+                    'date': df.index[i].strftime('%Y-%m-%d') if hasattr(df.index[i], 'strftime') else str(df.index[i])
+                })
+        
+        # Sort by index
+        swings.sort(key=lambda x: x['index'])
+        return swings
     
     def label_pivots(self, pivot_highs: List[Dict], pivot_lows: List[Dict]) -> Dict:
         """
@@ -295,9 +387,14 @@ class DowTheoryAnalyzer:
             'description': f'Sideways/Consolidation - Last High: {last_high_label}, Last Low: {last_low_label}'
         }
     
-    def analyze_timeframe(self, df: pd.DataFrame, pivot_len: int = 5) -> Dict:
+    def analyze_timeframe(self, df: pd.DataFrame, pivot_left: int = 5, pivot_right: int = 2) -> Dict:
         """
         Complete analysis for a single timeframe
+        
+        Args:
+            df: OHLC DataFrame
+            pivot_left: Number of bars to the left for pivot confirmation
+            pivot_right: Number of bars to the right (smaller to catch recent pivots)
         """
         if df is None or len(df) < 20:
             return {
@@ -308,12 +405,18 @@ class DowTheoryAnalyzer:
                 'description': 'Insufficient data'
             }
         
-        # Find pivots with specified length
-        pivot_highs = self.find_pivot_highs(df, left=pivot_len, right=pivot_len)
-        pivot_lows = self.find_pivot_lows(df, left=pivot_len, right=pivot_len)
+        # Find pivots with asymmetric left/right
+        pivot_highs = self.find_pivot_highs(df, left=pivot_left, right=pivot_right)
+        pivot_lows = self.find_pivot_lows(df, left=pivot_left, right=pivot_right)
+        
+        # Also find recent extremes that might not be confirmed as pivots yet
+        recent_extremes = self.find_recent_extreme(df, lookback=pivot_left + pivot_right + 5)
         
         # Label pivots
         labeled = self.label_pivots(pivot_highs, pivot_lows)
+        
+        # Check if recent extreme should update the last pivot label
+        labeled = self._update_with_recent_extremes(df, labeled, recent_extremes, pivot_highs, pivot_lows)
         
         # Determine trend
         trend_data = self.determine_trend(labeled)
@@ -323,8 +426,76 @@ class DowTheoryAnalyzer:
             'highs': labeled['highs'][-5:],  # Last 5 pivot highs
             'lows': labeled['lows'][-5:]      # Last 5 pivot lows
         }
+        trend_data['recent_extremes'] = recent_extremes
         
         return trend_data
+    
+    def _update_with_recent_extremes(self, df: pd.DataFrame, labeled: Dict, 
+                                     recent_extremes: Dict, 
+                                     pivot_highs: List[Dict], 
+                                     pivot_lows: List[Dict]) -> Dict:
+        """
+        Check if recent swings create new pivot labels that indicate trend changes.
+        This helps catch trends that are forming but not yet confirmed by main pivots.
+        """
+        # Find recent swings with smaller confirmation windows
+        recent_swings = self.find_recent_swings(df, lookback=20)
+        
+        if not recent_swings:
+            return labeled
+        
+        # Get the last confirmed pivot high and low
+        last_pivot_high = labeled['highs'][-1] if labeled['highs'] else None
+        last_pivot_low = labeled['lows'][-1] if labeled['lows'] else None
+        
+        if not last_pivot_high or not last_pivot_low:
+            return labeled
+        
+        # Process recent swings to find new HH/LH/HL/LL
+        for swing in recent_swings:
+            if swing['type'] == 'high' and swing['index'] > last_pivot_high['index']:
+                # This is a swing high after our last confirmed pivot high
+                if swing['price'] < last_pivot_high['price'] * 0.995:
+                    # Lower High - indicates potential downtrend
+                    labeled['highs'].append({
+                        **swing,
+                        'label': 'LH',
+                        'type': 'lower_high',
+                        'provisional': True
+                    })
+                    last_pivot_high = labeled['highs'][-1]  # Update for next comparison
+                elif swing['price'] > last_pivot_high['price'] * 1.005:
+                    # Higher High - uptrend continuation
+                    labeled['highs'].append({
+                        **swing,
+                        'label': 'HH',
+                        'type': 'higher_high',
+                        'provisional': True
+                    })
+                    last_pivot_high = labeled['highs'][-1]
+            
+            elif swing['type'] == 'low' and swing['index'] > last_pivot_low['index']:
+                # This is a swing low after our last confirmed pivot low
+                if swing['price'] < last_pivot_low['price'] * 0.995:
+                    # Lower Low - indicates downtrend
+                    labeled['lows'].append({
+                        **swing,
+                        'label': 'LL',
+                        'type': 'lower_low',
+                        'provisional': True
+                    })
+                    last_pivot_low = labeled['lows'][-1]
+                elif swing['price'] > last_pivot_low['price'] * 1.005:
+                    # Higher Low - uptrend continuation
+                    labeled['lows'].append({
+                        **swing,
+                        'label': 'HL',
+                        'type': 'higher_low',
+                        'provisional': True
+                    })
+                    last_pivot_low = labeled['lows'][-1]
+        
+        return labeled
     
     def fetch_data(self, symbol: str, interval: str, period: str) -> Optional[pd.DataFrame]:
         """Fetch OHLC data from Yahoo Finance"""
@@ -407,7 +578,8 @@ class DowTheoryAnalyzer:
         for tf_key, tf_config in TIMEFRAMES.items():
             interval = tf_config['interval']
             period = tf_config['period']
-            pivot_len = tf_config.get('pivot_len', 5)
+            pivot_left = tf_config.get('pivot_left', 5)
+            pivot_right = tf_config.get('pivot_right', 2)
             
             # Fetch data
             df = self.fetch_data(symbol, interval, period)
@@ -416,8 +588,8 @@ class DowTheoryAnalyzer:
             if tf_key == '4h' and df is not None:
                 df = self.aggregate_to_4h(df)
             
-            # Analyze timeframe
-            trend_data = self.analyze_timeframe(df, pivot_len)
+            # Analyze timeframe with asymmetric pivots
+            trend_data = self.analyze_timeframe(df, pivot_left, pivot_right)
             
             result['timeframes'][tf_key] = {
                 'label': tf_config['label'],
