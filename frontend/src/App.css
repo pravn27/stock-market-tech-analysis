@@ -2655,6 +2655,18 @@ body {
   color: var(--text-muted);
 }
 
+/* Tooltip styles for indicator cells */
+.indicator-cell.has-tooltip {
+  cursor: help;
+  position: relative;
+}
+
+.indicator-cell.has-tooltip:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+  transition: all 0.15s ease;
+}
+
 /* Trend Color Classes */
 .trend-up {
   background: rgba(34, 197, 94, 0.15);
