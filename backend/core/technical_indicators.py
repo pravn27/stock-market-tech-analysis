@@ -25,53 +25,72 @@ class RSIZone(Enum):
     NOT_CLEAR = "Not Clear"
 
 
-def calculate_rsi(df: pd.DataFrame, period: int = 14, smoothing: str = 'ema') -> pd.Series:
+def calculate_rsi_tradingview(df: pd.DataFrame, period: int = 14) -> pd.Series:
     """
-    Calculate RSI (Relative Strength Index) - TradingView compatible
+    Calculate RSI (Relative Strength Index) - Exact TradingView/Pine Script method
     
-    TradingView default settings:
-    - RSI Length: 14
-    - Source: Close
-    - Smoothing Type: EMA
-    - Smoothing Length: 14
+    TradingView uses RMA (Wilder's Moving Average) for RSI calculation:
+    - RMA is also called SMMA (Smoothed Moving Average)
+    - alpha = 1/length
+    - RMA = alpha * value + (1 - alpha) * prev_RMA
     
-    RSI = 100 - (100 / (1 + RS))
-    RS = Average Gain / Average Loss
-    
-    Args:
-        df: DataFrame with 'Close' column
-        period: RSI period (default 14)
-        smoothing: 'ema' for TradingView style, 'wilder' for traditional
+    Pine Script equivalent:
+        u = math.max(src - src[1], 0)
+        d = math.max(src[1] - src, 0)
+        rs = ta.rma(u, length) / ta.rma(d, length)
+        rsi = 100 - 100 / (1 + rs)
     """
     if df is None or len(df) < period + 1:
         return pd.Series()
     
+    close = df['Close'].values
+    n = len(close)
+    
     # Calculate price changes
-    delta = df['Close'].diff()
+    delta = np.zeros(n)
+    delta[1:] = close[1:] - close[:-1]
     
-    # Separate gains and losses
-    gains = delta.where(delta > 0, 0.0)
-    losses = (-delta).where(delta < 0, 0.0)
+    # Separate gains and losses (like TradingView)
+    gains = np.where(delta > 0, delta, 0.0)
+    losses = np.where(delta < 0, -delta, 0.0)
     
-    if smoothing == 'ema':
-        # TradingView style: Standard EMA smoothing
-        # EMA alpha = 2 / (period + 1)
-        avg_gain = gains.ewm(span=period, adjust=False).mean()
-        avg_loss = losses.ewm(span=period, adjust=False).mean()
-    else:
-        # Wilder's smoothing (traditional)
-        # Wilder's alpha = 1 / period
-        avg_gain = gains.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
-        avg_loss = losses.ewm(alpha=1/period, min_periods=period, adjust=False).mean()
+    # RMA (Wilder's smoothing) - exactly like TradingView
+    # First value is SMA, then use exponential smoothing
+    alpha = 1.0 / period
     
-    # Avoid division by zero
-    rs = avg_gain / avg_loss.replace(0, np.nan)
-    rsi = 100 - (100 / (1 + rs))
+    avg_gain = np.zeros(n)
+    avg_loss = np.zeros(n)
     
-    # Handle edge cases
-    rsi = rsi.fillna(50)  # Default to neutral if no data
+    # Initialize with SMA for first 'period' values
+    if n >= period:
+        avg_gain[period-1] = np.mean(gains[1:period+1])
+        avg_loss[period-1] = np.mean(losses[1:period+1])
+        
+        # Apply RMA formula: RMA = alpha * value + (1 - alpha) * prev_RMA
+        for i in range(period, n):
+            avg_gain[i] = alpha * gains[i] + (1 - alpha) * avg_gain[i-1]
+            avg_loss[i] = alpha * losses[i] + (1 - alpha) * avg_loss[i-1]
     
-    return rsi
+    # Calculate RSI
+    rsi = np.zeros(n)
+    for i in range(period-1, n):
+        if avg_loss[i] == 0:
+            rsi[i] = 100.0 if avg_gain[i] > 0 else 50.0
+        else:
+            rs = avg_gain[i] / avg_loss[i]
+            rsi[i] = 100.0 - (100.0 / (1.0 + rs))
+    
+    # Convert to Series with same index
+    rsi_series = pd.Series(rsi, index=df.index)
+    
+    return rsi_series
+
+
+def calculate_rsi(df: pd.DataFrame, period: int = 14) -> pd.Series:
+    """
+    Wrapper for RSI calculation - uses TradingView method
+    """
+    return calculate_rsi_tradingview(df, period)
 
 
 def classify_rsi(rsi_value: float) -> Dict:
