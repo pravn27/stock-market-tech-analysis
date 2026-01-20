@@ -61,3 +61,33 @@ body.dark {
 body, .ant-layout, .ant-card, .ant-table, .ant-modal-content {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* Table zebra striping */
+.ant-table-row-striped {
+  background-color: #fafafa;
+}
+
+.ant-table-row-striped-dark {
+  background-color: #1a1a1a;
+}
+
+/* Enhanced table hover effects */
+.ant-table-tbody > tr.ant-table-row:hover > td {
+  background-color: #f5f5f5 !important;
+  transition: background-color 0.2s ease;
+}
+
+.dark .ant-table-tbody > tr.ant-table-row:hover > td {
+  background-color: #262626 !important;
+}
+
+/* Card hover animations */
+.ant-card.ant-card-hoverable:hover {
+  transform: translateY(-2px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Progress bar animation */
+.ant-progress-bg {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
