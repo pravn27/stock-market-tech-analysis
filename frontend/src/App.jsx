@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react'
-import { Layout } from 'antd'
+import { Layout, Grid } from 'antd'
 import { ThemeProvider, useTheme } from './context/ThemeContext'
 import Header from './components/Header'
 import PerformanceOverview from './pages/PerformanceOverview'
@@ -18,10 +18,12 @@ import DowTheoryScanner from './pages/DowTheoryScanner'
 import './index.css'
 
 const { Content, Footer } = Layout
+const { useBreakpoint } = Grid
 
 const AppContent = () => {
   const [activePage, setActivePage] = useState('global')
   const { isDarkMode } = useTheme()
+  const screens = useBreakpoint()
 
   const renderPage = () => {
     switch (activePage) {
@@ -46,6 +48,10 @@ const AppContent = () => {
     }
   }
 
+  // Responsive padding: small on mobile, larger on desktop
+  const contentPadding = screens.md ? '24px' : '12px'
+  const innerPadding = screens.md ? '0 16px' : '0'
+
   return (
     <Layout 
       style={{ 
@@ -58,14 +64,14 @@ const AppContent = () => {
       <Content
         style={{
           marginTop: 64, // Header height
-          padding: '24px',
+          padding: contentPadding,
           maxWidth: 1400,
           width: '100%',
           margin: '64px auto 0',
         }}
       >
         <div style={{ 
-          padding: '0 16px',
+          padding: innerPadding,
           maxWidth: '100%',
         }}>
           {renderPage()}
@@ -77,7 +83,7 @@ const AppContent = () => {
           textAlign: 'center',
           background: 'transparent',
           color: isDarkMode ? '#666' : '#999',
-          padding: '16px 24px',
+          padding: screens.md ? '16px 24px' : '16px 12px',
         }}
       >
         StockMarket TA — Technical Analysis Platform
