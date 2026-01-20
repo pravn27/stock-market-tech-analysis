@@ -130,20 +130,18 @@ async def get_commodities(
     - Precious Metals (Gold, Silver, Platinum, Copper) - COMEX/NYMEX
     - Energy (Crude Oil WTI, Brent, Natural Gas, Gasoline) - NYMEX/ICE
     - Agricultural (Corn, Wheat, Soybean, Coffee, Sugar, Cocoa, Cotton) - CBOT/ICE
-    - MCX Commodities (Indian Exchange) - Gold, Silver, Crude, Natural Gas, Copper, Zinc, Lead, Aluminium
     
     Parameters:
     - **timeframe**: Single timeframe to fetch
     - **multi**: If true, returns data for all timeframes
     """
     try:
-        from core.global_markets import PRECIOUS_METALS, ENERGY_COMMODITIES, AGRICULTURAL_COMMODITIES, MCX_COMMODITIES
+        from core.global_markets import PRECIOUS_METALS, ENERGY_COMMODITIES, AGRICULTURAL_COMMODITIES
         
         commodity_groups = {
             'precious_metals': PRECIOUS_METALS,
             'energy_commodities': ENERGY_COMMODITIES,
             'agricultural_commodities': AGRICULTURAL_COMMODITIES,
-            'mcx_commodities': MCX_COMMODITIES
         }
         
         if multi:

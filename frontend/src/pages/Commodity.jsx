@@ -1,6 +1,6 @@
 /**
  * Commodity Markets Page - Ant Design Implementation
- * Shows commodity futures grouped by category (Precious Metals, Energy, Agricultural, MCX)
+ * Shows commodity futures grouped by category (Precious Metals, Energy, Agricultural)
  */
 
 import { useState, useEffect } from 'react'
@@ -12,7 +12,7 @@ import {
   ReloadOutlined, ArrowUpOutlined,
   ArrowDownOutlined, RiseOutlined, FallOutlined,
   DollarCircleOutlined, GoldOutlined, ThunderboltOutlined,
-  ExperimentOutlined, ShopOutlined
+  ExperimentOutlined
 } from '@ant-design/icons'
 import axios from 'axios'
 import { API_BASE_URL } from '../api/config'
@@ -51,13 +51,6 @@ const COMMODITY_GROUPS = [
     subtitle: 'CBOT - Chicago Board of Trade',
     icon: <ExperimentOutlined style={{ fontSize: 24, color: '#52c41a' }} />,
     color: '#52c41a'
-  },
-  {
-    key: 'mcx_commodities',
-    title: 'MCX (India)',
-    subtitle: 'Multi Commodity Exchange of India',
-    icon: <ShopOutlined style={{ fontSize: 24, color: '#1890ff' }} />,
-    color: '#1890ff'
   }
 ]
 

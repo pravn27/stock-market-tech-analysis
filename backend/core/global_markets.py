@@ -79,18 +79,6 @@ AGRICULTURAL_COMMODITIES = [
     {"symbol": "CT=F", "name": "Cotton Futures (ICE)", "short": "COTTON"},
 ]
 
-# MCX - Multi Commodity Exchange (India)
-MCX_COMMODITIES = [
-    {"symbol": "GOLD.NS", "name": "Gold MCX (INR/10g)", "short": "MCX GOLD"},
-    {"symbol": "SILVER.NS", "name": "Silver MCX (INR/kg)", "short": "MCX SILVER"},
-    {"symbol": "CRUDEOIL.NS", "name": "Crude Oil MCX", "short": "MCX CRUDE"},
-    {"symbol": "NATURALGAS.NS", "name": "Natural Gas MCX", "short": "MCX GAS"},
-    {"symbol": "COPPER.NS", "name": "Copper MCX", "short": "MCX COPPER"},
-    {"symbol": "ZINC.NS", "name": "Zinc MCX", "short": "MCX ZINC"},
-    {"symbol": "LEAD.NS", "name": "Lead MCX", "short": "MCX LEAD"},
-    {"symbol": "ALUMINIUM.NS", "name": "Aluminium MCX", "short": "MCX ALUM"},
-]
-
 # All commodities combined (for backward compatibility)
 COMMODITIES = PRECIOUS_METALS + ENERGY_COMMODITIES + AGRICULTURAL_COMMODITIES
 
