@@ -503,9 +503,25 @@ const GlobalMarkets = () => {
               {/* All Timeframes Toggle */}
               <div>
                 <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                  Mode
+                  Timeframe
                 </Text>
-                <Space>
+                <Space 
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 2,
+                    border: `1px solid ${isDarkMode ? '#434343' : '#d9d9d9'}`,
+                    background: isDarkMode ? '#1f1f1f' : '#fafafa',
+                  }}
+                >
+                  <Text 
+                    style={{ 
+                      fontSize: 13,
+                      fontWeight: !multiTimeframe ? 600 : 400,
+                      color: !multiTimeframe ? '#1890ff' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
+                    }}
+                  >
+                    Single
+                  </Text>
                   <Switch
                     checked={multiTimeframe}
                     onChange={(checked) => {
@@ -514,11 +530,18 @@ const GlobalMarkets = () => {
                         setViewMode('table') // Force table view when multi-timeframe is enabled
                       }
                     }}
-                    checkedChildren="All TF"
-                    unCheckedChildren="Single"
+                    style={{
+                      background: multiTimeframe ? '#52c41a' : undefined
+                    }}
                   />
-                  <Text type="secondary" style={{ fontSize: 12 }}>
-                    {multiTimeframe ? 'All Timeframes' : 'Single Timeframe'}
+                  <Text 
+                    style={{ 
+                      fontSize: 13,
+                      fontWeight: multiTimeframe ? 600 : 400,
+                      color: multiTimeframe ? '#52c41a' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
+                    }}
+                  >
+                    All Timeframes
                   </Text>
                 </Space>
               </div>
