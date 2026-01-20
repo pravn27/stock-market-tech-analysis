@@ -117,10 +117,10 @@ class GlobalMarketsService:
         vix_value = None
         dxy_change = 0
         
-        # Collect all indices
-        for region in ['us_markets', 'european_markets', 'asian_markets']:
+        # Collect all indices (including India ADRs)
+        for region in ['us_markets', 'european_markets', 'asian_markets', 'india_adrs']:
             for idx in markets_data.get(region, []):
-                if idx.get('change_pct') is not None:
+                if idx.get('change_pct') is not None and not idx.get('error', False):
                     all_indices.append(idx)
                     
                     # Capture VIX value
