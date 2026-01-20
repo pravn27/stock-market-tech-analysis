@@ -66,7 +66,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
   const mobileMenuItems = [
     {
       key: 'performance-group',
-      label: <span style={{ fontWeight: 600 }}>Performance</span>,
+      label: <span style={{ fontWeight: 600 }}>India Market</span>,
       type: 'group',
       children: performanceItems.map(item => ({
         key: item.key,
@@ -94,7 +94,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
           icon={<BarChartOutlined />}
           style={{ fontWeight: 600 }}
         >
-          Performance <DownOutlined style={{ fontSize: 10 }} />
+          India Market <DownOutlined style={{ fontSize: 10 }} />
         </Button>
       </Dropdown>
 
