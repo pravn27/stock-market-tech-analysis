@@ -493,7 +493,7 @@ const GlobalMarkets = () => {
             >
               <Space direction="vertical" size={16} style={{ width: '100%' }}>
                 <div>
-                  <Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 8 }}>
+                  <Text strong style={{ fontSize: 18, display: 'block', marginBottom: 8, fontWeight: 700 }}>
                     Overall Market Sentiment
                   </Text>
                   <Space size={16} align="end">
