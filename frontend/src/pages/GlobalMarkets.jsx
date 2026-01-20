@@ -420,7 +420,7 @@ const GlobalMarkets = () => {
           <Col xs={24} sm={12} md={16}>
             <Space wrap size={12}>
               <div>
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
                   View Mode
                 </Text>
                 <Segmented
@@ -442,7 +442,7 @@ const GlobalMarkets = () => {
                 />
               </div>
               <div>
-                <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
                   Timeframe
                 </Text>
                 <Select
