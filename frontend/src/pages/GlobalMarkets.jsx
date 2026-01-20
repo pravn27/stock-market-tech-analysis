@@ -523,62 +523,45 @@ const GlobalMarkets = () => {
                 </Space>
               </div>
 
-              {/* View Mode - Only show when NOT in multi-timeframe */}
+              {/* View Mode & Timeframe - Only show when NOT in multi-timeframe */}
               {!multiTimeframe && (
-                <div>
-                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                    View Mode
-                  </Text>
-                  <Segmented
-                    value={viewMode}
-                    onChange={setViewMode}
-                    size={screens.md ? 'middle' : 'large'}
-                    options={[
-                      { 
-                        value: 'cards', 
-                        icon: <AppstoreOutlined />, 
-                        label: screens.md ? 'Cards' : ''
-                      },
-                      { 
-                        value: 'table', 
-                        icon: <TableOutlined />, 
-                        label: screens.md ? 'Table' : '' 
-                      },
-                    ]}
-                  />
-                </div>
-              )}
+                <>
+                  <div>
+                    <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                      View Mode
+                    </Text>
+                    <Segmented
+                      value={viewMode}
+                      onChange={setViewMode}
+                      size={screens.md ? 'middle' : 'large'}
+                      options={[
+                        { 
+                          value: 'cards', 
+                          icon: <AppstoreOutlined />, 
+                          label: screens.md ? 'Cards' : ''
+                        },
+                        { 
+                          value: 'table', 
+                          icon: <TableOutlined />, 
+                          label: screens.md ? 'Table' : '' 
+                        },
+                      ]}
+                    />
+                  </div>
 
-              {/* Timeframe Selector - Only for single timeframe mode */}
-              {!multiTimeframe && (
-                <div>
-                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                    Timeframe
-                  </Text>
-                  <Select
-                    value={timeframe}
-                    onChange={setTimeframe}
-                    options={TIMEFRAMES.map(tf => ({ value: tf.value, label: tf.fullLabel }))}
-                    style={{ width: screens.md ? 140 : 120 }}
-                    size={screens.md ? 'middle' : 'large'}
-                  />
-                </div>
-              )}
-
-              {/* Highlight Selector - Only for multi-timeframe mode */}
-              {multiTimeframe && (
-                <div>
-                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                    Highlight
-                  </Text>
-                  <Select
-                    value={selectedTimeframe}
-                    onChange={setSelectedTimeframe}
-                    options={TIMEFRAMES.map(tf => ({ value: tf.value, label: tf.fullLabel }))}
-                    style={{ width: screens.md ? 140 : 120 }}
-                    size={screens.md ? 'middle' : 'large'}
-                  />
-                </div>
+                  <div>
+                    <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                      Timeframe
+                    </Text>
+                    <Select
+                      value={timeframe}
+                      onChange={setTimeframe}
+                      options={TIMEFRAMES.map(tf => ({ value: tf.value, label: tf.fullLabel }))}
+                      style={{ width: screens.md ? 140 : 120 }}
+                      size={screens.md ? 'middle' : 'large'}
+                    />
+                  </div>
+                </>
               )}
             </Space>
           </Col>
