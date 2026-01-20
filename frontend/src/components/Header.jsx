@@ -54,7 +54,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
       label: (
         <Space>
           {item.icon}
-          {item.label}
+          <span style={{ fontWeight: 600 }}>{item.label}</span>
         </Space>
       ),
     })),
@@ -66,21 +66,21 @@ const AppHeader = ({ activePage, onPageChange }) => {
   const mobileMenuItems = [
     {
       key: 'performance-group',
-      label: 'Performance',
+      label: <span style={{ fontWeight: 600 }}>Performance</span>,
       type: 'group',
       children: performanceItems.map(item => ({
         key: item.key,
-        label: item.label,
+        label: <span style={{ fontWeight: 600 }}>{item.label}</span>,
         icon: item.icon,
       })),
     },
     {
       key: 'tools-group',
-      label: 'Tools',
+      label: <span style={{ fontWeight: 600 }}>Tools</span>,
       type: 'group',
       children: [
-        { key: 'dow-scanner', label: 'Checklist Scanner', icon: <FileSearchOutlined /> },
-        { key: 'global', label: 'Global Market', icon: <GlobalOutlined /> },
+        { key: 'dow-scanner', label: <span style={{ fontWeight: 600 }}>Checklist Scanner</span>, icon: <FileSearchOutlined /> },
+        { key: 'global', label: <span style={{ fontWeight: 600 }}>Global Market</span>, icon: <GlobalOutlined /> },
       ],
     },
   ]
@@ -92,6 +92,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
         <Button 
           type={isPerformanceActive ? 'primary' : 'text'}
           icon={<BarChartOutlined />}
+          style={{ fontWeight: 600 }}
         >
           Performance <DownOutlined style={{ fontSize: 10 }} />
         </Button>
@@ -101,6 +102,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
         type={activePage === 'dow-scanner' ? 'primary' : 'text'}
         icon={<FileSearchOutlined />}
         onClick={() => onPageChange('dow-scanner')}
+        style={{ fontWeight: 600 }}
       >
         Checklist
       </Button>
@@ -109,6 +111,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
         type={activePage === 'global' ? 'primary' : 'text'}
         icon={<GlobalOutlined />}
         onClick={() => onPageChange('global')}
+        style={{ fontWeight: 600 }}
       >
         Global Market
       </Button>
