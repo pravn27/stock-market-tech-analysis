@@ -6,13 +6,14 @@
 import React, { useState, useEffect } from 'react'
 import { 
   Card, Button, Space, Tag, Typography, Spin, Alert, 
-  Row, Col, Tooltip, Descriptions, Grid, Divider
+  Row, Col, Tooltip, Descriptions, Grid, Divider, theme
 } from 'antd'
 import { 
   ArrowLeftOutlined, ReloadOutlined, RiseOutlined, 
   FallOutlined, MinusOutlined
 } from '@ant-design/icons'
 import { getStockAnalysis } from '../api/scanner'
+import { useTheme } from '../context/ThemeContext'
 
 const { Title, Text } = Typography
 const { useBreakpoint } = Grid
@@ -51,20 +52,31 @@ const getMacdEmoji = (signal) => {
   return '⚪'
 }
 
+// Timeframe structure with groups (8 columns total)
+// Super TIDE: M, W | TIDE: D, 4H | WAVE: 4H, 1H | RIPPLE: 1H, 15M
 const TIMEFRAMES = [
   { key: 'monthly', label: 'M', group: 'Super TIDE' },
   { key: 'weekly', label: 'W', group: 'Super TIDE' },
   { key: 'daily', label: 'D', group: 'TIDE' },
   { key: '4h', label: '4H', group: 'TIDE' },
+  { key: '4h', label: '4H', group: 'WAVE' },
   { key: '1h', label: '1H', group: 'WAVE' },
+  { key: '1h', label: '1H', group: 'RIPPLE' },
   { key: '15m', label: '15M', group: 'RIPPLE' },
 ]
 
 const StockAnalysis = ({ symbol, onBack }) => {
   const screens = useBreakpoint()
+  const { isDarkMode } = useTheme()
+  const { token } = theme.useToken()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  // Theme-aware colors
+  const headerBg = isDarkMode ? '#1d1d1d' : '#fafafa'
+  const borderColor = isDarkMode ? '#303030' : '#f0f0f0'
+  const separatorColor = isDarkMode ? '#434343' : '#d9d9d9'
 
   useEffect(() => {
     if (symbol) fetchAnalysis()
@@ -210,10 +222,11 @@ const StockAnalysis = ({ symbol, onBack }) => {
         <Card 
           style={{ 
             marginBottom: 24,
-            background: opportunity.color === 'green' ? '#f6ffed' : 
-                       opportunity.color === 'red' ? '#fff2f0' : '#fffbe6',
-            borderColor: opportunity.color === 'green' ? '#b7eb8f' : 
-                        opportunity.color === 'red' ? '#ffccc7' : '#ffe58f'
+            background: isDarkMode 
+              ? (opportunity.color === 'green' ? '#162312' : opportunity.color === 'red' ? '#2a1215' : '#2b2111')
+              : (opportunity.color === 'green' ? '#f6ffed' : opportunity.color === 'red' ? '#fff2f0' : '#fffbe6'),
+            borderColor: opportunity.color === 'green' ? '#52c41a' : 
+                        opportunity.color === 'red' ? '#ff4d4f' : '#faad14'
           }}
         >
           <Row gutter={[16, 8]} align="middle">
@@ -221,7 +234,7 @@ const StockAnalysis = ({ symbol, onBack }) => {
               <Text strong style={{ fontSize: 18 }}>
                 {opportunity.color === 'green' ? <RiseOutlined style={{ color: '#52c41a' }} /> : 
                  opportunity.color === 'red' ? <FallOutlined style={{ color: '#ff4d4f' }} /> : 
-                 <MinusOutlined />}
+                 <MinusOutlined style={{ color: '#faad14' }} />}
                 {' '}{opportunity.type}
               </Text>
             </Col>
@@ -238,82 +251,90 @@ const StockAnalysis = ({ symbol, onBack }) => {
       {/* Analysis Table */}
       <Card title="PAPA + SMM Checklist" style={{ marginBottom: 24 }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 900 }}>
             <thead>
-              <tr style={{ background: '#fafafa' }}>
-                <th style={{ padding: '12px 8px', textAlign: 'left', borderBottom: '1px solid #f0f0f0', minWidth: 150 }}>
+              <tr style={{ background: headerBg }}>
+                <th style={{ padding: '12px 8px', textAlign: 'left', borderBottom: `1px solid ${borderColor}`, minWidth: 150 }}>
                   Indicator
                 </th>
-                <th colSpan="2" style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', background: '#e6f4ff' }}>
+                <th colSpan="2" style={{ padding: '12px 8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>
                   Super TIDE
                 </th>
-                <th colSpan="2" style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', background: '#f6ffed' }}>
+                <th colSpan="2" style={{ padding: '12px 8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>
                   TIDE
                 </th>
-                <th style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', background: '#fffbe6' }}>
+                <th colSpan="2" style={{ padding: '12px 8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>
                   WAVE
                 </th>
-                <th style={{ padding: '12px 8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0', background: '#fff0f6' }}>
+                <th colSpan="2" style={{ padding: '12px 8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>
                   RIPPLE
                 </th>
               </tr>
-              <tr style={{ background: '#fafafa' }}>
-                <th style={{ padding: '8px', borderBottom: '2px solid #f0f0f0' }}></th>
-                <th style={{ padding: '8px', textAlign: 'center', borderBottom: '2px solid #f0f0f0', fontSize: 12 }}>M</th>
-                <th style={{ padding: '8px', textAlign: 'center', borderBottom: '2px solid #f0f0f0', fontSize: 12 }}>W</th>
-                <th style={{ padding: '8px', textAlign: 'center', borderBottom: '2px solid #f0f0f0', fontSize: 12 }}>D</th>
-                <th style={{ padding: '8px', textAlign: 'center', borderBottom: '2px solid #f0f0f0', fontSize: 12 }}>4H</th>
-                <th style={{ padding: '8px', textAlign: 'center', borderBottom: '2px solid #f0f0f0', fontSize: 12 }}>1H</th>
-                <th style={{ padding: '8px', textAlign: 'center', borderBottom: '2px solid #f0f0f0', fontSize: 12 }}>15M</th>
+              <tr style={{ background: headerBg }}>
+                <th style={{ padding: '8px', borderBottom: `2px solid ${borderColor}` }}></th>
+                <th style={{ padding: '8px', textAlign: 'center', borderBottom: `2px solid ${borderColor}`, fontSize: 12 }}>M</th>
+                <th style={{ padding: '8px', textAlign: 'center', borderBottom: `2px solid ${borderColor}`, fontSize: 12, borderRight: `2px solid ${separatorColor}` }}>W</th>
+                <th style={{ padding: '8px', textAlign: 'center', borderBottom: `2px solid ${borderColor}`, fontSize: 12 }}>D</th>
+                <th style={{ padding: '8px', textAlign: 'center', borderBottom: `2px solid ${borderColor}`, fontSize: 12, borderRight: `2px solid ${separatorColor}` }}>4H</th>
+                <th style={{ padding: '8px', textAlign: 'center', borderBottom: `2px solid ${borderColor}`, fontSize: 12 }}>4H</th>
+                <th style={{ padding: '8px', textAlign: 'center', borderBottom: `2px solid ${borderColor}`, fontSize: 12, borderRight: `2px solid ${separatorColor}` }}>1H</th>
+                <th style={{ padding: '8px', textAlign: 'center', borderBottom: `2px solid ${borderColor}`, fontSize: 12 }}>1H</th>
+                <th style={{ padding: '8px', textAlign: 'center', borderBottom: `2px solid ${borderColor}`, fontSize: 12 }}>15M</th>
               </tr>
             </thead>
             <tbody>
               {/* Dow Theory Row */}
               <tr>
-                <td style={{ padding: '12px 8px', fontWeight: 500, borderBottom: '1px solid #f0f0f0' }}>
+                <td style={{ padding: '12px 8px', fontWeight: 500, borderBottom: `1px solid ${borderColor}` }}>
                   Dow Theory (HH/HL)
                 </td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderTrendCell('monthly')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderTrendCell('weekly')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderTrendCell('daily')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderTrendCell('4h')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderTrendCell('1h')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderTrendCell('15m')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderTrendCell('monthly')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>{renderTrendCell('weekly')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderTrendCell('daily')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>{renderTrendCell('4h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderTrendCell('4h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>{renderTrendCell('1h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderTrendCell('1h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderTrendCell('15m')}</td>
               </tr>
 
               {/* RSI Row */}
               <tr>
-                <td style={{ padding: '12px 8px', fontWeight: 500, borderBottom: '1px solid #f0f0f0' }}>
+                <td style={{ padding: '12px 8px', fontWeight: 500, borderBottom: `1px solid ${borderColor}` }}>
                   RSI (14)
                 </td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderRsiCell('monthly')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderRsiCell('weekly')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderRsiCell('daily')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderRsiCell('4h')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderRsiCell('1h')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderRsiCell('15m')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderRsiCell('monthly')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>{renderRsiCell('weekly')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderRsiCell('daily')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>{renderRsiCell('4h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderRsiCell('4h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>{renderRsiCell('1h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderRsiCell('1h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderRsiCell('15m')}</td>
               </tr>
 
               {/* MACD Row */}
               <tr>
-                <td style={{ padding: '12px 8px', fontWeight: 500, borderBottom: '1px solid #f0f0f0' }}>
+                <td style={{ padding: '12px 8px', fontWeight: 500, borderBottom: `1px solid ${borderColor}` }}>
                   MACD (12,26,9)
                 </td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderMacdCell('monthly')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderMacdCell('weekly')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderMacdCell('daily')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderMacdCell('4h')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderMacdCell('1h')}</td>
-                <td style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>{renderMacdCell('15m')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderMacdCell('monthly')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>{renderMacdCell('weekly')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderMacdCell('daily')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>{renderMacdCell('4h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderMacdCell('4h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}`, borderRight: `2px solid ${separatorColor}` }}>{renderMacdCell('1h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderMacdCell('1h')}</td>
+                <td style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>{renderMacdCell('15m')}</td>
               </tr>
 
               {/* Coming Soon */}
               {['Stochastic', 'DMI (+DI/-DI)', 'ADX', 'Bollinger Band', 'EMAs'].map(indicator => (
                 <tr key={indicator}>
-                  <td style={{ padding: '12px 8px', fontWeight: 500, borderBottom: '1px solid #f0f0f0', color: '#999' }}>
+                  <td style={{ padding: '12px 8px', fontWeight: 500, borderBottom: `1px solid ${borderColor}`, color: isDarkMode ? '#666' : '#999' }}>
                     {indicator}
                   </td>
-                  <td colSpan="6" style={{ padding: '8px', textAlign: 'center', borderBottom: '1px solid #f0f0f0' }}>
+                  <td colSpan="8" style={{ padding: '8px', textAlign: 'center', borderBottom: `1px solid ${borderColor}` }}>
                     <Text type="secondary" italic>Coming Soon...</Text>
                   </td>
                 </tr>
