@@ -373,30 +373,35 @@ const Commodity = () => {
       </Card>
 
       {/* Filters */}
-      <Card size="small" style={{ marginBottom: 24 }}>
-        <Row gutter={[16, 16]} align="middle" justify="space-between">
-          <Col>
-            <Space wrap size={screens.md ? 16 : 8}>
+      <Card 
+        style={{ 
+          marginBottom: 24,
+          boxShadow: isDarkMode 
+            ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+            : '0 2px 8px rgba(0, 0, 0, 0.06)',
+        }}
+      >
+        <Row gutter={[16, 16]} align="middle" justify="space-between" wrap>
+          <Col xs={24} md={18} lg={16}>
+            <Space wrap size={16}>
               {/* Analysis Mode Toggle */}
-              <Space direction="vertical" size={4}>
-                <Text strong style={{ fontSize: 13, fontWeight: 600 }}>Analysis Mode:</Text>
-                <div
+              <div>
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                  Analysis Mode
+                </Text>
+                <Space
                   style={{
+                    padding: '6px 12px',
+                    borderRadius: 2,
                     border: `1px solid ${isDarkMode ? '#434343' : '#d9d9d9'}`,
-                    borderRadius: 6,
-                    padding: 4,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    transition: 'all 0.3s ease'
+                    background: isDarkMode ? '#1f1f1f' : '#fafafa',
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 13,
                       fontWeight: !isMultiTimeframe ? 600 : 400,
-                      color: !isMultiTimeframe ? '#1890ff' : (isDarkMode ? 'rgba(255, 255, 255, 0.65)' : 'rgba(0, 0, 0, 0.65)'),
-                      transition: 'all 0.3s ease'
+                      color: !isMultiTimeframe ? '#1890ff' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
                     }}
                   >
                     Single
@@ -404,51 +409,50 @@ const Commodity = () => {
                   <Switch
                     checked={isMultiTimeframe}
                     onChange={setIsMultiTimeframe}
-                    checkedChildren={<Text strong style={{ color: '#fff' }}>All TF</Text>}
-                    unCheckedChildren={<Text strong style={{ color: '#fff' }}>Single</Text>}
                     style={{
-                      backgroundColor: isMultiTimeframe ? '#52c41a' : (isDarkMode ? '#595959' : '#bfbfbf'),
-                      transition: 'background-color 0.3s ease'
+                      background: isMultiTimeframe ? '#52c41a' : undefined
                     }}
                   />
                   <Text
                     style={{
                       fontSize: 13,
                       fontWeight: isMultiTimeframe ? 600 : 400,
-                      color: isMultiTimeframe ? '#52c41a' : (isDarkMode ? 'rgba(255, 255, 255, 0.65)' : 'rgba(0, 0, 0, 0.65)'),
-                      transition: 'all 0.3s ease'
+                      color: isMultiTimeframe ? '#52c41a' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
                     }}
                   >
                     All Timeframes
                   </Text>
-                </div>
-              </Space>
+                </Space>
+              </div>
 
-              {/* Single Timeframe Controls */}
+              {/* Timeframe - Right next to Analysis Mode, only in single mode */}
               {!isMultiTimeframe && (
-                <Space direction="vertical" size={4}>
-                  <Text strong style={{ fontSize: 13, fontWeight: 600 }}>Timeframe:</Text>
+                <div>
+                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                    Timeframe
+                  </Text>
                   <Select
                     value={timeframe}
                     onChange={setTimeframe}
                     options={TIMEFRAMES.map(tf => ({ value: tf.value, label: tf.fullLabel }))}
-                    style={{ width: 120 }}
+                    style={{ width: screens.md ? 140 : 120 }}
                     size={screens.md ? 'middle' : 'large'}
                   />
-                </Space>
+                </div>
               )}
-
-              <Button
-                type="primary"
-                icon={<ReloadOutlined spin={loading} />}
-                onClick={() => fetchData()}
-                loading={loading}
-                size={screens.md ? 'middle' : 'large'}
-                style={{ alignSelf: 'flex-end' }}
-              >
-                Refresh
-              </Button>
             </Space>
+          </Col>
+          <Col xs={24} md={6} lg={8} style={{ textAlign: screens.md ? 'right' : 'left' }}>
+            <Button
+              type="primary"
+              icon={<ReloadOutlined spin={loading} />}
+              onClick={() => fetchData()}
+              loading={loading}
+              size={screens.md ? 'middle' : 'large'}
+              style={{ minWidth: 120 }}
+            >
+              Refresh Data
+            </Button>
           </Col>
         </Row>
       </Card>

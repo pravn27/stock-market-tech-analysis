@@ -4,12 +4,12 @@
  */
 
 import { useState, useEffect } from 'react'
-import { 
+import {
   Card, Select, Button, Space, Tag, Typography, Table,
   Empty, Spin, Alert, Row, Col, Statistic, Progress, Grid, Segmented, Divider, Switch
 } from 'antd'
-import { 
-  ReloadOutlined, GlobalOutlined, ArrowUpOutlined, 
+import {
+  ReloadOutlined, GlobalOutlined, ArrowUpOutlined,
   ArrowDownOutlined, RiseOutlined, FallOutlined,
   AppstoreOutlined, TableOutlined
 } from '@ant-design/icons'
@@ -70,7 +70,7 @@ const GlobalMarkets = () => {
   useEffect(() => {
     const abortController = new AbortController()
     fetchData(abortController.signal)
-    
+
     return () => {
       abortController.abort()
     }
@@ -94,7 +94,7 @@ const GlobalMarkets = () => {
 
   const total = sentiment.bullish + sentiment.bearish + sentiment.neutral
   const bullishPercent = total > 0 ? Math.round((sentiment.bullish / total) * 100) : 0
-  
+
   // Multi-timeframe sentiments
   const multiTimeframeSentiments = multiTimeframe && data?.sentiments ? data.sentiments : null
 
@@ -139,18 +139,18 @@ const GlobalMarkets = () => {
       render: (_, record) => {
         const tfData = record.timeframes?.[tf.value]
         if (!tfData || tfData.error || tfData.change_pct === null) return '-'
-        
+
         const pct = tfData.change_pct
         const color = pct > 0 ? 'green' : pct < 0 ? 'red' : 'default'
         const sign = pct > 0 ? '+' : ''
         const Icon = pct > 0 ? ArrowUpOutlined : pct < 0 ? ArrowDownOutlined : null
         const isSelected = tf.value === selectedTimeframe
-        
+
         return (
-          <Tag 
-            color={color} 
-            style={{ 
-              minWidth: 75, 
+          <Tag
+            color={color}
+            style={{
+              minWidth: 75,
               textAlign: 'center',
               fontSize: 12,
               fontWeight: isSelected ? 700 : 500,
@@ -237,10 +237,10 @@ const GlobalMarkets = () => {
         const sign = pct > 0 ? '+' : ''
         const Icon = pct > 0 ? ArrowUpOutlined : pct < 0 ? ArrowDownOutlined : null
         return (
-          <Tag 
-            color={color} 
-            style={{ 
-              minWidth: 90, 
+          <Tag
+            color={color}
+            style={{
+              minWidth: 90,
               textAlign: 'center',
               fontSize: 13,
               fontWeight: 600,
@@ -263,7 +263,7 @@ const GlobalMarkets = () => {
 
     return (
       <div key={group.key} style={{ marginBottom: 24 }}>
-        <Card 
+        <Card
           title={
             <Space size={12}>
               <span style={{ fontSize: 20 }}>{group.emoji}</span>
@@ -278,8 +278,8 @@ const GlobalMarkets = () => {
           size="small"
           bodyStyle={{ padding: 0 }}
           style={{
-            boxShadow: isDarkMode 
-              ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+            boxShadow: isDarkMode
+              ? '0 2px 8px rgba(0, 0, 0, 0.3)'
               : '0 2px 8px rgba(0, 0, 0, 0.08)',
             transition: 'all 0.3s ease'
           }}
@@ -291,7 +291,7 @@ const GlobalMarkets = () => {
             size="middle"
             scroll={{ x: multiTimeframe ? 1000 : 600 }}
             sticky={{ offsetHeader: 64 }}
-            rowClassName={(record, index) => 
+            rowClassName={(record, index) =>
               index % 2 === 0 ? '' : isDarkMode ? 'ant-table-row-striped-dark' : 'ant-table-row-striped'
             }
           />
@@ -305,9 +305,9 @@ const GlobalMarkets = () => {
     const isPositive = market.change_pct > 0
     const isNegative = market.change_pct < 0
     const changeColor = isPositive ? '#52c41a' : isNegative ? '#ff4d4f' : '#999'
-    const bgColor = isPositive 
-      ? (isDarkMode ? 'rgba(82, 196, 26, 0.08)' : 'rgba(82, 196, 26, 0.04)') 
-      : isNegative 
+    const bgColor = isPositive
+      ? (isDarkMode ? 'rgba(82, 196, 26, 0.08)' : 'rgba(82, 196, 26, 0.04)')
+      : isNegative
         ? (isDarkMode ? 'rgba(255, 77, 79, 0.08)' : 'rgba(255, 77, 79, 0.04)')
         : 'transparent'
     const sign = isPositive ? '+' : ''
@@ -315,15 +315,15 @@ const GlobalMarkets = () => {
 
     return (
       <Col xs={12} sm={8} md={6} lg={4} xl={3} key={market.symbol}>
-        <Card 
+        <Card
           hoverable
-          style={{ 
+          style={{
             height: '100%',
             borderLeft: `4px solid ${changeColor}`,
             background: bgColor,
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: isDarkMode 
-              ? '0 1px 4px rgba(0, 0, 0, 0.3)' 
+            boxShadow: isDarkMode
+              ? '0 1px 4px rgba(0, 0, 0, 0.3)'
               : '0 1px 4px rgba(0, 0, 0, 0.08)',
           }}
           bodyStyle={{ padding: '16px' }}
@@ -331,8 +331,8 @@ const GlobalMarkets = () => {
             body: {
               ':hover': {
                 transform: 'translateY(-2px)',
-                boxShadow: isDarkMode 
-                  ? '0 4px 12px rgba(0, 0, 0, 0.4)' 
+                boxShadow: isDarkMode
+                  ? '0 4px 12px rgba(0, 0, 0, 0.4)'
                   : '0 4px 12px rgba(0, 0, 0, 0.12)'
               }
             }
@@ -346,30 +346,30 @@ const GlobalMarkets = () => {
               {market.symbol}
             </Text>
           </div>
-          
-          <Text 
-            strong 
-            style={{ 
-              fontSize: 24, 
-              fontWeight: 700, 
-              display: 'block', 
+
+          <Text
+            strong
+            style={{
+              fontSize: 24,
+              fontWeight: 700,
+              display: 'block',
               marginTop: 8,
               marginBottom: 12,
               fontFamily: 'monospace',
               letterSpacing: '-0.5px'
             }}
           >
-            {market.price?.toLocaleString(undefined, { 
-              minimumFractionDigits: 2, 
-              maximumFractionDigits: 2 
+            {market.price?.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
             }) || '-'}
           </Text>
-          
+
           <Space size={8} style={{ width: '100%' }} wrap>
-            <Tag 
+            <Tag
               color={isPositive ? 'green' : isNegative ? 'red' : 'default'}
-              style={{ 
-                fontSize: 13, 
+              style={{
+                fontSize: 13,
                 fontWeight: 600,
                 padding: '2px 8px',
                 margin: 0
@@ -382,13 +382,13 @@ const GlobalMarkets = () => {
               {sign}{market.change?.toFixed(2) || '0.00'}
             </Text>
           </Space>
-          
+
           <Divider style={{ margin: '12px 0' }} />
-          
-          <Text 
-            type="secondary" 
-            style={{ 
-              fontSize: 11, 
+
+          <Text
+            type="secondary"
+            style={{
+              fontSize: 11,
               display: 'block',
               lineHeight: 1.4,
               overflow: 'hidden',
@@ -415,7 +415,7 @@ const GlobalMarkets = () => {
 
     return (
       <div key={group.key} style={{ marginBottom: 32 }}>
-        <Card 
+        <Card
           title={
             <Space size={12} style={{ width: '100%', justifyContent: 'space-between' }}>
               <Space size={12}>
@@ -427,7 +427,7 @@ const GlobalMarkets = () => {
                   </Text>
                 </div>
               </Space>
-              <Tag 
+              <Tag
                 color={groupPercent >= 50 ? 'green' : 'red'}
                 style={{ fontSize: 13, padding: '4px 12px', fontWeight: 600 }}
               >
@@ -437,8 +437,8 @@ const GlobalMarkets = () => {
           }
           bodyStyle={{ padding: 20 }}
           style={{
-            boxShadow: isDarkMode 
-              ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+            boxShadow: isDarkMode
+              ? '0 2px 8px rgba(0, 0, 0, 0.3)'
               : '0 2px 8px rgba(0, 0, 0, 0.08)',
             borderRadius: 2,
             transition: 'all 0.3s ease'
@@ -486,11 +486,11 @@ const GlobalMarkets = () => {
       </Card>
 
       {/* Enhanced Filters */}
-      <Card 
-        style={{ 
+      <Card
+        style={{
           marginBottom: 24,
-          boxShadow: isDarkMode 
-            ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+          boxShadow: isDarkMode
+            ? '0 2px 8px rgba(0, 0, 0, 0.3)'
             : '0 2px 8px rgba(0, 0, 0, 0.06)',
         }}
         bodyStyle={{ padding: screens.md ? '16px 24px' : '16px' }}
@@ -503,7 +503,7 @@ const GlobalMarkets = () => {
                 <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
                   Analysis Mode
                 </Text>
-                <Space 
+                <Space
                   style={{
                     padding: '6px 12px',
                     borderRadius: 2,
@@ -511,8 +511,8 @@ const GlobalMarkets = () => {
                     background: isDarkMode ? '#1f1f1f' : '#fafafa',
                   }}
                 >
-                  <Text 
-                    style={{ 
+                  <Text
+                    style={{
                       fontSize: 13,
                       fontWeight: !multiTimeframe ? 600 : 400,
                       color: !multiTimeframe ? '#1890ff' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
@@ -532,8 +532,8 @@ const GlobalMarkets = () => {
                       background: multiTimeframe ? '#52c41a' : undefined
                     }}
                   />
-                  <Text 
-                    style={{ 
+                  <Text
+                    style={{
                       fontSize: 13,
                       fontWeight: multiTimeframe ? 600 : 400,
                       color: multiTimeframe ? '#52c41a' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
@@ -571,15 +571,15 @@ const GlobalMarkets = () => {
                     onChange={setViewMode}
                     size={screens.md ? 'middle' : 'large'}
                     options={[
-                      { 
-                        value: 'cards', 
-                        icon: <AppstoreOutlined />, 
+                      {
+                        value: 'cards',
+                        icon: <AppstoreOutlined />,
                         label: screens.md ? 'Cards' : ''
                       },
-                      { 
-                        value: 'table', 
-                        icon: <TableOutlined />, 
-                        label: screens.md ? 'Table' : '' 
+                      {
+                        value: 'table',
+                        icon: <TableOutlined />,
+                        label: screens.md ? 'Table' : ''
                       },
                     ]}
                   />
@@ -612,13 +612,13 @@ const GlobalMarkets = () => {
             {TIMEFRAMES.map(tf => {
               const sent = multiTimeframeSentiments[tf.value]
               if (!sent) return null
-              
+
               const bullish = sent.breadth?.positive || 0
               const bearish = sent.breadth?.negative || 0
               const neutral = sent.breadth?.total - bullish - bearish || 0
               const bullishPercent = sent.breadth?.percentage || 0
               const isBullish = bullishPercent >= 50
-              
+
               return (
                 <Col xs={12} sm={8} md={4} key={tf.value}>
                   <Card
@@ -631,8 +631,8 @@ const GlobalMarkets = () => {
                         : (isDarkMode ? 'rgba(255, 77, 79, 0.08)' : 'rgba(255, 77, 79, 0.04)'),
                       height: '100%',
                       transition: 'all 0.3s ease',
-                      boxShadow: isDarkMode 
-                        ? '0 2px 6px rgba(0, 0, 0, 0.3)' 
+                      boxShadow: isDarkMode
+                        ? '0 2px 6px rgba(0, 0, 0, 0.3)'
                         : '0 2px 6px rgba(0, 0, 0, 0.08)',
                     }}
                     bodyStyle={{ padding: 12 }}
@@ -647,7 +647,7 @@ const GlobalMarkets = () => {
                       </Text>
                       {isBullish ? <RiseOutlined style={{ color: '#52c41a', fontSize: 16 }} /> : <FallOutlined style={{ color: '#ff4d4f', fontSize: 16 }} />}
                     </Space>
-                    <Tag 
+                    <Tag
                       color={isBullish ? 'green' : 'red'}
                       style={{ fontSize: 11, padding: '2px 6px', margin: 0, marginBottom: 8 }}
                     >
@@ -670,19 +670,19 @@ const GlobalMarkets = () => {
       {!loading && !multiTimeframe && allIndices.length > 0 && (
         <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
           <Col xs={24} lg={10}>
-            <Card 
+            <Card
               style={{
-                background: bullishPercent >= 50 
-                  ? (isDarkMode 
-                      ? 'linear-gradient(135deg, rgba(82, 196, 26, 0.12) 0%, rgba(82, 196, 26, 0.04) 100%)'
-                      : 'linear-gradient(135deg, rgba(82, 196, 26, 0.08) 0%, rgba(82, 196, 26, 0.02) 100%)')
-                  : (isDarkMode 
-                      ? 'linear-gradient(135deg, rgba(255, 77, 79, 0.12) 0%, rgba(255, 77, 79, 0.04) 100%)'
-                      : 'linear-gradient(135deg, rgba(255, 77, 79, 0.08) 0%, rgba(255, 77, 79, 0.02) 100%)'),
+                background: bullishPercent >= 50
+                  ? (isDarkMode
+                    ? 'linear-gradient(135deg, rgba(82, 196, 26, 0.12) 0%, rgba(82, 196, 26, 0.04) 100%)'
+                    : 'linear-gradient(135deg, rgba(82, 196, 26, 0.08) 0%, rgba(82, 196, 26, 0.02) 100%)')
+                  : (isDarkMode
+                    ? 'linear-gradient(135deg, rgba(255, 77, 79, 0.12) 0%, rgba(255, 77, 79, 0.04) 100%)'
+                    : 'linear-gradient(135deg, rgba(255, 77, 79, 0.08) 0%, rgba(255, 77, 79, 0.02) 100%)'),
                 borderLeft: `4px solid ${bullishPercent >= 50 ? '#52c41a' : '#ff4d4f'}`,
                 height: '100%',
-                boxShadow: isDarkMode 
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
                   : '0 2px 8px rgba(0, 0, 0, 0.08)',
               }}
               bodyStyle={{ padding: 20 }}
@@ -697,13 +697,13 @@ const GlobalMarkets = () => {
                       value={bullishPercent}
                       suffix="%"
                       prefix={bullishPercent >= 50 ? <RiseOutlined /> : <FallOutlined />}
-                      valueStyle={{ 
+                      valueStyle={{
                         color: bullishPercent >= 50 ? '#52c41a' : '#ff4d4f',
                         fontSize: 40,
                         fontWeight: 700
                       }}
                     />
-                    <Tag 
+                    <Tag
                       color={bullishPercent >= 50 ? 'green' : 'red'}
                       style={{ fontSize: 16, padding: '6px 16px', fontWeight: 600 }}
                     >
@@ -711,8 +711,8 @@ const GlobalMarkets = () => {
                     </Tag>
                   </Space>
                 </div>
-                <Progress 
-                  percent={bullishPercent} 
+                <Progress
+                  percent={bullishPercent}
                   strokeColor={{
                     '0%': bullishPercent >= 50 ? '#52c41a' : '#ff4d4f',
                     '100%': bullishPercent >= 50 ? '#73d13d' : '#ff7875',
@@ -729,13 +729,13 @@ const GlobalMarkets = () => {
             </Card>
           </Col>
           <Col xs={8} lg={5}>
-            <Card 
+            <Card
               hoverable
               style={{
                 height: '100%',
                 borderTop: '3px solid #52c41a',
-                boxShadow: isDarkMode 
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
                   : '0 2px 8px rgba(0, 0, 0, 0.08)',
                 transition: 'all 0.3s ease'
               }}
@@ -753,13 +753,13 @@ const GlobalMarkets = () => {
             </Card>
           </Col>
           <Col xs={8} lg={5}>
-            <Card 
+            <Card
               hoverable
               style={{
                 height: '100%',
                 borderTop: '3px solid #999',
-                boxShadow: isDarkMode 
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
                   : '0 2px 8px rgba(0, 0, 0, 0.08)',
                 transition: 'all 0.3s ease'
               }}
@@ -776,13 +776,13 @@ const GlobalMarkets = () => {
             </Card>
           </Col>
           <Col xs={8} lg={4}>
-            <Card 
+            <Card
               hoverable
               style={{
                 height: '100%',
                 borderTop: '3px solid #ff4d4f',
-                boxShadow: isDarkMode 
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
                   : '0 2px 8px rgba(0, 0, 0, 0.08)',
                 transition: 'all 0.3s ease'
               }}
@@ -810,10 +810,10 @@ const GlobalMarkets = () => {
           type="error"
           showIcon
           closable
-          style={{ 
+          style={{
             marginBottom: 24,
-            boxShadow: isDarkMode 
-              ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+            boxShadow: isDarkMode
+              ? '0 2px 8px rgba(0, 0, 0, 0.3)'
               : '0 2px 8px rgba(0, 0, 0, 0.08)',
           }}
         />
@@ -823,8 +823,8 @@ const GlobalMarkets = () => {
       {loading && (
         <Card
           style={{
-            boxShadow: isDarkMode 
-              ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+            boxShadow: isDarkMode
+              ? '0 2px 8px rgba(0, 0, 0, 0.3)'
               : '0 2px 8px rgba(0, 0, 0, 0.08)',
           }}
         >
@@ -846,12 +846,12 @@ const GlobalMarkets = () => {
       {!loading && !error && !multiTimeframe && allIndices.length === 0 && (
         <Card
           style={{
-            boxShadow: isDarkMode 
-              ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+            boxShadow: isDarkMode
+              ? '0 2px 8px rgba(0, 0, 0, 0.3)'
               : '0 2px 8px rgba(0, 0, 0, 0.08)',
           }}
         >
-          <Empty 
+          <Empty
             description={
               <Space direction="vertical" size={8}>
                 <Text strong style={{ fontSize: 15 }}>No Market Data Available</Text>
@@ -862,9 +862,9 @@ const GlobalMarkets = () => {
             }
             style={{ padding: screens.md ? 60 : 40 }}
           >
-            <Button 
-              type="primary" 
-              icon={<ReloadOutlined />} 
+            <Button
+              type="primary"
+              icon={<ReloadOutlined />}
               onClick={() => fetchData()}
               size="large"
             >
