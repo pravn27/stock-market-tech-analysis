@@ -22,12 +22,12 @@ const { Title, Text } = Typography
 const { useBreakpoint } = Grid
 
 const TIMEFRAMES = [
-  { value: '1h', label: '1H', fullLabel: '1 Hour' },
-  { value: '4h', label: '4H', fullLabel: '4 Hour' },
-  { value: 'daily', label: 'Daily', fullLabel: 'Daily' },
-  { value: 'weekly', label: 'Weekly', fullLabel: 'Weekly' },
-  { value: 'monthly', label: 'Monthly', fullLabel: 'Monthly' },
   { value: '3m', label: '3M', fullLabel: '3 Month' },
+  { value: 'monthly', label: 'Monthly', fullLabel: 'Monthly' },
+  { value: 'weekly', label: 'Weekly', fullLabel: 'Weekly' },
+  { value: 'daily', label: 'Daily', fullLabel: 'Daily' },
+  { value: '4h', label: '4H', fullLabel: '4 Hour' },
+  { value: '1h', label: '1H', fullLabel: '1 Hour' },
 ]
 
 const COMMODITY_GROUPS = [
