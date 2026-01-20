@@ -500,10 +500,10 @@ const GlobalMarkets = () => {
         <Row gutter={[16, 16]} align="middle" justify="space-between" wrap>
           <Col xs={24} md={18} lg={16}>
             <Space wrap size={12}>
-              {/* All Timeframes Toggle */}
+              {/* Analysis Mode Toggle */}
               <div>
                 <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                  Timeframe
+                  Analysis Mode
                 </Text>
                 <Space 
                   style={{
