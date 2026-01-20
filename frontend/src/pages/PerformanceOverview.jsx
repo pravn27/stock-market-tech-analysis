@@ -6,11 +6,11 @@
 import { useState, useMemo } from 'react'
 import { 
   Card, Table, Select, InputNumber, Button, Space, Tag, Modal, 
-  Typography, Empty, Spin, Alert, Row, Col, Tooltip, Grid
+  Typography, Empty, Spin, Alert, Row, Col, Tooltip, Grid, Switch, Statistic, Progress
 } from 'antd'
 import { 
   ReloadOutlined, BarChartOutlined, ArrowUpOutlined, 
-  ArrowDownOutlined, MinusOutlined 
+  ArrowDownOutlined, MinusOutlined, RiseOutlined, FallOutlined
 } from '@ant-design/icons'
 import { getTopPerformers, getSectorStocks } from '../api/scanner'
 import { useTheme } from '../context/ThemeContext'
@@ -21,11 +21,13 @@ const { useBreakpoint } = Grid
 const TIMEFRAMES = ['3M', 'M', 'W', 'D', '4H', '1H']
 const TF_KEY_MAP = { '3M': 'three_month', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': 'four_hour', '1H': 'one_hour' }
 
-const INDEX_GROUPS = [
-  { value: 'all', label: 'All Indices' },
-  { value: 'sectorial', label: 'Sectorial' },
-  { value: 'broad_market', label: 'Broad Market' },
-  { value: 'thematic', label: 'Thematic' }
+const TIMEFRAME_OPTIONS = [
+  { value: 'three_month', label: '3 Month' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'four_hour', label: '4 Hour' },
+  { value: 'one_hour', label: '1 Hour' },
 ]
 
 // Get status tag based on value
@@ -56,7 +58,8 @@ const PerformanceOverview = () => {
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
   const [lookback, setLookback] = useState(1)
-  const [indexGroup, setIndexGroup] = useState('all')
+  const [isMultiTimeframe, setIsMultiTimeframe] = useState(false)
+  const [timeframe, setTimeframe] = useState('weekly')
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
@@ -68,7 +71,7 @@ const PerformanceOverview = () => {
     setLoading(true)
     setError(null)
     try {
-      const result = await getTopPerformers(100, indexGroup, lookback)
+      const result = await getTopPerformers(100, 'all', lookback)
       setData(result)
     } catch (err) {
       const detail = err.response?.data?.detail
@@ -234,12 +237,7 @@ const PerformanceOverview = () => {
                   Relative Performance Overview
                 </Title>
                 <Text type="secondary" style={{ fontSize: 14 }}>
-                  {INDEX_GROUPS.find(g => g.value === indexGroup)?.label || 'All Indices'} vs NIFTY 50
-                  {data && (
-                    <Tag color="blue" style={{ marginLeft: 8 }}>
-                      Lookback: {data.lookback || lookback}
-                    </Tag>
-                  )}
+                  All Indices vs NIFTY 50
                 </Text>
               </div>
             </Space>
@@ -248,52 +246,328 @@ const PerformanceOverview = () => {
       </Card>
 
       {/* Filters */}
-      <Card size="small" style={{ marginBottom: 24 }}>
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} sm={12} md={6}>
-            <Space direction="vertical" size={4} style={{ width: '100%' }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>INDEX GROUP</Text>
-              <Select
-                value={indexGroup}
-                onChange={setIndexGroup}
-                options={INDEX_GROUPS}
-                style={{ width: '100%' }}
-                size={screens.md ? 'middle' : 'large'}
-              />
+      <Card 
+        style={{ 
+          marginBottom: 24,
+          boxShadow: isDarkMode 
+            ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+            : '0 2px 8px rgba(0, 0, 0, 0.06)',
+        }}
+      >
+        <Row gutter={[16, 16]} align="middle" justify="space-between" wrap>
+          <Col xs={24} md={18} lg={16}>
+            <Space wrap size={16}>
+              {/* Analysis Mode Toggle */}
+              <div>
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                  Analysis Mode
+                </Text>
+                <Space
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 2,
+                    border: `1px solid ${isDarkMode ? '#434343' : '#d9d9d9'}`,
+                    background: isDarkMode ? '#1f1f1f' : '#fafafa',
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: !isMultiTimeframe ? 600 : 400,
+                      color: !isMultiTimeframe ? '#1890ff' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
+                    }}
+                  >
+                    Single
+                  </Text>
+                  <Switch
+                    checked={isMultiTimeframe}
+                    onChange={setIsMultiTimeframe}
+                    style={{
+                      background: isMultiTimeframe ? '#52c41a' : undefined
+                    }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: isMultiTimeframe ? 600 : 400,
+                      color: isMultiTimeframe ? '#52c41a' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
+                    }}
+                  >
+                    All Timeframes
+                  </Text>
+                </Space>
+              </div>
+
+              {/* Timeframe - Only in single mode */}
+              {!isMultiTimeframe && (
+                <div>
+                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                    Timeframe
+                  </Text>
+                  <Select
+                    value={timeframe}
+                    onChange={setTimeframe}
+                    options={TIMEFRAME_OPTIONS}
+                    style={{ width: screens.md ? 140 : 120 }}
+                    size={screens.md ? 'middle' : 'large'}
+                  />
+                </div>
+              )}
+
+              {/* Lookback */}
+              <div>
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                  Lookback
+                </Text>
+                <Space>
+                  <InputNumber
+                    min={1}
+                    max={99}
+                    value={lookback}
+                    onChange={(val) => setLookback(val || 1)}
+                    style={{ width: 80 }}
+                    size={screens.md ? 'middle' : 'large'}
+                  />
+                  <Text type="secondary">periods</Text>
+                </Space>
+              </div>
             </Space>
           </Col>
-          <Col xs={24} sm={12} md={6}>
-            <Space direction="vertical" size={4} style={{ width: '100%' }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>LOOKBACK</Text>
-              <Space>
-                <InputNumber
-                  min={1}
-                  max={99}
-                  value={lookback}
-                  onChange={(val) => setLookback(val || 1)}
-                  style={{ width: 80 }}
-                  size={screens.md ? 'middle' : 'large'}
-                />
-                <Text type="secondary">periods</Text>
-              </Space>
-            </Space>
-          </Col>
-          <Col xs={24} sm={24} md={12}>
-            <div style={{ display: 'flex', justifyContent: screens.md ? 'flex-end' : 'flex-start', marginTop: screens.md ? 20 : 0 }}>
-              <Button
-                type="primary"
-                icon={<ReloadOutlined spin={loading} />}
-                onClick={fetchData}
-                loading={loading}
-                size={screens.md ? 'middle' : 'large'}
-                style={{ minWidth: 120 }}
-              >
-                {loading ? 'Loading...' : 'Refresh'}
-              </Button>
-            </div>
+          <Col xs={24} md={6} lg={8} style={{ textAlign: screens.md ? 'right' : 'left' }}>
+            <Button
+              type="primary"
+              icon={<ReloadOutlined spin={loading} />}
+              onClick={fetchData}
+              loading={loading}
+              size={screens.md ? 'middle' : 'large'}
+              style={{ minWidth: 120 }}
+            >
+              Refresh Data
+            </Button>
           </Col>
         </Row>
       </Card>
+
+      {/* Overall Sentiment */}
+      {!loading && data && allSectors.length > 0 && (
+        <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
+          <Col xs={24} lg={10}>
+            <Card
+              style={{
+                background: (() => {
+                  const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                  const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                  const totalCount = allSectors.length
+                  const bullishPercent = Math.round((bullishCount / totalCount) * 100)
+                  const isPositive = bullishPercent >= 50
+                  return isPositive
+                    ? (isDarkMode
+                        ? 'linear-gradient(135deg, rgba(82, 196, 26, 0.12) 0%, rgba(82, 196, 26, 0.04) 100%)'
+                        : 'linear-gradient(135deg, rgba(82, 196, 26, 0.08) 0%, rgba(82, 196, 26, 0.02) 100%)')
+                    : (isDarkMode
+                        ? 'linear-gradient(135deg, rgba(255, 77, 79, 0.12) 0%, rgba(255, 77, 79, 0.04) 100%)'
+                        : 'linear-gradient(135deg, rgba(255, 77, 79, 0.08) 0%, rgba(255, 77, 79, 0.02) 100%)')
+                })(),
+                borderLeft: (() => {
+                  const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                  const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                  const totalCount = allSectors.length
+                  const bullishPercent = Math.round((bullishCount / totalCount) * 100)
+                  return `4px solid ${bullishPercent >= 50 ? '#52c41a' : '#ff4d4f'}`
+                })(),
+                height: '100%',
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
+              }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                <div>
+                  <Text strong style={{ fontSize: 18, display: 'block', marginBottom: 8, fontWeight: 700 }}>
+                    Overall Market Sentiment ({TIMEFRAME_OPTIONS.find(tf => tf.value === (isMultiTimeframe ? 'weekly' : timeframe))?.label})
+                  </Text>
+                  <Space size={16} align="end">
+                    <Statistic
+                      value={(() => {
+                        const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                        const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                        const totalCount = allSectors.length
+                        return Math.round((bullishCount / totalCount) * 100)
+                      })()}
+                      suffix="%"
+                      prefix={(() => {
+                        const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                        const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                        const totalCount = allSectors.length
+                        const bullishPercent = Math.round((bullishCount / totalCount) * 100)
+                        return bullishPercent >= 50 ? <RiseOutlined /> : <FallOutlined />
+                      })()}
+                      valueStyle={{
+                        color: (() => {
+                          const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                          const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                          const totalCount = allSectors.length
+                          const bullishPercent = Math.round((bullishCount / totalCount) * 100)
+                          return bullishPercent >= 50 ? '#52c41a' : '#ff4d4f'
+                        })(),
+                        fontSize: 40,
+                        fontWeight: 700
+                      }}
+                    />
+                    <Tag
+                      color={(() => {
+                        const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                        const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                        const totalCount = allSectors.length
+                        const bullishPercent = Math.round((bullishCount / totalCount) * 100)
+                        return bullishPercent >= 50 ? 'green' : 'red'
+                      })()}
+                      style={{ fontSize: 16, padding: '6px 16px', fontWeight: 600 }}
+                    >
+                      {(() => {
+                        const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                        const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                        const totalCount = allSectors.length
+                        const bullishPercent = Math.round((bullishCount / totalCount) * 100)
+                        return bullishPercent >= 50 ? 'BULLISH' : 'BEARISH'
+                      })()}
+                    </Tag>
+                  </Space>
+                </div>
+                <Progress
+                  percent={(() => {
+                    const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                    const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                    const totalCount = allSectors.length
+                    return Math.round((bullishCount / totalCount) * 100)
+                  })()}
+                  strokeColor={{
+                    '0%': (() => {
+                      const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                      const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                      const totalCount = allSectors.length
+                      const bullishPercent = Math.round((bullishCount / totalCount) * 100)
+                      return bullishPercent >= 50 ? '#52c41a' : '#ff4d4f'
+                    })(),
+                    '100%': (() => {
+                      const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                      const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                      const totalCount = allSectors.length
+                      const bullishPercent = Math.round((bullishCount / totalCount) * 100)
+                      return bullishPercent >= 50 ? '#87d068' : '#f5222d'
+                    })(),
+                  }}
+                  trailColor={isDarkMode ? '#434343' : '#f0f0f0'}
+                  showInfo={false}
+                  style={{ marginTop: 8 }}
+                />
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  {(() => {
+                    const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                    const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                    const totalCount = allSectors.length
+                    const bullishPercent = Math.round((bullishCount / totalCount) * 100)
+                    return bullishPercent >= 50 ? 'Bullish' : 'Bearish'
+                  })()} • {allSectors.length} indices
+                </Text>
+              </Space>
+            </Card>
+          </Col>
+          <Col xs={8} lg={4}>
+            <Card
+              hoverable
+              style={{
+                height: '100%',
+                borderTop: '3px solid #52c41a',
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                transition: 'all 0.3s ease'
+              }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <Statistic
+                title={<Text strong style={{ fontSize: 13 }}>Bullish</Text>}
+                value={(() => {
+                  const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                  return allSectors.filter(s => s[tfKey] > 1).length
+                })()}
+                valueStyle={{ color: '#52c41a', fontSize: 32, fontWeight: 700 }}
+                prefix={<ArrowUpOutlined style={{ fontSize: 24 }} />}
+              />
+              <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
+                {(() => {
+                  const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                  const bullishCount = allSectors.filter(s => s[tfKey] > 1).length
+                  return Math.round((bullishCount / allSectors.length) * 100)
+                })()}% of indices
+              </Text>
+            </Card>
+          </Col>
+          <Col xs={8} lg={4}>
+            <Card
+              hoverable
+              style={{
+                height: '100%',
+                borderTop: '3px solid #999',
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                transition: 'all 0.3s ease'
+              }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <Statistic
+                title={<Text strong style={{ fontSize: 13 }}>Neutral</Text>}
+                value={(() => {
+                  const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                  return allSectors.filter(s => s[tfKey] >= -1 && s[tfKey] <= 1).length
+                })()}
+                valueStyle={{ color: '#999', fontSize: 32, fontWeight: 700 }}
+              />
+              <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
+                {(() => {
+                  const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                  const neutralCount = allSectors.filter(s => s[tfKey] >= -1 && s[tfKey] <= 1).length
+                  return Math.round((neutralCount / allSectors.length) * 100)
+                })()}% of indices
+              </Text>
+            </Card>
+          </Col>
+          <Col xs={8} lg={4}>
+            <Card
+              hoverable
+              style={{
+                height: '100%',
+                borderTop: '3px solid #ff4d4f',
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                transition: 'all 0.3s ease'
+              }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <Statistic
+                title={<Text strong style={{ fontSize: 13 }}>Bearish</Text>}
+                value={(() => {
+                  const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                  return allSectors.filter(s => s[tfKey] < -1).length
+                })()}
+                valueStyle={{ color: '#ff4d4f', fontSize: 32, fontWeight: 700 }}
+                prefix={<ArrowDownOutlined style={{ fontSize: 24 }} />}
+              />
+              <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
+                {(() => {
+                  const tfKey = isMultiTimeframe ? 'weekly' : timeframe
+                  const bearishCount = allSectors.filter(s => s[tfKey] < -1).length
+                  return Math.round((bearishCount / allSectors.length) * 100)
+                })()}% of indices
+              </Text>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       {/* Error Alert */}
       {error && (
