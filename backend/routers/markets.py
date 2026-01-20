@@ -148,10 +148,11 @@ async def get_commodities(
                 result = GlobalMarketsService.fetch_market_group(COMMODITIES, tf)
                 all_timeframe_data[tf] = result
                 
-                # Calculate sentiment for this timeframe
-                total = len(result)
-                bullish = sum(1 for c in result if c.get('change_pct', 0) > 0)
-                bearish = sum(1 for c in result if c.get('change_pct', 0) < 0)
+                # Calculate sentiment for this timeframe (exclude errors/None values)
+                valid_results = [c for c in result if c.get('change_pct') is not None and not c.get('error', False)]
+                total = len(valid_results)
+                bullish = sum(1 for c in valid_results if c.get('change_pct', 0) > 0)
+                bearish = sum(1 for c in valid_results if c.get('change_pct', 0) < 0)
                 neutral = total - bullish - bearish
                 bullish_pct = round((bullish / total * 100) if total > 0 else 0, 1)
                 
@@ -199,10 +200,11 @@ async def get_commodities(
         else:
             result = GlobalMarketsService.fetch_market_group(COMMODITIES, timeframe)
             
-            # Calculate sentiment
-            total = len(result)
-            bullish = sum(1 for c in result if c.get('change_pct', 0) > 0)
-            bearish = sum(1 for c in result if c.get('change_pct', 0) < 0)
+            # Calculate sentiment (exclude errors/None values)
+            valid_results = [c for c in result if c.get('change_pct') is not None and not c.get('error', False)]
+            total = len(valid_results)
+            bullish = sum(1 for c in valid_results if c.get('change_pct', 0) > 0)
+            bearish = sum(1 for c in valid_results if c.get('change_pct', 0) < 0)
             neutral = total - bullish - bearish
             bullish_pct = round((bullish / total * 100) if total > 0 else 0, 1)
             
