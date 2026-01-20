@@ -19,7 +19,7 @@ import './index.css'
 const { Content, Footer } = Layout
 
 const AppContent = () => {
-  const [activePage, setActivePage] = useState('overview')
+  const [activePage, setActivePage] = useState('global')
   const { isDarkMode } = useTheme()
 
   const renderPage = () => {
