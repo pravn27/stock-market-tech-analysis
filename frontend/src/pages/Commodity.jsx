@@ -35,21 +35,21 @@ const COMMODITY_GROUPS = [
     key: 'precious_metals',
     title: 'Precious Metals',
     subtitle: 'COMEX - CME Group, New York',
-    icon: <GoldOutlined style={{ fontSize: 24, color: '#faad14' }} />,
+    icon: <GoldOutlined style={{ fontSize: 20, color: '#faad14' }} />,
     color: '#faad14'
   },
   {
     key: 'energy_commodities',
     title: 'Energy',
     subtitle: 'NYMEX - New York Mercantile Exchange',
-    icon: <ThunderboltOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />,
+    icon: <ThunderboltOutlined style={{ fontSize: 20, color: '#ff4d4f' }} />,
     color: '#ff4d4f'
   },
   {
     key: 'agricultural_commodities',
     title: 'Agricultural',
     subtitle: 'CBOT - Chicago Board of Trade',
-    icon: <ExperimentOutlined style={{ fontSize: 24, color: '#52c41a' }} />,
+    icon: <ExperimentOutlined style={{ fontSize: 20, color: '#52c41a' }} />,
     color: '#52c41a'
   }
 ]
@@ -301,33 +301,42 @@ const Commodity = () => {
     const dataSource = groupData.map((item, idx) => ({ ...item, key: `${groupKey}_${idx}` }))
 
     return (
-      <div key={groupKey} style={{ marginBottom: 32 }}>
-        <Space align="center" style={{ marginBottom: 16 }}>
-          {groupInfo.icon}
-          <div>
-            <Title level={4} style={{ margin: 0, color: groupInfo.color }}>
-              {groupInfo.title}
-            </Title>
+      <div key={groupKey} style={{ marginBottom: 24 }}>
+        <Card
+          title={
+            <Space size={12}>
+              {groupInfo.icon}
+              <div>
+                <Text strong style={{ fontSize: 16 }}>{groupInfo.title}</Text>
+                <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                  ({groupData.length} commodities)
+                </Text>
+              </div>
+            </Space>
+          }
+          extra={
             <Text type="secondary" style={{ fontSize: 12 }}>
               {groupInfo.subtitle}
             </Text>
-          </div>
-        </Space>
-        <Table
-          columns={columns}
-          dataSource={dataSource}
-          pagination={false}
+          }
           size="small"
-          scroll={{ x: 'max-content' }}
-          rowClassName={(record, index) => (isDarkMode ? (index % 2 === 0 ? 'ant-table-row-dark-stripe' : '') : (index % 2 === 0 ? 'ant-table-row-light-stripe' : ''))}
+          bodyStyle={{ padding: 0 }}
           style={{
             boxShadow: isDarkMode
               ? '0 2px 8px rgba(0, 0, 0, 0.3)'
               : '0 2px 8px rgba(0, 0, 0, 0.08)',
-            borderRadius: 2,
-            overflow: 'hidden',
+            transition: 'all 0.3s ease'
           }}
-        />
+        >
+          <Table
+            columns={columns}
+            dataSource={dataSource}
+            pagination={false}
+            size="small"
+            scroll={{ x: 'max-content' }}
+            rowClassName={(record, index) => (isDarkMode ? (index % 2 === 0 ? 'ant-table-row-dark-stripe' : '') : (index % 2 === 0 ? 'ant-table-row-light-stripe' : ''))}
+          />
+        </Card>
       </div>
     )
   }
