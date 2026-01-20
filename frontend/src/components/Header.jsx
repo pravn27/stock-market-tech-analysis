@@ -19,6 +19,7 @@ import {
   FundOutlined,
   AppstoreOutlined,
   UnorderedListOutlined,
+  DollarOutlined,
 } from '@ant-design/icons'
 import { useTheme } from '../context/ThemeContext'
 
@@ -70,6 +71,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
       type: 'group',
       children: [
         { key: 'global', label: <span style={{ fontWeight: 600 }}>Global Market</span>, icon: <GlobalOutlined /> },
+        { key: 'commodity', label: <span style={{ fontWeight: 600 }}>Commodity</span>, icon: <DollarOutlined /> },
       ],
     },
     {
@@ -102,6 +104,15 @@ const AppHeader = ({ activePage, onPageChange }) => {
         style={{ fontWeight: 600 }}
       >
         Global Market
+      </Button>
+
+      <Button
+        type={activePage === 'commodity' ? 'primary' : 'text'}
+        icon={<DollarOutlined />}
+        onClick={() => onPageChange('commodity')}
+        style={{ fontWeight: 600 }}
+      >
+        Commodity
       </Button>
 
       <Dropdown menu={performanceMenu} trigger={['click']}>

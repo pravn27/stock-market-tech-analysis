@@ -9,6 +9,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext'
 import Header from './components/Header'
 import PerformanceOverview from './pages/PerformanceOverview'
 import GlobalMarkets from './pages/GlobalMarkets'
+import Commodity from './pages/Commodity'
 import Nifty50 from './pages/Nifty50'
 import BankNifty from './pages/BankNifty'
 import SectorPerformance from './pages/SectorPerformance'
@@ -30,6 +31,8 @@ const AppContent = () => {
         return <DowTheoryScanner />
       case 'global':
         return <GlobalMarkets />
+      case 'commodity':
+        return <Commodity />
       case 'nifty50':
         return <Nifty50 />
       case 'banknifty':

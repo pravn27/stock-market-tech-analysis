@@ -52,11 +52,28 @@ INDIA_ADRS = [
     {"symbol": "SIFY", "name": "Sify Technologies", "short": "SIFY"},
 ]
 
-# Commodities (for sentiment)
+# Commodities - Major Global Instruments
 COMMODITIES = [
+    # Precious Metals
     {"symbol": "GC=F", "name": "Gold Futures", "short": "GOLD"},
-    {"symbol": "CL=F", "name": "Crude Oil WTI", "short": "CRUDE"},
     {"symbol": "SI=F", "name": "Silver Futures", "short": "SILVER"},
+    {"symbol": "PL=F", "name": "Platinum Futures", "short": "PLATINUM"},
+    {"symbol": "HG=F", "name": "Copper Futures", "short": "COPPER"},
+    
+    # Energy
+    {"symbol": "CL=F", "name": "Crude Oil WTI", "short": "CRUDE"},
+    {"symbol": "BZ=F", "name": "Brent Crude Oil", "short": "BRENT"},
+    {"symbol": "NG=F", "name": "Natural Gas", "short": "NATGAS"},
+    {"symbol": "RB=F", "name": "Gasoline Futures", "short": "GASOLINE"},
+    
+    # Agricultural
+    {"symbol": "ZC=F", "name": "Corn Futures", "short": "CORN"},
+    {"symbol": "ZW=F", "name": "Wheat Futures", "short": "WHEAT"},
+    {"symbol": "ZS=F", "name": "Soybean Futures", "short": "SOYBEAN"},
+    {"symbol": "KC=F", "name": "Coffee Futures", "short": "COFFEE"},
+    {"symbol": "SB=F", "name": "Sugar Futures", "short": "SUGAR"},
+    {"symbol": "CC=F", "name": "Cocoa Futures", "short": "COCOA"},
+    {"symbol": "CT=F", "name": "Cotton Futures", "short": "COTTON"},
 ]
 
 # All markets combined
