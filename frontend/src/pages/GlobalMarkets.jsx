@@ -632,11 +632,9 @@ const GlobalMarkets = () => {
                         : (isDarkMode ? 'rgba(255, 77, 79, 0.08)' : 'rgba(255, 77, 79, 0.04)'),
                       height: '100%',
                       transition: 'all 0.3s ease',
-                      boxShadow: selectedTimeframe === tf.value
-                        ? (isDarkMode ? '0 4px 12px rgba(24, 144, 255, 0.4)' : '0 4px 12px rgba(24, 144, 255, 0.3)')
-                        : (isDarkMode ? '0 2px 6px rgba(0, 0, 0, 0.3)' : '0 2px 6px rgba(0, 0, 0, 0.08)'),
-                      borderColor: selectedTimeframe === tf.value ? '#1890ff' : undefined,
-                      borderWidth: selectedTimeframe === tf.value ? 2 : 1,
+                      boxShadow: isDarkMode 
+                        ? '0 2px 6px rgba(0, 0, 0, 0.3)' 
+                        : '0 2px 6px rgba(0, 0, 0, 0.08)',
                     }}
                     bodyStyle={{ padding: 12 }}
                     onClick={() => setSelectedTimeframe(tf.value)}
