@@ -65,7 +65,15 @@ const AppHeader = ({ activePage, onPageChange }) => {
   // Mobile menu items
   const mobileMenuItems = [
     {
-      key: 'performance-group',
+      key: 'markets-group',
+      label: <span style={{ fontWeight: 600 }}>Markets</span>,
+      type: 'group',
+      children: [
+        { key: 'global', label: <span style={{ fontWeight: 600 }}>Global Market</span>, icon: <GlobalOutlined /> },
+      ],
+    },
+    {
+      key: 'india-group',
       label: <span style={{ fontWeight: 600 }}>India Market</span>,
       type: 'group',
       children: performanceItems.map(item => ({
@@ -80,7 +88,6 @@ const AppHeader = ({ activePage, onPageChange }) => {
       type: 'group',
       children: [
         { key: 'dow-scanner', label: <span style={{ fontWeight: 600 }}>Checklist Scanner</span>, icon: <FileSearchOutlined /> },
-        { key: 'global', label: <span style={{ fontWeight: 600 }}>Global Market</span>, icon: <GlobalOutlined /> },
       ],
     },
   ]
@@ -88,6 +95,15 @@ const AppHeader = ({ activePage, onPageChange }) => {
   // Desktop navigation
   const renderDesktopNav = () => (
     <Space size="middle">
+      <Button
+        type={activePage === 'global' ? 'primary' : 'text'}
+        icon={<GlobalOutlined />}
+        onClick={() => onPageChange('global')}
+        style={{ fontWeight: 600 }}
+      >
+        Global Market
+      </Button>
+
       <Dropdown menu={performanceMenu} trigger={['click']}>
         <Button 
           type={isPerformanceActive ? 'primary' : 'text'}
@@ -105,15 +121,6 @@ const AppHeader = ({ activePage, onPageChange }) => {
         style={{ fontWeight: 600 }}
       >
         Checklist
-      </Button>
-
-      <Button
-        type={activePage === 'global' ? 'primary' : 'text'}
-        icon={<GlobalOutlined />}
-        onClick={() => onPageChange('global')}
-        style={{ fontWeight: 600 }}
-      >
-        Global Market
       </Button>
     </Space>
   )
