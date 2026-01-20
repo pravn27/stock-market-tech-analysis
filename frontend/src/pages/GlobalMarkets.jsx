@@ -470,8 +470,8 @@ const GlobalMarkets = () => {
         </Row>
       </Card>
 
-      {/* Enhanced Sentiment Summary */}
-      {allIndices.length > 0 && (
+      {/* Enhanced Sentiment Summary - Only show when not loading */}
+      {!loading && allIndices.length > 0 && (
         <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
           <Col xs={24} lg={10}>
             <Card 
