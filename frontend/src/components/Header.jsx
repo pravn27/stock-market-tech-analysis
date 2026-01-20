@@ -80,7 +80,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
       type: 'group',
       children: [
         { key: 'dow-scanner', label: 'Checklist Scanner', icon: <FileSearchOutlined /> },
-        { key: 'global', label: 'Global Markets', icon: <GlobalOutlined /> },
+        { key: 'global', label: 'Global Market', icon: <GlobalOutlined /> },
       ],
     },
   ]
@@ -110,7 +110,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
         icon={<GlobalOutlined />}
         onClick={() => onPageChange('global')}
       >
-        Global
+        Global Market
       </Button>
     </Space>
   )
