@@ -47,26 +47,33 @@ const GlobalMarkets = () => {
   const [multiTimeframe, setMultiTimeframe] = useState(false) // Default to single-timeframe
   const [selectedTimeframe, setSelectedTimeframe] = useState('daily') // For highlighting column
 
-  const fetchData = async () => {
+  const fetchData = async (signal) => {
     setLoading(true)
     setError(null)
     try {
       if (multiTimeframe) {
-        const result = await getGlobalMarketsMultiTimeframe()
+        const result = await getGlobalMarketsMultiTimeframe(signal)
         setData(result)
       } else {
-        const result = await getGlobalMarkets(timeframe)
+        const result = await getGlobalMarkets(timeframe, signal)
         setData(result)
       }
     } catch (err) {
-      setError(err.message || 'Failed to fetch global markets data')
+      if (err.name !== 'CanceledError') {
+        setError(err.message || 'Failed to fetch global markets data')
+      }
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchData()
+    const abortController = new AbortController()
+    fetchData(abortController.signal)
+    
+    return () => {
+      abortController.abort()
+    }
   }, [timeframe, multiTimeframe])
 
   // Flatten all market groups - handle both single and multi-timeframe data
@@ -593,7 +600,7 @@ const GlobalMarkets = () => {
             <Button
               type="primary"
               icon={<ReloadOutlined spin={loading} />}
-              onClick={fetchData}
+              onClick={() => fetchData()}
               loading={loading}
               size={screens.md ? 'middle' : 'large'}
               style={{ minWidth: 120 }}
@@ -867,7 +874,7 @@ const GlobalMarkets = () => {
             <Button 
               type="primary" 
               icon={<ReloadOutlined />} 
-              onClick={fetchData}
+              onClick={() => fetchData()}
               size="large"
             >
               Refresh Data

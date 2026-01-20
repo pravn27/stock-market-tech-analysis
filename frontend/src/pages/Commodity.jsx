@@ -71,23 +71,30 @@ const Commodity = () => {
   const [isMultiTimeframe, setIsMultiTimeframe] = useState(false)
   const [highlightedTimeframe, setHighlightedTimeframe] = useState('daily')
 
-  const fetchData = async () => {
+  const fetchData = async (signal) => {
     setLoading(true)
     setError(null)
     try {
       const url = `${API_BASE_URL}/markets/commodities`
       const params = isMultiTimeframe ? { multi: true } : { timeframe }
-      const response = await axios.get(url, { params })
+      const response = await axios.get(url, { params, signal })
       setData(response.data)
     } catch (err) {
-      setError(err.message || 'Failed to fetch commodity markets data')
+      if (err.name !== 'CanceledError') {
+        setError(err.message || 'Failed to fetch commodity markets data')
+      }
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchData()
+    const abortController = new AbortController()
+    fetchData(abortController.signal)
+    
+    return () => {
+      abortController.abort()
+    }
   }, [timeframe, isMultiTimeframe])
 
   // Calculate sentiment for single timeframe mode
@@ -420,7 +427,7 @@ const Commodity = () => {
               <Button
                 type="primary"
                 icon={<ReloadOutlined spin={loading} />}
-                onClick={fetchData}
+                onClick={() => fetchData()}
                 loading={loading}
                 size={screens.md ? 'middle' : 'large'}
                 style={{ alignSelf: 'flex-end' }}
@@ -637,7 +644,7 @@ const Commodity = () => {
             <Button
               type="primary"
               icon={<ReloadOutlined />}
-              onClick={fetchData}
+              onClick={() => fetchData()}
               size="large"
             >
               Refresh Data
