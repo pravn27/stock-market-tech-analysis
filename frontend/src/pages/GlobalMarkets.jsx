@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react'
 import { 
   Card, Select, Button, Space, Tag, Typography, Table,
-  Empty, Spin, Alert, Row, Col, Statistic, Progress, Grid, Segmented, Divider
+  Empty, Spin, Alert, Row, Col, Statistic, Progress, Grid, Segmented, Divider, Switch
 } from 'antd'
 import { 
   ReloadOutlined, GlobalOutlined, ArrowUpOutlined, 
@@ -43,8 +43,8 @@ const GlobalMarkets = () => {
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
   const [timeframe, setTimeframe] = useState('daily')
-  const [viewMode, setViewMode] = useState('table')
-  const [multiTimeframe, setMultiTimeframe] = useState(true) // Default to multi-timeframe
+  const [viewMode, setViewMode] = useState('cards')
+  const [multiTimeframe, setMultiTimeframe] = useState(false) // Default to single-timeframe
   const [selectedTimeframe, setSelectedTimeframe] = useState('daily') // For highlighting column
 
   const fetchData = async () => {
@@ -498,32 +498,58 @@ const GlobalMarkets = () => {
         bodyStyle={{ padding: screens.md ? '16px 24px' : '16px' }}
       >
         <Row gutter={[16, 16]} align="middle" justify="space-between" wrap>
-          <Col xs={24} sm={12} md={16}>
+          <Col xs={24} md={18} lg={16}>
             <Space wrap size={12}>
+              {/* All Timeframes Toggle */}
               <div>
                 <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                  View Mode
+                  Mode
                 </Text>
-                <Segmented
-                  value={viewMode}
-                  onChange={setViewMode}
-                  size={screens.md ? 'middle' : 'large'}
-                  disabled={multiTimeframe}
-                  options={[
-                    { 
-                      value: 'cards', 
-                      icon: <AppstoreOutlined />, 
-                      label: screens.md ? 'Cards' : '',
-                      disabled: multiTimeframe
-                    },
-                    { 
-                      value: 'table', 
-                      icon: <TableOutlined />, 
-                      label: screens.md ? 'Table' : '' 
-                    },
-                  ]}
-                />
+                <Space>
+                  <Switch
+                    checked={multiTimeframe}
+                    onChange={(checked) => {
+                      setMultiTimeframe(checked)
+                      if (checked) {
+                        setViewMode('table') // Force table view when multi-timeframe is enabled
+                      }
+                    }}
+                    checkedChildren="All TF"
+                    unCheckedChildren="Single"
+                  />
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {multiTimeframe ? 'All Timeframes' : 'Single Timeframe'}
+                  </Text>
+                </Space>
               </div>
+
+              {/* View Mode - Only show when NOT in multi-timeframe */}
+              {!multiTimeframe && (
+                <div>
+                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                    View Mode
+                  </Text>
+                  <Segmented
+                    value={viewMode}
+                    onChange={setViewMode}
+                    size={screens.md ? 'middle' : 'large'}
+                    options={[
+                      { 
+                        value: 'cards', 
+                        icon: <AppstoreOutlined />, 
+                        label: screens.md ? 'Cards' : ''
+                      },
+                      { 
+                        value: 'table', 
+                        icon: <TableOutlined />, 
+                        label: screens.md ? 'Table' : '' 
+                      },
+                    ]}
+                  />
+                </div>
+              )}
+
+              {/* Timeframe Selector - Only for single timeframe mode */}
               {!multiTimeframe && (
                 <div>
                   <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
@@ -538,6 +564,8 @@ const GlobalMarkets = () => {
                   />
                 </div>
               )}
+
+              {/* Highlight Selector - Only for multi-timeframe mode */}
               {multiTimeframe && (
                 <div>
                   <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
@@ -554,7 +582,7 @@ const GlobalMarkets = () => {
               )}
             </Space>
           </Col>
-          <Col xs={24} sm={12} md={8} style={{ textAlign: screens.sm ? 'right' : 'left' }}>
+          <Col xs={24} md={6} lg={8} style={{ textAlign: screens.md ? 'right' : 'left' }}>
             <Button
               type="primary"
               icon={<ReloadOutlined spin={loading} />}
