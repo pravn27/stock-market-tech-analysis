@@ -30,6 +30,46 @@ const TIMEFRAME_OPTIONS = [
   { value: 'one_hour', label: '1 Hour' },
 ]
 
+// Index group configurations
+const INDEX_GROUPS = [
+  { 
+    key: 'sectorial', 
+    title: 'Sectorial Indices', 
+    subtitle: 'Sector-specific indices',
+    icon: '📊',
+    keywords: ['Auto', 'Bank', 'Financial', 'FMCG', 'IT', 'Metal', 'Pharma', 'PSU', 'Realty', 'Media', 'Infra', 'Energy', 'Commodities', 'Consumption', 'Healthcare', 'Oil', 'Private Bank', 'PSE']
+  },
+  { 
+    key: 'broader_market', 
+    title: 'Broader Market', 
+    subtitle: 'Broad market indices',
+    icon: '📈',
+    keywords: ['NIFTY', 'SENSEX', 'Midcap', 'Smallcap', 'Next', 'Microcap', 'LargeMid', 'BSE']
+  },
+  { 
+    key: 'thematic', 
+    title: 'Thematic Indices', 
+    subtitle: 'Theme-based indices',
+    icon: '🎯',
+    keywords: ['Alpha', 'Quality', 'Value', 'Growth', 'Momentum', 'Dividend', 'MNC', 'Consumer Durables', 'India Defence', 'Capital Markets', 'India Digital', 'Housing', 'Mobility', 'Manufacturing', 'Total Market', 'Services', 'MidSmall']
+  }
+]
+
+// Categorize index into a group
+const categorizeIndex = (indexName) => {
+  const name = indexName.toUpperCase()
+  
+  for (const group of INDEX_GROUPS) {
+    for (const keyword of group.keywords) {
+      if (name.includes(keyword.toUpperCase())) {
+        return group.key
+      }
+    }
+  }
+  
+  return 'broader_market' // Default to broader market if no match
+}
+
 // Get status tag based on value
 const getStatusTag = (value) => {
   if (value === null || value === undefined) return <Text type="secondary">-</Text>
@@ -112,7 +152,8 @@ const PerformanceOverview = () => {
               key: item.name,
               name: item.name,
               symbol: item.symbol || '',
-              values: {}
+              values: {},
+              group: categorizeIndex(item.name) // Add group categorization
             })
           }
           sectorsMap.get(item.name).values[tf] = item.rs
@@ -122,6 +163,24 @@ const PerformanceOverview = () => {
 
     return Array.from(sectorsMap.values())
   }, [data])
+
+  // Group sectors by index type
+  const groupedSectors = useMemo(() => {
+    const grouped = {
+      sectorial: [],
+      broader_market: [],
+      thematic: []
+    }
+
+    allSectors.forEach(sector => {
+      const groupKey = sector.group || 'broader_market'
+      if (grouped[groupKey]) {
+        grouped[groupKey].push(sector)
+      }
+    })
+
+    return grouped
+  }, [allSectors])
 
   const openStocksModal = async (sectorName) => {
     setModalSector(sectorName)
@@ -617,31 +676,65 @@ const PerformanceOverview = () => {
         </Card>
       )}
 
-      {/* Data Table */}
+      {/* Index Group Tables */}
       {!loading && data && (
-        <>
-          <Card bodyStyle={{ padding: screens.md ? 16 : 8 }}>
-            <Table
-              columns={columns}
-              dataSource={allSectors}
-              pagination={false}
-              scroll={{ x: 800 }}
-              size={screens.md ? 'middle' : 'small'}
-              onRow={(record) => ({
-                onClick: () => openStocksModal(record.name),
-                style: { cursor: 'pointer' },
-              })}
-              rowClassName={(record) => {
-                const w = record.values?.['W']
-                if (w > 1) return 'ant-table-row-success'
-                if (w < -1) return 'ant-table-row-error'
-                return ''
-              }}
-            />
-          </Card>
+        <div>
+          {INDEX_GROUPS.map(groupInfo => {
+            const groupData = groupedSectors[groupInfo.key]
+            if (!groupData || groupData.length === 0) return null
+
+            return (
+              <div key={groupInfo.key} style={{ marginBottom: 24 }}>
+                <Card
+                  title={
+                    <Space size={12}>
+                      <span style={{ fontSize: 20 }}>{groupInfo.icon}</span>
+                      <div>
+                        <Text strong style={{ fontSize: 16 }}>{groupInfo.title}</Text>
+                        <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                          ({groupData.length} indices)
+                        </Text>
+                      </div>
+                    </Space>
+                  }
+                  extra={
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      {groupInfo.subtitle}
+                    </Text>
+                  }
+                  size="small"
+                  bodyStyle={{ padding: 0 }}
+                  style={{
+                    boxShadow: isDarkMode
+                      ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+                      : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  <Table
+                    columns={columns}
+                    dataSource={groupData}
+                    pagination={false}
+                    scroll={{ x: 800 }}
+                    size={screens.md ? 'middle' : 'small'}
+                    onRow={(record) => ({
+                      onClick: () => openStocksModal(record.name),
+                      style: { cursor: 'pointer' },
+                    })}
+                    rowClassName={(record) => {
+                      const w = record.values?.['W']
+                      if (w > 1) return 'ant-table-row-success'
+                      if (w < -1) return 'ant-table-row-error'
+                      return ''
+                    }}
+                  />
+                </Card>
+              </div>
+            )
+          })}
 
           {/* Legend */}
-          <Card size="small" style={{ marginTop: 16 }}>
+          <Card size="small">
             <Row justify="center" gutter={[24, 8]}>
               <Col>
                 <Space>
@@ -668,7 +761,7 @@ const PerformanceOverview = () => {
               </Text>
             </div>
           </Card>
-        </>
+        </div>
       )}
 
       {/* Stocks Modal */}
