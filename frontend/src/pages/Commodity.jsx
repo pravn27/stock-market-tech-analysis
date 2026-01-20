@@ -342,21 +342,35 @@ const Commodity = () => {
   return (
     <div>
       {/* Page Header */}
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
-          <Space align="center">
-            <DollarCircleOutlined style={{ fontSize: 28, color: '#faad14' }} />
-            <div>
-              <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
-                Commodity Markets
-              </Title>
-              <Text type="secondary">
-                Major commodity futures & sentiment analysis
-              </Text>
-            </div>
-          </Space>
-        </Col>
-      </Row>
+      <Card
+        style={{
+          marginBottom: 24,
+          background: isDarkMode
+            ? 'linear-gradient(135deg, rgba(24, 144, 255, 0.12) 0%, rgba(24, 144, 255, 0.04) 100%)'
+            : 'linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(24, 144, 255, 0.02) 100%)',
+          borderLeft: '4px solid #1890ff',
+          boxShadow: isDarkMode
+            ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+            : '0 2px 8px rgba(0, 0, 0, 0.08)',
+        }}
+        bodyStyle={{ padding: screens.md ? 24 : 16 }}
+      >
+        <Row justify="space-between" align="middle">
+          <Col>
+            <Space align="center">
+              <DollarCircleOutlined style={{ fontSize: 32, color: '#1890ff' }} />
+              <div>
+                <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
+                  Commodity Markets
+                </Title>
+                <Text type="secondary" style={{ fontSize: 14 }}>
+                  Major commodity futures & sentiment analysis
+                </Text>
+              </div>
+            </Space>
+          </Col>
+        </Row>
+      </Card>
 
       {/* Filters */}
       <Card size="small" style={{ marginBottom: 24 }}>
