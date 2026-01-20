@@ -1,5 +1,5 @@
 /**
- * Performance Overview Page - Ant Design Implementation
+ * Relative Performance Overview Page - Ant Design Implementation
  * Shows all sectors across ALL timeframes in one sortable table
  */
 
@@ -13,6 +13,7 @@ import {
   ArrowDownOutlined, MinusOutlined 
 } from '@ant-design/icons'
 import { getTopPerformers, getSectorStocks } from '../api/scanner'
+import { useTheme } from '../context/ThemeContext'
 
 const { Title, Text } = Typography
 const { useBreakpoint } = Grid
@@ -50,6 +51,7 @@ const getStatusIcon = (weeklyRs) => {
 
 const PerformanceOverview = () => {
   const screens = useBreakpoint()
+  const { isDarkMode } = useTheme()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
@@ -210,26 +212,40 @@ const PerformanceOverview = () => {
   return (
     <div>
       {/* Page Header */}
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
-          <Space align="center">
-            <BarChartOutlined style={{ fontSize: 28, color: '#1890ff' }} />
-            <div>
-              <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
-                Performance Overview
-              </Title>
-              <Text type="secondary">
-                {INDEX_GROUPS.find(g => g.value === indexGroup)?.label || 'All'} vs NIFTY 50
-                {data && (
-                  <Tag color="blue" style={{ marginLeft: 8 }}>
-                    Lookback: {data.lookback || lookback}
-                  </Tag>
-                )}
-              </Text>
-            </div>
-          </Space>
-        </Col>
-      </Row>
+      <Card
+        style={{
+          marginBottom: 24,
+          background: isDarkMode
+            ? 'linear-gradient(135deg, rgba(24, 144, 255, 0.12) 0%, rgba(24, 144, 255, 0.04) 100%)'
+            : 'linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(24, 144, 255, 0.02) 100%)',
+          borderLeft: '4px solid #1890ff',
+          boxShadow: isDarkMode
+            ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+            : '0 2px 8px rgba(0, 0, 0, 0.08)',
+        }}
+        bodyStyle={{ padding: screens.md ? 24 : 16 }}
+      >
+        <Row justify="space-between" align="middle">
+          <Col>
+            <Space align="center">
+              <BarChartOutlined style={{ fontSize: 32, color: '#1890ff' }} />
+              <div>
+                <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
+                  Relative Performance Overview
+                </Title>
+                <Text type="secondary" style={{ fontSize: 14 }}>
+                  {INDEX_GROUPS.find(g => g.value === indexGroup)?.label || 'All Indices'} vs NIFTY 50
+                  {data && (
+                    <Tag color="blue" style={{ marginLeft: 8 }}>
+                      Lookback: {data.lookback || lookback}
+                    </Tag>
+                  )}
+                </Text>
+              </div>
+            </Space>
+          </Col>
+        </Row>
+      </Card>
 
       {/* Filters */}
       <Card size="small" style={{ marginBottom: 24 }}>

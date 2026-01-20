@@ -34,7 +34,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
 
   // Performance dropdown items
   const performanceItems = [
-    { key: 'overview', label: 'Relative Strength', icon: <LineChartOutlined /> },
+    { key: 'overview', label: 'Relative Performance', icon: <LineChartOutlined /> },
     { key: 'nifty50', label: 'Nifty 50', icon: <StockOutlined /> },
     { key: 'banknifty', label: 'Bank Nifty', icon: <BankOutlined /> },
     { key: 'sectors', label: 'Sector Performance', icon: <FundOutlined /> },
