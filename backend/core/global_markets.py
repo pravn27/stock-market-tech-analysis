@@ -31,6 +31,7 @@ EUROPEAN_MARKETS = [
 ASIAN_MARKETS = [
     {"symbol": "^NSEI", "name": "NIFTY 50 (India)", "short": "NIFTY"},
     {"symbol": "^BSESN", "name": "SENSEX (India)", "short": "SENSEX"},
+    {"symbol": "^INDIAVIX", "name": "India VIX", "short": "INDIAVIX"},
     {"symbol": "^HSI", "name": "Hang Seng (HK)", "short": "HSI"},
     {"symbol": "^N225", "name": "Nikkei 225 (Japan)", "short": "N225"},
     {"symbol": "^STI", "name": "Straits Times (SG)", "short": "STI"},
