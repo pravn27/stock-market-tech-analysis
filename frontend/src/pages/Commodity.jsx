@@ -206,9 +206,9 @@ const Commodity = () => {
       key: tf.value,
       align: 'center',
       width: 100,
-      sorter: (a, b) => (a.timeframes[tf.value]?.change_pct || 0) - (b.timeframes[tf.value]?.change_pct || 0),
+      sorter: (a, b) => (a.timeframes?.[tf.value]?.change_pct || 0) - (b.timeframes?.[tf.value]?.change_pct || 0),
       render: (pct, record) => {
-        if (record.timeframes[tf.value]?.error || pct === null || pct === undefined) return '-'
+        if (!record.timeframes?.[tf.value] || record.timeframes[tf.value]?.error || pct === null || pct === undefined) return '-'
         const color = pct > 0 ? 'green' : pct < 0 ? 'red' : 'default'
         const sign = pct > 0 ? '+' : ''
         const Icon = pct > 0 ? ArrowUpOutlined : pct < 0 ? ArrowDownOutlined : null
@@ -633,7 +633,7 @@ const Commodity = () => {
       )}
 
       {/* Empty State */}
-      {!loading && !error && data && !COMMODITY_GROUPS.some(g => data[g.key]?.length > 0) && (
+      {!loading && !error && (!data || !COMMODITY_GROUPS.some(g => data[g.key]?.length > 0)) && (
         <Card
           style={{
             boxShadow: isDarkMode
@@ -667,9 +667,11 @@ const Commodity = () => {
       {/* Commodity Group Tables */}
       {!loading && data && (
         <div>
-          {COMMODITY_GROUPS.map(groupInfo => 
-            renderGroupTable(groupInfo.key, data[groupInfo.key], groupInfo)
-          )}
+          {COMMODITY_GROUPS.map(groupInfo => {
+            const groupData = data[groupInfo.key]
+            if (!groupData) return null
+            return renderGroupTable(groupInfo.key, groupData, groupInfo)
+          })}
         </div>
       )}
     </div>
