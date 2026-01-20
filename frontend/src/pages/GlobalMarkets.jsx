@@ -454,35 +454,26 @@ const GlobalMarkets = () => {
 
   return (
     <div>
-      {/* Page Header with Gradient */}
-      <div 
-        style={{ 
-          background: isDarkMode 
-            ? 'linear-gradient(135deg, rgba(24, 144, 255, 0.15) 0%, rgba(24, 144, 255, 0.05) 100%)'
-            : 'linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(240, 242, 245, 0) 100%)',
-          padding: screens.md ? '32px 24px' : '24px 16px',
-          borderRadius: 2,
+      {/* Page Header */}
+      <Card
+        style={{
           marginBottom: 24,
-          border: isDarkMode ? '1px solid rgba(24, 144, 255, 0.2)' : '1px solid rgba(24, 144, 255, 0.1)',
+          background: isDarkMode
+            ? 'linear-gradient(135deg, rgba(24, 144, 255, 0.12) 0%, rgba(24, 144, 255, 0.04) 100%)'
+            : 'linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(24, 144, 255, 0.02) 100%)',
+          borderLeft: '4px solid #1890ff',
+          boxShadow: isDarkMode
+            ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+            : '0 2px 8px rgba(0, 0, 0, 0.08)',
         }}
+        bodyStyle={{ padding: screens.md ? 24 : 16 }}
       >
         <Row justify="space-between" align="middle">
           <Col>
-            <Space align="center" size={16}>
-              <div 
-                style={{ 
-                  background: 'rgba(24, 144, 255, 0.1)',
-                  borderRadius: 2,
-                  padding: 12,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <GlobalOutlined style={{ fontSize: 32, color: '#1890ff' }} />
-              </div>
+            <Space align="center">
+              <GlobalOutlined style={{ fontSize: 32, color: '#1890ff' }} />
               <div>
-                <Title level={screens.md ? 2 : 3} style={{ margin: 0, marginBottom: 4 }}>
+                <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
                   Global Markets
                 </Title>
                 <Text type="secondary" style={{ fontSize: 14 }}>
@@ -492,7 +483,7 @@ const GlobalMarkets = () => {
             </Space>
           </Col>
         </Row>
-      </div>
+      </Card>
 
       {/* Enhanced Filters */}
       <Card 
