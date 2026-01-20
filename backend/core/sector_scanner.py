@@ -324,10 +324,33 @@ class SectorRelativeStrength:
         current_date = df['Date'].iloc[-1]
         
         # Daily: vs N days back close
+        # For daily returns with lookback=1, we compare:
+        # Most recent complete trading day vs previous complete trading day
+        # Ensure we use the last complete trading day (exclude today if market is still open)
         daily_offset = lookback
         if len(df) > daily_offset:
-            prev_day_close = float(df['Close'].iloc[-(daily_offset + 1)])
-            returns['Daily'] = ((current_price - prev_day_close) / prev_day_close) * 100
+            # For daily interval data, each row should be a complete trading day
+            # However, if market is open, yfinance might include today's partial data
+            # Use the last complete day: if last date is today, use previous day
+            from datetime import datetime
+            
+            last_date = pd.to_datetime(df['Date'].iloc[-1])
+            today = pd.Timestamp.now().normalize()  # Get today's date (normalized to midnight)
+            last_date_normalized = pd.Timestamp(last_date).normalize()
+            
+            # If last row is today and we have enough data, use previous day
+            # This ensures we use the last complete trading day's close
+            if last_date_normalized == today and len(df) > daily_offset + 1:
+                # Use previous day as the "current" day for calculation
+                most_recent_close = float(df['Close'].iloc[-2])
+                prev_day_close = float(df['Close'].iloc[-(daily_offset + 2)])
+            else:
+                # Use last available day
+                most_recent_close = float(df['Close'].iloc[-1])
+                prev_day_close = float(df['Close'].iloc[-(daily_offset + 1)])
+            
+            # Calculate daily return: (Today - Yesterday) / Yesterday * 100
+            returns['Daily'] = ((most_recent_close - prev_day_close) / prev_day_close) * 100
         else:
             returns['Daily'] = None
         
