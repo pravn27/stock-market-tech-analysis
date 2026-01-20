@@ -13,19 +13,19 @@ import {
   ArrowDownOutlined, RiseOutlined, FallOutlined,
   AppstoreOutlined, TableOutlined
 } from '@ant-design/icons'
-import { getGlobalMarkets } from '../api/scanner'
+import { getGlobalMarkets, getGlobalMarketsMultiTimeframe } from '../api/scanner'
 import { useTheme } from '../context/ThemeContext'
 
 const { Title, Text } = Typography
 const { useBreakpoint } = Grid
 
 const TIMEFRAMES = [
-  { value: '1h', label: '1 Hour' },
-  { value: '4h', label: '4 Hour' },
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: '3m', label: '3 Month' },
+  { value: '1h', label: '1H', fullLabel: '1 Hour' },
+  { value: '4h', label: '4H', fullLabel: '4 Hour' },
+  { value: 'daily', label: 'Daily', fullLabel: 'Daily' },
+  { value: 'weekly', label: 'Weekly', fullLabel: 'Weekly' },
+  { value: 'monthly', label: 'Monthly', fullLabel: 'Monthly' },
+  { value: '3m', label: '3M', fullLabel: '3 Month' },
 ]
 
 // Market group configurations
@@ -43,14 +43,21 @@ const GlobalMarkets = () => {
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
   const [timeframe, setTimeframe] = useState('daily')
-  const [viewMode, setViewMode] = useState('cards')
+  const [viewMode, setViewMode] = useState('table')
+  const [multiTimeframe, setMultiTimeframe] = useState(true) // Default to multi-timeframe
+  const [selectedTimeframe, setSelectedTimeframe] = useState('daily') // For highlighting column
 
   const fetchData = async () => {
     setLoading(true)
     setError(null)
     try {
-      const result = await getGlobalMarkets(timeframe)
-      setData(result)
+      if (multiTimeframe) {
+        const result = await getGlobalMarketsMultiTimeframe()
+        setData(result)
+      } else {
+        const result = await getGlobalMarkets(timeframe)
+        setData(result)
+      }
     } catch (err) {
       setError(err.message || 'Failed to fetch global markets data')
     } finally {
@@ -60,28 +67,100 @@ const GlobalMarkets = () => {
 
   useEffect(() => {
     fetchData()
-  }, [timeframe])
+  }, [timeframe, multiTimeframe])
 
-  // Flatten all market groups for sentiment calculation
-  const allIndices = data ? [
+  // Flatten all market groups - handle both single and multi-timeframe data
+  const allIndices = data && !multiTimeframe ? [
     ...(data.us_markets || []),
     ...(data.european_markets || []),
     ...(data.asian_markets || []),
     ...(data.india_adrs || []),
   ] : []
 
-  // Calculate sentiment
-  const sentiment = allIndices.reduce((acc, idx) => {
+  // Calculate sentiment for single timeframe mode (multi-timeframe has its own sentiments)
+  const sentiment = !multiTimeframe && allIndices.length > 0 ? allIndices.reduce((acc, idx) => {
     if (idx.change_pct > 0) acc.bullish++
     else if (idx.change_pct < 0) acc.bearish++
     else acc.neutral++
     return acc
-  }, { bullish: 0, bearish: 0, neutral: 0 })
+  }, { bullish: 0, bearish: 0, neutral: 0 }) : { bullish: 0, bearish: 0, neutral: 0 }
 
   const total = sentiment.bullish + sentiment.bearish + sentiment.neutral
   const bullishPercent = total > 0 ? Math.round((sentiment.bullish / total) * 100) : 0
+  
+  // Multi-timeframe sentiments
+  const multiTimeframeSentiments = multiTimeframe && data?.sentiments ? data.sentiments : null
 
-  // Table columns for table view with enhanced styling
+  // Multi-timeframe table columns
+  const multiTimeframeColumns = [
+    {
+      title: 'Index',
+      dataIndex: 'short',
+      key: 'short',
+      width: 120,
+      fixed: screens.md ? 'left' : false,
+      render: (short, record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong style={{ fontSize: 14 }}>{short || record.name?.split(' ')[0]}</Text>
+          <Text type="secondary" style={{ fontSize: 11 }}>{record.symbol}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      align: 'right',
+      width: 110,
+      sorter: (a, b) => (a.price || 0) - (b.price || 0),
+      render: (price) => (
+        <Text strong style={{ fontFamily: 'monospace', fontSize: 14 }}>
+          {price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '-'}
+        </Text>
+      ),
+    },
+    ...TIMEFRAMES.map(tf => ({
+      title: tf.label,
+      key: `tf_${tf.value}`,
+      align: 'center',
+      width: 100,
+      sorter: (a, b) => {
+        const aVal = a.timeframes?.[tf.value]?.change_pct || 0
+        const bVal = b.timeframes?.[tf.value]?.change_pct || 0
+        return aVal - bVal
+      },
+      render: (_, record) => {
+        const tfData = record.timeframes?.[tf.value]
+        if (!tfData || tfData.error || tfData.change_pct === null) return '-'
+        
+        const pct = tfData.change_pct
+        const color = pct > 0 ? 'green' : pct < 0 ? 'red' : 'default'
+        const sign = pct > 0 ? '+' : ''
+        const Icon = pct > 0 ? ArrowUpOutlined : pct < 0 ? ArrowDownOutlined : null
+        const isSelected = tf.value === selectedTimeframe
+        
+        return (
+          <Tag 
+            color={color} 
+            style={{ 
+              minWidth: 75, 
+              textAlign: 'center',
+              fontSize: 12,
+              fontWeight: isSelected ? 700 : 500,
+              padding: '3px 6px',
+              backgroundColor: isSelected && (isDarkMode ? 'rgba(24, 144, 255, 0.15)' : 'rgba(24, 144, 255, 0.08)'),
+              borderWidth: isSelected ? 2 : 1,
+            }}
+          >
+            {Icon && <Icon style={{ marginRight: 3, fontSize: 10 }} />}
+            {sign}{pct.toFixed(2)}%
+          </Tag>
+        )
+      },
+    })),
+  ]
+
+  // Single timeframe table columns (original)
   const tableColumns = [
     {
       title: 'Index',
@@ -173,6 +252,8 @@ const GlobalMarkets = () => {
     const markets = data?.[group.key] || []
     if (markets.length === 0) return null
 
+    const columns = multiTimeframe ? multiTimeframeColumns : tableColumns
+
     return (
       <div key={group.key} style={{ marginBottom: 24 }}>
         <Card 
@@ -197,11 +278,11 @@ const GlobalMarkets = () => {
           }}
         >
           <Table
-            columns={tableColumns}
+            columns={columns}
             dataSource={markets.map((m, i) => ({ ...m, key: i }))}
             pagination={false}
             size="middle"
-            scroll={{ x: 600 }}
+            scroll={{ x: multiTimeframe ? 1000 : 600 }}
             sticky={{ offsetHeader: 64 }}
             rowClassName={(record, index) => 
               index % 2 === 0 ? '' : isDarkMode ? 'ant-table-row-striped-dark' : 'ant-table-row-striped'
@@ -427,11 +508,13 @@ const GlobalMarkets = () => {
                   value={viewMode}
                   onChange={setViewMode}
                   size={screens.md ? 'middle' : 'large'}
+                  disabled={multiTimeframe}
                   options={[
                     { 
                       value: 'cards', 
                       icon: <AppstoreOutlined />, 
-                      label: screens.md ? 'Cards' : '' 
+                      label: screens.md ? 'Cards' : '',
+                      disabled: multiTimeframe
                     },
                     { 
                       value: 'table', 
@@ -441,18 +524,34 @@ const GlobalMarkets = () => {
                   ]}
                 />
               </div>
-              <div>
-                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                  Timeframe
-                </Text>
-                <Select
-                  value={timeframe}
-                  onChange={setTimeframe}
-                  options={TIMEFRAMES}
-                  style={{ width: screens.md ? 140 : 120 }}
-                  size={screens.md ? 'middle' : 'large'}
-                />
-              </div>
+              {!multiTimeframe && (
+                <div>
+                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                    Timeframe
+                  </Text>
+                  <Select
+                    value={timeframe}
+                    onChange={setTimeframe}
+                    options={TIMEFRAMES.map(tf => ({ value: tf.value, label: tf.fullLabel }))}
+                    style={{ width: screens.md ? 140 : 120 }}
+                    size={screens.md ? 'middle' : 'large'}
+                  />
+                </div>
+              )}
+              {multiTimeframe && (
+                <div>
+                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                    Highlight
+                  </Text>
+                  <Select
+                    value={selectedTimeframe}
+                    onChange={setSelectedTimeframe}
+                    options={TIMEFRAMES.map(tf => ({ value: tf.value, label: tf.fullLabel }))}
+                    style={{ width: screens.md ? 140 : 120 }}
+                    size={screens.md ? 'middle' : 'large'}
+                  />
+                </div>
+              )}
             </Space>
           </Col>
           <Col xs={24} sm={12} md={8} style={{ textAlign: screens.sm ? 'right' : 'left' }}>
@@ -470,8 +569,74 @@ const GlobalMarkets = () => {
         </Row>
       </Card>
 
-      {/* Enhanced Sentiment Summary - Only show when not loading */}
-      {!loading && allIndices.length > 0 && (
+      {/* Multi-Timeframe Sentiment Cards */}
+      {!loading && multiTimeframe && multiTimeframeSentiments && (
+        <div style={{ marginBottom: 32 }}>
+          <Text strong style={{ fontSize: 17, display: 'block', marginBottom: 16, fontWeight: 700 }}>
+            Overall Market Sentiment - All Timeframes
+          </Text>
+          <Row gutter={[12, 12]}>
+            {TIMEFRAMES.map(tf => {
+              const sent = multiTimeframeSentiments[tf.value]
+              if (!sent) return null
+              
+              const bullish = sent.breadth?.positive || 0
+              const bearish = sent.breadth?.negative || 0
+              const neutral = sent.breadth?.total - bullish - bearish || 0
+              const bullishPercent = sent.breadth?.percentage || 0
+              const isBullish = bullishPercent >= 50
+              
+              return (
+                <Col xs={12} sm={8} md={4} key={tf.value}>
+                  <Card
+                    size="small"
+                    hoverable
+                    style={{
+                      borderTop: `3px solid ${isBullish ? '#52c41a' : '#ff4d4f'}`,
+                      background: isBullish
+                        ? (isDarkMode ? 'rgba(82, 196, 26, 0.08)' : 'rgba(82, 196, 26, 0.04)')
+                        : (isDarkMode ? 'rgba(255, 77, 79, 0.08)' : 'rgba(255, 77, 79, 0.04)'),
+                      height: '100%',
+                      transition: 'all 0.3s ease',
+                      boxShadow: selectedTimeframe === tf.value
+                        ? (isDarkMode ? '0 4px 12px rgba(24, 144, 255, 0.4)' : '0 4px 12px rgba(24, 144, 255, 0.3)')
+                        : (isDarkMode ? '0 2px 6px rgba(0, 0, 0, 0.3)' : '0 2px 6px rgba(0, 0, 0, 0.08)'),
+                      borderColor: selectedTimeframe === tf.value ? '#1890ff' : undefined,
+                      borderWidth: selectedTimeframe === tf.value ? 2 : 1,
+                    }}
+                    bodyStyle={{ padding: 12 }}
+                    onClick={() => setSelectedTimeframe(tf.value)}
+                  >
+                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>
+                      {tf.fullLabel}
+                    </Text>
+                    <Space size={4} align="center" style={{ marginBottom: 6 }}>
+                      <Text strong style={{ fontSize: 22, color: isBullish ? '#52c41a' : '#ff4d4f' }}>
+                        {Math.round(bullishPercent)}%
+                      </Text>
+                      {isBullish ? <RiseOutlined style={{ color: '#52c41a', fontSize: 16 }} /> : <FallOutlined style={{ color: '#ff4d4f', fontSize: 16 }} />}
+                    </Space>
+                    <Tag 
+                      color={isBullish ? 'green' : 'red'}
+                      style={{ fontSize: 11, padding: '2px 6px', margin: 0, marginBottom: 8 }}
+                    >
+                      {isBullish ? 'BULLISH' : 'BEARISH'}
+                    </Tag>
+                    <div style={{ fontSize: 10, lineHeight: 1.4 }}>
+                      <Text type="secondary">
+                        ↑{bullish} / ↓{bearish} / •{neutral}
+                      </Text>
+                    </div>
+                  </Card>
+                </Col>
+              )
+            })}
+          </Row>
+        </div>
+      )}
+
+      {/* Single Timeframe Sentiment Summary - Only show when not loading and not in multi-timeframe mode */}
+      {!loading && !multiTimeframe && allIndices.length > 0 && (
         <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
           <Col xs={24} lg={10}>
             <Card 
@@ -647,7 +812,7 @@ const GlobalMarkets = () => {
       )}
 
       {/* Enhanced Empty State */}
-      {!loading && !error && allIndices.length === 0 && (
+      {!loading && !error && !multiTimeframe && allIndices.length === 0 && (
         <Card
           style={{
             boxShadow: isDarkMode 
@@ -681,7 +846,7 @@ const GlobalMarkets = () => {
       {/* Market Groups */}
       {!loading && data && (
         <div>
-          {viewMode === 'cards' 
+          {viewMode === 'cards' && !multiTimeframe
             ? MARKET_GROUPS.map(group => renderMarketGroup(group))
             : MARKET_GROUPS.map(group => renderMarketTable(group))
           }

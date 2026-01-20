@@ -10,7 +10,8 @@ router = APIRouter(prefix="/markets", tags=["Global Markets"])
 
 @router.get("/global")
 async def get_global_markets(
-    timeframe: str = Query("daily", description="Timeframe: 1h, 4h, daily, weekly, monthly")
+    timeframe: str = Query("daily", description="Timeframe: 1h, 4h, daily, weekly, monthly"),
+    multi: bool = Query(False, description="Return all timeframes")
 ):
     """
     Get global market indices with sentiment analysis
@@ -21,17 +22,24 @@ async def get_global_markets(
     - **daily**: Compare with previous day close (default)
     - **weekly**: Compare with last week
     - **monthly**: Compare with last month
+    - **3m**: Compare with 3 months ago
+    
+    Parameters:
+    - **multi**: If true, returns data for all timeframes (1h, 4h, daily, weekly, monthly, 3m)
     
     Returns data for:
     - US Markets (DJI, S&P 500, NASDAQ, VIX, etc.)
     - European Markets (DAX, FTSE, CAC40, etc.)
     - Asian Markets (Nifty, Sensex, Nikkei, Hang Seng, etc.)
     - India ADRs (Infosys, Wipro, ICICI, HDFC)
-    - Commodities (Gold, Crude Oil)
-    - Overall Market Sentiment Score
+    - Overall Market Sentiment Score(s)
     """
     try:
-        result = GlobalMarketsService.get_global_overview(timeframe)
+        if multi:
+            result = GlobalMarketsService.get_multi_timeframe_overview()
+        else:
+            result = GlobalMarketsService.get_global_overview(timeframe)
+        
         if not result:
             raise HTTPException(
                 status_code=500,

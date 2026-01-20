@@ -90,6 +90,17 @@ export const getGlobalMarkets = async (timeframe = 'daily') => {
 };
 
 /**
+ * Get global market indices for all timeframes with sentiment for each
+ * Returns data with multiple timeframes (1h, 4h, daily, weekly, monthly, 3m)
+ */
+export const getGlobalMarketsMultiTimeframe = async () => {
+  const response = await api.get('/markets/global', {
+    params: { multi: true }
+  });
+  return response.data;
+};
+
+/**
  * Get only market sentiment
  * @param {string} timeframe - Timeframe: 1h, 4h, daily, weekly, monthly
  */

@@ -236,3 +236,66 @@ class GlobalMarketsService:
             **markets_data,
             'sentiment': sentiment
         }
+    
+    @staticmethod
+    def get_multi_timeframe_overview() -> Dict:
+        """
+        Get global market data for all timeframes simultaneously
+        Returns data structure with all 6 timeframes and sentiment for each
+        """
+        timeframes = ['1h', '4h', 'daily', 'weekly', 'monthly', '3m']
+        
+        # Fetch data for all timeframes
+        all_timeframe_data = {}
+        sentiments = {}
+        
+        for tf in timeframes:
+            markets_data = GlobalMarketsService.fetch_all_markets(tf)
+            sentiment = GlobalMarketsService.calculate_sentiment(markets_data)
+            
+            all_timeframe_data[tf] = markets_data
+            sentiments[tf] = sentiment
+        
+        # Restructure data to group by market with all timeframes
+        # Market groups
+        market_groups = ['us_markets', 'european_markets', 'asian_markets', 'india_adrs']
+        
+        result = {}
+        for group in market_groups:
+            markets_list = []
+            
+            # Get unique markets from the first timeframe
+            base_markets = all_timeframe_data['daily'].get(group, [])
+            
+            for market in base_markets:
+                symbol = market['symbol']
+                market_data = {
+                    'symbol': symbol,
+                    'name': market['name'],
+                    'short': market['short'],
+                    'price': market.get('price'),  # Use current price from daily
+                    'timeframes': {}
+                }
+                
+                # Add data for each timeframe
+                for tf in timeframes:
+                    tf_markets = all_timeframe_data[tf].get(group, [])
+                    tf_market = next((m for m in tf_markets if m['symbol'] == symbol), None)
+                    
+                    if tf_market:
+                        market_data['timeframes'][tf] = {
+                            'change': tf_market.get('change'),
+                            'change_pct': tf_market.get('change_pct'),
+                            'error': tf_market.get('error', False)
+                        }
+                
+                markets_list.append(market_data)
+            
+            result[group] = markets_list
+        
+        return {
+            **result,
+            'sentiments': sentiments,
+            'timestamp': datetime.now().isoformat(),
+            'mode': 'multi_timeframe'
+        }
