@@ -1,23 +1,25 @@
 /**
- * Commodity Page - Ant Design Implementation
- * Shows commodity futures prices and analysis
+ * Commodity Markets Page - Ant Design Implementation
+ * Shows commodity futures grouped by category (Precious Metals, Energy, Agricultural, MCX)
  */
 
 import { useState, useEffect } from 'react'
-import { 
+import {
   Card, Select, Button, Space, Tag, Typography, Table,
-  Empty, Spin, Alert, Row, Col, Statistic, Grid, Switch
+  Empty, Spin, Alert, Row, Col, Statistic, Progress, Grid, Switch, Divider
 } from 'antd'
-import { 
-  ReloadOutlined, ArrowUpOutlined, ArrowDownOutlined,
-  RiseOutlined, FallOutlined, DollarOutlined
+import {
+  ReloadOutlined, ArrowUpOutlined,
+  ArrowDownOutlined, RiseOutlined, FallOutlined,
+  DollarCircleOutlined, GoldOutlined, ThunderboltOutlined,
+  ExperimentOutlined, ShopOutlined
 } from '@ant-design/icons'
 import axios from 'axios'
 import { API_BASE_URL } from '../api/config'
 import { useTheme } from '../context/ThemeContext'
 
 const { Title, Text } = Typography
-const { useBreakpoint} = Grid
+const { useBreakpoint } = Grid
 
 const TIMEFRAMES = [
   { value: '1h', label: '1H', fullLabel: '1 Hour' },
@@ -28,6 +30,37 @@ const TIMEFRAMES = [
   { value: '3m', label: '3M', fullLabel: '3 Month' },
 ]
 
+const COMMODITY_GROUPS = [
+  {
+    key: 'precious_metals',
+    title: 'Precious Metals',
+    subtitle: 'COMEX - CME Group, New York',
+    icon: <GoldOutlined style={{ fontSize: 24, color: '#faad14' }} />,
+    color: '#faad14'
+  },
+  {
+    key: 'energy_commodities',
+    title: 'Energy',
+    subtitle: 'NYMEX - New York Mercantile Exchange',
+    icon: <ThunderboltOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />,
+    color: '#ff4d4f'
+  },
+  {
+    key: 'agricultural_commodities',
+    title: 'Agricultural',
+    subtitle: 'CBOT - Chicago Board of Trade',
+    icon: <ExperimentOutlined style={{ fontSize: 24, color: '#52c41a' }} />,
+    color: '#52c41a'
+  },
+  {
+    key: 'mcx_commodities',
+    title: 'MCX (India)',
+    subtitle: 'Multi Commodity Exchange of India',
+    icon: <ShopOutlined style={{ fontSize: 24, color: '#1890ff' }} />,
+    color: '#1890ff'
+  }
+]
+
 const Commodity = () => {
   const screens = useBreakpoint()
   const { isDarkMode } = useTheme()
@@ -35,19 +68,19 @@ const Commodity = () => {
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
   const [timeframe, setTimeframe] = useState('daily')
-  const [multiTimeframe, setMultiTimeframe] = useState(false)
-  const [selectedTimeframe, setSelectedTimeframe] = useState('daily')
+  const [isMultiTimeframe, setIsMultiTimeframe] = useState(false)
+  const [highlightedTimeframe, setHighlightedTimeframe] = useState('daily')
 
   const fetchData = async () => {
     setLoading(true)
     setError(null)
     try {
       const url = `${API_BASE_URL}/markets/commodities`
-      const params = multiTimeframe ? { multi: true } : { timeframe }
+      const params = isMultiTimeframe ? { multi: true } : { timeframe }
       const response = await axios.get(url, { params })
       setData(response.data)
     } catch (err) {
-      setError(err.message || 'Failed to fetch commodity data')
+      setError(err.message || 'Failed to fetch commodity markets data')
     } finally {
       setLoading(false)
     }
@@ -55,87 +88,16 @@ const Commodity = () => {
 
   useEffect(() => {
     fetchData()
-  }, [timeframe, multiTimeframe])
+  }, [timeframe, isMultiTimeframe])
 
-  // Single timeframe data
-  const commodities = !multiTimeframe && data?.commodities ? data.commodities : []
-  const sentiment = !multiTimeframe && data?.sentiment ? data.sentiment : null
+  // Calculate sentiment for single timeframe mode
+  const sentiment = !isMultiTimeframe && data ? data.sentiment : null
 
-  // Multi-timeframe data
-  const multiTimeframeSentiments = multiTimeframe && data?.sentiments ? data.sentiments : null
-  const multiCommodities = multiTimeframe && data?.commodities ? data.commodities : []
-
-  // Multi-timeframe table columns
-  const multiTimeframeColumns = [
-    {
-      title: 'Commodity',
-      dataIndex: 'short',
-      key: 'short',
-      width: 120,
-      fixed: screens.md ? 'left' : false,
-      render: (short, record) => (
-        <Space direction="vertical" size={0}>
-          <Text strong style={{ fontSize: 14 }}>{short}</Text>
-          <Text type="secondary" style={{ fontSize: 11 }}>{record.symbol}</Text>
-        </Space>
-      ),
-    },
-    {
-      title: 'Price',
-      dataIndex: 'price',
-      key: 'price',
-      align: 'right',
-      width: 110,
-      sorter: (a, b) => (a.price || 0) - (b.price || 0),
-      render: (price) => (
-        <Text strong style={{ fontFamily: 'monospace', fontSize: 14 }}>
-          {price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '-'}
-        </Text>
-      ),
-    },
-    ...TIMEFRAMES.map(tf => ({
-      title: tf.label,
-      key: `tf_${tf.value}`,
-      align: 'center',
-      width: 100,
-      sorter: (a, b) => {
-        const aVal = a.timeframes?.[tf.value]?.change_pct || 0
-        const bVal = b.timeframes?.[tf.value]?.change_pct || 0
-        return aVal - bVal
-      },
-      render: (_, record) => {
-        const tfData = record.timeframes?.[tf.value]
-        if (!tfData || tfData.error || tfData.change_pct === null) return '-'
-        
-        const pct = tfData.change_pct
-        const color = pct > 0 ? 'green' : pct < 0 ? 'red' : 'default'
-        const sign = pct > 0 ? '+' : ''
-        const Icon = pct > 0 ? ArrowUpOutlined : pct < 0 ? ArrowDownOutlined : null
-        const isSelected = tf.value === selectedTimeframe
-        
-        return (
-          <Tag 
-            color={color} 
-            style={{ 
-              minWidth: 75, 
-              textAlign: 'center',
-              fontSize: 12,
-              fontWeight: isSelected ? 700 : 500,
-              padding: '3px 6px',
-              backgroundColor: isSelected && (isDarkMode ? 'rgba(24, 144, 255, 0.15)' : 'rgba(24, 144, 255, 0.08)'),
-              borderWidth: isSelected ? 2 : 1,
-            }}
-          >
-            {Icon && <Icon style={{ marginRight: 3, fontSize: 10 }} />}
-            {sign}{pct.toFixed(2)}%
-          </Tag>
-        )
-      },
-    })),
-  ]
+  // Multi-timeframe sentiments
+  const multiTimeframeSentiments = isMultiTimeframe && data ? data.sentiments : {}
 
   // Single timeframe table columns
-  const tableColumns = [
+  const singleTimeframeTableColumns = [
     {
       title: 'Commodity',
       dataIndex: 'short',
@@ -143,7 +105,7 @@ const Commodity = () => {
       width: 120,
       render: (short, record) => (
         <Space direction="vertical" size={0}>
-          <Text strong style={{ fontSize: 14 }}>{short}</Text>
+          <Text strong style={{ fontWeight: 600 }}>{short || record.name?.split(' ')[0]}</Text>
           <Text type="secondary" style={{ fontSize: 11 }}>{record.symbol}</Text>
         </Space>
       ),
@@ -153,17 +115,17 @@ const Commodity = () => {
       dataIndex: 'name',
       key: 'name',
       width: 200,
-      ellipsis: true,
+      render: (name) => <Text style={{ fontSize: 13 }}>{name}</Text>,
     },
     {
       title: 'Price',
       dataIndex: 'price',
       key: 'price',
       align: 'right',
-      width: 130,
+      width: 120,
       sorter: (a, b) => (a.price || 0) - (b.price || 0),
       render: (price) => (
-        <Text strong style={{ fontFamily: 'monospace', fontSize: 15 }}>
+        <Text style={{ fontFamily: 'monospace', fontWeight: 500 }}>
           {price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '-'}
         </Text>
       ),
@@ -173,20 +135,16 @@ const Commodity = () => {
       dataIndex: 'change',
       key: 'change',
       align: 'right',
-      width: 110,
+      width: 100,
       sorter: (a, b) => (a.change || 0) - (b.change || 0),
       render: (change) => {
         if (change === null || change === undefined) return '-'
         const color = change > 0 ? '#52c41a' : change < 0 ? '#ff4d4f' : '#999'
         const sign = change > 0 ? '+' : ''
-        const Icon = change > 0 ? ArrowUpOutlined : ArrowDownOutlined
         return (
-          <Space size={4}>
-            <Icon style={{ color, fontSize: 12 }} />
-            <Text strong style={{ color, fontFamily: 'monospace' }}>
-              {sign}{change?.toFixed(2)}
-            </Text>
-          </Space>
+          <Text style={{ color, fontFamily: 'monospace' }}>
+            {sign}{change?.toFixed(2)}
+          </Text>
         )
       },
     },
@@ -195,334 +153,433 @@ const Commodity = () => {
       dataIndex: 'change_pct',
       key: 'change_pct',
       align: 'center',
-      width: 120,
+      width: 110,
       sorter: (a, b) => (a.change_pct || 0) - (b.change_pct || 0),
-      defaultSortOrder: 'descend',
       render: (pct) => {
         if (pct === null || pct === undefined) return '-'
         const color = pct > 0 ? 'green' : pct < 0 ? 'red' : 'default'
         const sign = pct > 0 ? '+' : ''
         const Icon = pct > 0 ? ArrowUpOutlined : pct < 0 ? ArrowDownOutlined : null
         return (
-          <Tag 
-            color={color} 
-            style={{ 
-              minWidth: 90, 
-              textAlign: 'center',
-              fontSize: 13,
-              fontWeight: 600,
-              padding: '4px 8px'
-            }}
-          >
-            {Icon && <Icon style={{ marginRight: 4 }} />} {sign}{pct?.toFixed(2)}%
+          <Tag color={color} style={{ minWidth: 80, textAlign: 'center', fontWeight: 600 }}>
+            {Icon && <Icon />} {sign}{pct?.toFixed(2)}%
           </Tag>
         )
       },
     },
   ]
 
+  // Multi-timeframe table columns
+  const multiTimeframeTableColumns = [
+    {
+      title: 'Commodity',
+      dataIndex: 'short',
+      key: 'short',
+      width: 120,
+      render: (short, record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong style={{ fontWeight: 600 }}>{short || record.name?.split(' ')[0]}</Text>
+          <Text type="secondary" style={{ fontSize: 11 }}>{record.symbol}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      align: 'right',
+      width: 120,
+      sorter: (a, b) => (a.price || 0) - (b.price || 0),
+      render: (price) => (
+        <Text style={{ fontFamily: 'monospace', fontWeight: 500 }}>
+          {price?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '-'}
+        </Text>
+      ),
+    },
+    ...TIMEFRAMES.map(tf => ({
+      title: (
+        <Text strong={highlightedTimeframe === tf.value} style={{ color: highlightedTimeframe === tf.value ? '#1890ff' : undefined }}>
+          {tf.label}
+        </Text>
+      ),
+      dataIndex: ['timeframes', tf.value, 'change_pct'],
+      key: tf.value,
+      align: 'center',
+      width: 100,
+      sorter: (a, b) => (a.timeframes[tf.value]?.change_pct || 0) - (b.timeframes[tf.value]?.change_pct || 0),
+      render: (pct, record) => {
+        if (record.timeframes[tf.value]?.error || pct === null || pct === undefined) return '-'
+        const color = pct > 0 ? 'green' : pct < 0 ? 'red' : 'default'
+        const sign = pct > 0 ? '+' : ''
+        const Icon = pct > 0 ? ArrowUpOutlined : pct < 0 ? ArrowDownOutlined : null
+        return (
+          <Tag
+            color={color}
+            style={{
+              minWidth: 70,
+              textAlign: 'center',
+              fontWeight: 600,
+              background: highlightedTimeframe === tf.value
+                ? (isDarkMode ? 'rgba(24, 144, 255, 0.15)' : 'rgba(24, 144, 255, 0.1)')
+                : undefined,
+              transition: 'background-color 0.3s ease'
+            }}
+          >
+            {Icon && <Icon />} {sign}{pct?.toFixed(2)}%
+          </Tag>
+        )
+      },
+    })),
+  ]
+
+  // Render multi-timeframe sentiment card
+  const renderMultiTimeframeSentimentCard = (tfValue, sentimentData) => {
+    if (!sentimentData) return null
+
+    const bullish = sentimentData.breadth.positive
+    const bearish = sentimentData.breadth.negative
+    const neutral = sentimentData.breadth.neutral
+    const totalTf = sentimentData.breadth.total
+    const bullishPct = sentimentData.breadth.percentage
+    const isPositive = bullishPct >= 50
+    const borderColor = isPositive ? '#52c41a' : '#ff4d4f'
+    const bgColor = isPositive
+      ? (isDarkMode ? 'linear-gradient(135deg, rgba(82, 196, 26, 0.12) 0%, rgba(82, 196, 26, 0.04) 100%)' : 'linear-gradient(135deg, rgba(82, 196, 26, 0.08) 0%, rgba(82, 196, 26, 0.02) 100%)')
+      : (isDarkMode ? 'linear-gradient(135deg, rgba(255, 77, 79, 0.12) 0%, rgba(255, 77, 79, 0.04) 100%)' : 'linear-gradient(135deg, rgba(255, 77, 79, 0.08) 0%, rgba(255, 77, 79, 0.02) 100%)')
+
+    return (
+      <Col xs={12} sm={8} md={4} lg={4} xl={4} key={tfValue}>
+        <Card
+          hoverable
+          size="small"
+          onClick={() => setHighlightedTimeframe(tfValue)}
+          style={{
+            height: '100%',
+            borderLeft: `4px solid ${borderColor}`,
+            background: bgColor,
+            boxShadow: isDarkMode
+              ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+              : '0 2px 8px rgba(0, 0, 0, 0.08)',
+            transition: 'all 0.3s ease',
+            cursor: 'pointer',
+          }}
+          bodyStyle={{ padding: '12px 16px' }}
+        >
+          <Text strong style={{ fontSize: 14, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+            {TIMEFRAMES.find(tf => tf.value === tfValue)?.fullLabel || tfValue}
+          </Text>
+          <Space align="baseline" style={{ width: '100%', justifyContent: 'space-between' }}>
+            <Text
+              style={{
+                color: isPositive ? '#52c41a' : '#ff4d4f',
+                fontSize: 20,
+                fontWeight: 700,
+              }}
+            >
+              {bullishPct}%
+            </Text>
+            <Tag
+              color={isPositive ? 'green' : 'red'}
+              style={{ fontWeight: 600, fontSize: 12, padding: '4px 8px' }}
+            >
+              {isPositive ? 'BULLISH' : 'BEARISH'}
+            </Tag>
+          </Space>
+          <Text type="secondary" style={{ fontSize: 11, display: 'block', marginTop: 4 }}>
+            {bullish}↑ {bearish}↓ {neutral}• ({totalTf} total)
+          </Text>
+        </Card>
+      </Col>
+    )
+  }
+
+  // Render commodity group table
+  const renderGroupTable = (groupKey, groupData, groupInfo) => {
+    if (!groupData || groupData.length === 0) return null
+
+    const columns = isMultiTimeframe ? multiTimeframeTableColumns : singleTimeframeTableColumns
+    const dataSource = groupData.map((item, idx) => ({ ...item, key: `${groupKey}_${idx}` }))
+
+    return (
+      <div key={groupKey} style={{ marginBottom: 32 }}>
+        <Space align="center" style={{ marginBottom: 16 }}>
+          {groupInfo.icon}
+          <div>
+            <Title level={4} style={{ margin: 0, color: groupInfo.color }}>
+              {groupInfo.title}
+            </Title>
+            <Text type="secondary" style={{ fontSize: 12 }}>
+              {groupInfo.subtitle}
+            </Text>
+          </div>
+        </Space>
+        <Table
+          columns={columns}
+          dataSource={dataSource}
+          pagination={false}
+          size="small"
+          scroll={{ x: 'max-content' }}
+          rowClassName={(record, index) => (isDarkMode ? (index % 2 === 0 ? 'ant-table-row-dark-stripe' : '') : (index % 2 === 0 ? 'ant-table-row-light-stripe' : ''))}
+          style={{
+            boxShadow: isDarkMode
+              ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+              : '0 2px 8px rgba(0, 0, 0, 0.08)',
+            borderRadius: 2,
+            overflow: 'hidden',
+          }}
+        />
+      </div>
+    )
+  }
+
   return (
     <div>
       {/* Page Header */}
-      <div 
-        style={{ 
-          background: isDarkMode 
-            ? 'linear-gradient(135deg, rgba(250, 173, 20, 0.15) 0%, rgba(250, 173, 20, 0.05) 100%)'
-            : 'linear-gradient(135deg, rgba(250, 173, 20, 0.08) 0%, rgba(240, 242, 245, 0) 100%)',
-          padding: screens.md ? '32px 24px' : '24px 16px',
-          borderRadius: 2,
-          marginBottom: 24,
-          border: isDarkMode ? '1px solid rgba(250, 173, 20, 0.2)' : '1px solid rgba(250, 173, 20, 0.1)',
-        }}
-      >
-        <Row justify="space-between" align="middle">
-          <Col>
-            <Space align="center" size={16}>
-              <div 
-                style={{ 
-                  background: 'rgba(250, 173, 20, 0.1)',
-                  borderRadius: 2,
-                  padding: 12,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <DollarOutlined style={{ fontSize: 32, color: '#faad14' }} />
-              </div>
-              <div>
-                <Title level={screens.md ? 2 : 3} style={{ margin: 0, marginBottom: 4 }}>
-                  Commodity Markets
-                </Title>
-                <Text type="secondary" style={{ fontSize: 14 }}>
-                  Precious metals, energy & agricultural commodities
-                </Text>
-              </div>
-            </Space>
-          </Col>
-        </Row>
-      </div>
+      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
+        <Col>
+          <Space align="center">
+            <DollarCircleOutlined style={{ fontSize: 28, color: '#faad14' }} />
+            <div>
+              <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
+                Commodity Markets
+              </Title>
+              <Text type="secondary">
+                Major commodity futures & sentiment analysis
+              </Text>
+            </div>
+          </Space>
+        </Col>
+      </Row>
 
       {/* Filters */}
-      <Card 
-        style={{ 
-          marginBottom: 24,
-          boxShadow: isDarkMode 
-            ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
-            : '0 2px 8px rgba(0, 0, 0, 0.06)',
-        }}
-        bodyStyle={{ padding: screens.md ? '16px 24px' : '16px' }}
-      >
-        <Row gutter={[16, 16]} align="middle" justify="space-between" wrap>
-          <Col xs={24} md={18} lg={16}>
-            <Space wrap size={16}>
+      <Card size="small" style={{ marginBottom: 24 }}>
+        <Row gutter={[16, 16]} align="middle" justify="space-between">
+          <Col>
+            <Space wrap size={screens.md ? 16 : 8}>
               {/* Analysis Mode Toggle */}
-              <div>
-                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                  Analysis Mode
-                </Text>
-                <Space 
+              <Space direction="vertical" size={4}>
+                <Text strong style={{ fontSize: 13, fontWeight: 600 }}>Analysis Mode:</Text>
+                <div
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: 2,
                     border: `1px solid ${isDarkMode ? '#434343' : '#d9d9d9'}`,
-                    background: isDarkMode ? '#1f1f1f' : '#fafafa',
+                    borderRadius: 6,
+                    padding: 4,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    transition: 'all 0.3s ease'
                   }}
                 >
-                  <Text 
-                    style={{ 
+                  <Text
+                    style={{
                       fontSize: 13,
-                      fontWeight: !multiTimeframe ? 600 : 400,
-                      color: !multiTimeframe ? '#1890ff' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
+                      fontWeight: !isMultiTimeframe ? 600 : 400,
+                      color: !isMultiTimeframe ? '#1890ff' : (isDarkMode ? 'rgba(255, 255, 255, 0.65)' : 'rgba(0, 0, 0, 0.65)'),
+                      transition: 'all 0.3s ease'
                     }}
                   >
                     Single
                   </Text>
                   <Switch
-                    checked={multiTimeframe}
-                    onChange={setMultiTimeframe}
+                    checked={isMultiTimeframe}
+                    onChange={setIsMultiTimeframe}
+                    checkedChildren={<Text strong style={{ color: '#fff' }}>All TF</Text>}
+                    unCheckedChildren={<Text strong style={{ color: '#fff' }}>Single</Text>}
                     style={{
-                      background: multiTimeframe ? '#52c41a' : undefined
+                      backgroundColor: isMultiTimeframe ? '#52c41a' : (isDarkMode ? '#595959' : '#bfbfbf'),
+                      transition: 'background-color 0.3s ease'
                     }}
                   />
-                  <Text 
-                    style={{ 
+                  <Text
+                    style={{
                       fontSize: 13,
-                      fontWeight: multiTimeframe ? 600 : 400,
-                      color: multiTimeframe ? '#52c41a' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
+                      fontWeight: isMultiTimeframe ? 600 : 400,
+                      color: isMultiTimeframe ? '#52c41a' : (isDarkMode ? 'rgba(255, 255, 255, 0.65)' : 'rgba(0, 0, 0, 0.65)'),
+                      transition: 'all 0.3s ease'
                     }}
                   >
                     All Timeframes
                   </Text>
-                </Space>
-              </div>
+                </div>
+              </Space>
 
-              {/* Timeframe Selector */}
-              {!multiTimeframe && (
-                <div>
-                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                    Timeframe
-                  </Text>
+              {/* Single Timeframe Controls */}
+              {!isMultiTimeframe && (
+                <Space direction="vertical" size={4}>
+                  <Text strong style={{ fontSize: 13, fontWeight: 600 }}>Timeframe:</Text>
                   <Select
                     value={timeframe}
                     onChange={setTimeframe}
                     options={TIMEFRAMES.map(tf => ({ value: tf.value, label: tf.fullLabel }))}
-                    style={{ width: screens.md ? 140 : 120 }}
+                    style={{ width: 120 }}
                     size={screens.md ? 'middle' : 'large'}
                   />
-                </div>
+                </Space>
               )}
+
+              <Button
+                type="primary"
+                icon={<ReloadOutlined spin={loading} />}
+                onClick={fetchData}
+                loading={loading}
+                size={screens.md ? 'middle' : 'large'}
+                style={{ alignSelf: 'flex-end' }}
+              >
+                Refresh
+              </Button>
             </Space>
-          </Col>
-          <Col xs={24} md={6} lg={8} style={{ textAlign: screens.md ? 'right' : 'left' }}>
-            <Button
-              type="primary"
-              icon={<ReloadOutlined spin={loading} />}
-              onClick={fetchData}
-              loading={loading}
-              size={screens.md ? 'middle' : 'large'}
-              style={{ minWidth: 120 }}
-            >
-              Refresh Data
-            </Button>
           </Col>
         </Row>
       </Card>
 
-      {/* Multi-Timeframe Sentiment Cards */}
-      {!loading && multiTimeframe && multiTimeframeSentiments && (
+      {/* Multi-Timeframe Sentiment Summary */}
+      {!loading && isMultiTimeframe && data && data.sentiments && (
         <div style={{ marginBottom: 32 }}>
-          <Text strong style={{ fontSize: 17, display: 'block', marginBottom: 16, fontWeight: 700 }}>
-            Commodity Market Sentiment - All Timeframes
+          <Text strong style={{ fontSize: 18, display: 'block', marginBottom: 16, fontWeight: 700 }}>
+            Overall Commodity Sentiment
           </Text>
-          <Row gutter={[12, 12]}>
-            {TIMEFRAMES.map(tf => {
-              const sent = multiTimeframeSentiments[tf.value]
-              if (!sent) return null
-              
-              const bullish = sent.breadth?.positive || 0
-              const bearish = sent.breadth?.negative || 0
-              const neutral = sent.breadth?.total - bullish - bearish || 0
-              const bullishPercent = sent.breadth?.percentage || 0
-              const isBullish = bullishPercent >= 50
-              
-              return (
-                <Col xs={12} sm={8} md={4} key={tf.value}>
-                  <Card
-                    size="small"
-                    hoverable
-                    style={{
-                      borderTop: `3px solid ${isBullish ? '#52c41a' : '#ff4d4f'}`,
-                      background: isBullish
-                        ? (isDarkMode ? 'rgba(82, 196, 26, 0.08)' : 'rgba(82, 196, 26, 0.04)')
-                        : (isDarkMode ? 'rgba(255, 77, 79, 0.08)' : 'rgba(255, 77, 79, 0.04)'),
-                      height: '100%',
-                      transition: 'all 0.3s ease',
-                      boxShadow: isDarkMode 
-                        ? '0 2px 6px rgba(0, 0, 0, 0.3)' 
-                        : '0 2px 6px rgba(0, 0, 0, 0.08)',
-                    }}
-                    bodyStyle={{ padding: 12 }}
-                    onClick={() => setSelectedTimeframe(tf.value)}
-                  >
-                    <Text type="secondary" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>
-                      {tf.fullLabel}
-                    </Text>
-                    <Space size={4} align="center" style={{ marginBottom: 6 }}>
-                      <Text strong style={{ fontSize: 22, color: isBullish ? '#52c41a' : '#ff4d4f' }}>
-                        {Math.round(bullishPercent)}%
-                      </Text>
-                      {isBullish ? <RiseOutlined style={{ color: '#52c41a', fontSize: 16 }} /> : <FallOutlined style={{ color: '#ff4d4f', fontSize: 16 }} />}
-                    </Space>
-                    <Tag 
-                      color={isBullish ? 'green' : 'red'}
-                      style={{ fontSize: 11, padding: '2px 6px', margin: 0, marginBottom: 8 }}
-                    >
-                      {isBullish ? 'BULLISH' : 'BEARISH'}
-                    </Tag>
-                    <div style={{ fontSize: 10, lineHeight: 1.4 }}>
-                      <Text type="secondary">
-                        ↑{bullish} / ↓{bearish} / •{neutral}
-                      </Text>
-                    </div>
-                  </Card>
-                </Col>
-              )
-            })}
+          <Row gutter={[16, 16]}>
+            {TIMEFRAMES.map(tf => renderMultiTimeframeSentimentCard(tf.value, multiTimeframeSentiments[tf.value]))}
           </Row>
         </div>
       )}
 
-      {/* Single Timeframe Sentiment */}
-      {!loading && !multiTimeframe && sentiment && commodities.length > 0 && (
+      {/* Single Timeframe Sentiment Summary */}
+      {!loading && !isMultiTimeframe && sentiment && (
         <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
-          <Col xs={24} lg={12}>
-            <Card 
+          <Col xs={24} lg={10}>
+            <Card
               style={{
-                background: sentiment.breadth.percentage >= 50 
-                  ? (isDarkMode 
+                background: sentiment.breadth.percentage >= 50
+                  ? (isDarkMode
                       ? 'linear-gradient(135deg, rgba(82, 196, 26, 0.12) 0%, rgba(82, 196, 26, 0.04) 100%)'
                       : 'linear-gradient(135deg, rgba(82, 196, 26, 0.08) 0%, rgba(82, 196, 26, 0.02) 100%)')
-                  : (isDarkMode 
+                  : (isDarkMode
                       ? 'linear-gradient(135deg, rgba(255, 77, 79, 0.12) 0%, rgba(255, 77, 79, 0.04) 100%)'
                       : 'linear-gradient(135deg, rgba(255, 77, 79, 0.08) 0%, rgba(255, 77, 79, 0.02) 100%)'),
                 borderLeft: `4px solid ${sentiment.breadth.percentage >= 50 ? '#52c41a' : '#ff4d4f'}`,
                 height: '100%',
-                boxShadow: isDarkMode 
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
                   : '0 2px 8px rgba(0, 0, 0, 0.08)',
               }}
               bodyStyle={{ padding: 20 }}
             >
-              <Text strong style={{ fontSize: 18, display: 'block', marginBottom: 12, fontWeight: 700 }}>
-                Overall Commodity Sentiment
-              </Text>
-              <Space size={16} align="end">
-                <Statistic
-                  value={Math.round(sentiment.breadth.percentage)}
-                  suffix="%"
-                  prefix={sentiment.breadth.percentage >= 50 ? <RiseOutlined /> : <FallOutlined />}
-                  valueStyle={{ 
-                    color: sentiment.breadth.percentage >= 50 ? '#52c41a' : '#ff4d4f',
-                    fontSize: 40,
-                    fontWeight: 700
+              <Space direction="vertical" size={16} style={{ width: '100%' }}>
+                <div>
+                  <Text strong style={{ fontSize: 18, display: 'block', marginBottom: 8, fontWeight: 700 }}>
+                    Overall Commodity Sentiment ({TIMEFRAMES.find(tf => tf.value === timeframe)?.fullLabel})
+                  </Text>
+                  <Space size={16} align="end">
+                    <Statistic
+                      value={sentiment.breadth.percentage}
+                      suffix="%"
+                      prefix={sentiment.breadth.percentage >= 50 ? <RiseOutlined /> : <FallOutlined />}
+                      valueStyle={{
+                        color: sentiment.breadth.percentage >= 50 ? '#52c41a' : '#ff4d4f',
+                        fontSize: 40,
+                        fontWeight: 700
+                      }}
+                    />
+                    <Tag
+                      color={sentiment.breadth.percentage >= 50 ? 'green' : 'red'}
+                      style={{ fontSize: 16, padding: '6px 16px', fontWeight: 600 }}
+                    >
+                      {sentiment.breadth.percentage >= 50 ? 'BULLISH' : 'BEARISH'}
+                    </Tag>
+                  </Space>
+                </div>
+                <Progress
+                  percent={sentiment.breadth.percentage}
+                  strokeColor={{
+                    '0%': sentiment.breadth.percentage >= 50 ? '#52c41a' : '#ff4d4f',
+                    '100%': sentiment.breadth.percentage >= 50 ? '#87d068' : '#f5222d',
                   }}
+                  trailColor={isDarkMode ? '#434343' : '#f0f0f0'}
+                  showInfo={false}
+                  style={{ marginTop: 8 }}
                 />
-                <Tag 
-                  color={sentiment.breadth.percentage >= 50 ? 'green' : 'red'}
-                  style={{ fontSize: 16, padding: '6px 16px', fontWeight: 600 }}
-                >
-                  {sentiment.breadth.percentage >= 50 ? 'BULLISH' : 'BEARISH'}
-                </Tag>
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  {sentiment.breadth.percentage >= 50 ? 'Bullish' : 'Bearish'} • {sentiment.breadth.total} commodities
+                </Text>
               </Space>
-              <Text type="secondary" style={{ fontSize: 13, display: 'block', marginTop: 12 }}>
-                Based on {sentiment.breadth.total} commodity instruments
-              </Text>
             </Card>
           </Col>
           <Col xs={8} lg={4}>
-            <Card 
+            <Card
               hoverable
               style={{
                 height: '100%',
                 borderTop: '3px solid #52c41a',
-                boxShadow: isDarkMode 
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
                   : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                transition: 'all 0.3s ease'
               }}
               bodyStyle={{ padding: 20 }}
             >
               <Statistic
-                title={<Text strong>Bullish</Text>}
+                title={<Text strong style={{ fontSize: 13 }}>Bullish</Text>}
                 value={sentiment.breadth.positive}
                 valueStyle={{ color: '#52c41a', fontSize: 32, fontWeight: 700 }}
-                prefix={<ArrowUpOutlined />}
+                prefix={<ArrowUpOutlined style={{ fontSize: 24 }} />}
               />
+              <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
+                {Math.round((sentiment.breadth.positive / sentiment.breadth.total) * 100)}% of commodities
+              </Text>
             </Card>
           </Col>
           <Col xs={8} lg={4}>
-            <Card 
+            <Card
               hoverable
               style={{
                 height: '100%',
                 borderTop: '3px solid #999',
-                boxShadow: isDarkMode 
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
                   : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                transition: 'all 0.3s ease'
               }}
               bodyStyle={{ padding: 20 }}
             >
               <Statistic
-                title={<Text strong>Neutral</Text>}
+                title={<Text strong style={{ fontSize: 13 }}>Neutral</Text>}
                 value={sentiment.breadth.neutral}
                 valueStyle={{ color: '#999', fontSize: 32, fontWeight: 700 }}
               />
+              <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
+                {Math.round((sentiment.breadth.neutral / sentiment.breadth.total) * 100)}% of commodities
+              </Text>
             </Card>
           </Col>
           <Col xs={8} lg={4}>
-            <Card 
+            <Card
               hoverable
               style={{
                 height: '100%',
                 borderTop: '3px solid #ff4d4f',
-                boxShadow: isDarkMode 
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
+                boxShadow: isDarkMode
+                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
                   : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                transition: 'all 0.3s ease'
               }}
               bodyStyle={{ padding: 20 }}
             >
               <Statistic
-                title={<Text strong>Bearish</Text>}
+                title={<Text strong style={{ fontSize: 13 }}>Bearish</Text>}
                 value={sentiment.breadth.negative}
                 valueStyle={{ color: '#ff4d4f', fontSize: 32, fontWeight: 700 }}
-                prefix={<ArrowDownOutlined />}
+                prefix={<ArrowDownOutlined style={{ fontSize: 24 }} />}
               />
+              <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
+                {Math.round((sentiment.breadth.negative / sentiment.breadth.total) * 100)}% of commodities
+              </Text>
             </Card>
           </Col>
         </Row>
       )}
 
-      {/* Error */}
+      {/* Error Alert */}
       {error && (
         <Alert
           message="Error Loading Commodity Data"
@@ -530,65 +587,72 @@ const Commodity = () => {
           type="error"
           showIcon
           closable
-          style={{ marginBottom: 24 }}
+          style={{
+            marginBottom: 24,
+            boxShadow: isDarkMode
+              ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+              : '0 2px 8px rgba(0, 0, 0, 0.08)',
+          }}
         />
       )}
 
-      {/* Loading */}
+      {/* Loading State */}
       {loading && (
-        <Card>
-          <div style={{ textAlign: 'center', padding: screens.md ? 80 : 60 }}>
+        <Card
+          style={{
+            boxShadow: isDarkMode
+              ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+              : '0 2px 8px rgba(0, 0, 0, 0.08)',
+          }}
+        >
+          <div style={{ textAlign: 'center', padding: 60 }}>
             <Spin size="large" />
-            <div style={{ marginTop: 24 }}>
-              <Text strong style={{ fontSize: 16, display: 'block', marginBottom: 8 }}>
-                Loading Commodity Markets
-              </Text>
-              <Text type="secondary">Fetching latest commodity prices...</Text>
+            <div style={{ marginTop: 16 }}>
+              <Text type="secondary">Loading commodity markets...</Text>
             </div>
           </div>
         </Card>
       )}
 
       {/* Empty State */}
-      {!loading && !error && !multiTimeframe && commodities.length === 0 && (
-        <Card>
-          <Empty description="No commodity data available" />
+      {!loading && !error && data && !COMMODITY_GROUPS.some(g => data[g.key]?.length > 0) && (
+        <Card
+          style={{
+            boxShadow: isDarkMode
+              ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+              : '0 2px 8px rgba(0, 0, 0, 0.08)',
+          }}
+        >
+          <Empty
+            description={
+              <Space direction="vertical" size={8}>
+                <Text strong style={{ fontSize: 15 }}>No Commodity Data Available</Text>
+                <Text type="secondary" style={{ fontSize: 13 }}>
+                  Try refreshing or selecting a different timeframe
+                </Text>
+              </Space>
+            }
+            style={{ padding: screens.md ? 60 : 40 }}
+          >
+            <Button
+              type="primary"
+              icon={<ReloadOutlined />}
+              onClick={fetchData}
+              size="large"
+            >
+              Refresh Data
+            </Button>
+          </Empty>
         </Card>
       )}
 
-      {/* Commodity Table */}
-      {!loading && ((multiTimeframe && multiCommodities.length > 0) || (!multiTimeframe && commodities.length > 0)) && (
-        <Card 
-          title={
-            <Space size={12}>
-              <DollarOutlined style={{ fontSize: 20, color: '#faad14' }} />
-              <div>
-                <Text strong style={{ fontSize: 16 }}>Commodity Instruments</Text>
-                <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-                  ({multiTimeframe ? multiCommodities.length : commodities.length} commodities)
-                </Text>
-              </div>
-            </Space>
-          }
-          style={{
-            boxShadow: isDarkMode 
-              ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
-              : '0 2px 8px rgba(0, 0, 0, 0.08)',
-          }}
-          bodyStyle={{ padding: 0 }}
-        >
-          <Table
-            columns={multiTimeframe ? multiTimeframeColumns : tableColumns}
-            dataSource={(multiTimeframe ? multiCommodities : commodities).map((c, i) => ({ ...c, key: i }))}
-            pagination={false}
-            size="middle"
-            scroll={{ x: multiTimeframe ? 1000 : 600 }}
-            sticky={{ offsetHeader: 64 }}
-            rowClassName={(record, index) => 
-              index % 2 === 0 ? '' : isDarkMode ? 'ant-table-row-striped-dark' : 'ant-table-row-striped'
-            }
-          />
-        </Card>
+      {/* Commodity Group Tables */}
+      {!loading && data && (
+        <div>
+          {COMMODITY_GROUPS.map(groupInfo => 
+            renderGroupTable(groupInfo.key, data[groupInfo.key], groupInfo)
+          )}
+        </div>
       )}
     </div>
   )

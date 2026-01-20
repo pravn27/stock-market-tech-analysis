@@ -52,29 +52,47 @@ INDIA_ADRS = [
     {"symbol": "SIFY", "name": "Sify Technologies", "short": "SIFY"},
 ]
 
-# Commodities - Major Global Instruments
-COMMODITIES = [
-    # Precious Metals
-    {"symbol": "GC=F", "name": "Gold Futures", "short": "GOLD"},
-    {"symbol": "SI=F", "name": "Silver Futures", "short": "SILVER"},
-    {"symbol": "PL=F", "name": "Platinum Futures", "short": "PLATINUM"},
-    {"symbol": "HG=F", "name": "Copper Futures", "short": "COPPER"},
-    
-    # Energy
-    {"symbol": "CL=F", "name": "Crude Oil WTI", "short": "CRUDE"},
-    {"symbol": "BZ=F", "name": "Brent Crude Oil", "short": "BRENT"},
-    {"symbol": "NG=F", "name": "Natural Gas", "short": "NATGAS"},
-    {"symbol": "RB=F", "name": "Gasoline Futures", "short": "GASOLINE"},
-    
-    # Agricultural
-    {"symbol": "ZC=F", "name": "Corn Futures", "short": "CORN"},
-    {"symbol": "ZW=F", "name": "Wheat Futures", "short": "WHEAT"},
-    {"symbol": "ZS=F", "name": "Soybean Futures", "short": "SOYBEAN"},
-    {"symbol": "KC=F", "name": "Coffee Futures", "short": "COFFEE"},
-    {"symbol": "SB=F", "name": "Sugar Futures", "short": "SUGAR"},
-    {"symbol": "CC=F", "name": "Cocoa Futures", "short": "COCOA"},
-    {"symbol": "CT=F", "name": "Cotton Futures", "short": "COTTON"},
+# Precious Metals (COMEX - CME Group, New York)
+PRECIOUS_METALS = [
+    {"symbol": "GC=F", "name": "Gold Futures (COMEX)", "short": "GOLD"},
+    {"symbol": "SI=F", "name": "Silver Futures (COMEX)", "short": "SILVER"},
+    {"symbol": "PL=F", "name": "Platinum Futures (NYMEX)", "short": "PLATINUM"},
+    {"symbol": "HG=F", "name": "Copper Futures (COMEX)", "short": "COPPER"},
 ]
+
+# Energy (NYMEX - New York Mercantile Exchange)
+ENERGY_COMMODITIES = [
+    {"symbol": "CL=F", "name": "Crude Oil WTI (NYMEX)", "short": "CRUDE"},
+    {"symbol": "BZ=F", "name": "Brent Crude Oil (ICE)", "short": "BRENT"},
+    {"symbol": "NG=F", "name": "Natural Gas (NYMEX)", "short": "NATGAS"},
+    {"symbol": "RB=F", "name": "Gasoline Futures (NYMEX)", "short": "GASOLINE"},
+]
+
+# Agricultural (CBOT - Chicago Board of Trade)
+AGRICULTURAL_COMMODITIES = [
+    {"symbol": "ZC=F", "name": "Corn Futures (CBOT)", "short": "CORN"},
+    {"symbol": "ZW=F", "name": "Wheat Futures (CBOT)", "short": "WHEAT"},
+    {"symbol": "ZS=F", "name": "Soybean Futures (CBOT)", "short": "SOYBEAN"},
+    {"symbol": "KC=F", "name": "Coffee Futures (ICE)", "short": "COFFEE"},
+    {"symbol": "SB=F", "name": "Sugar Futures (ICE)", "short": "SUGAR"},
+    {"symbol": "CC=F", "name": "Cocoa Futures (ICE)", "short": "COCOA"},
+    {"symbol": "CT=F", "name": "Cotton Futures (ICE)", "short": "COTTON"},
+]
+
+# MCX - Multi Commodity Exchange (India)
+MCX_COMMODITIES = [
+    {"symbol": "GOLD.NS", "name": "Gold MCX (INR/10g)", "short": "MCX GOLD"},
+    {"symbol": "SILVER.NS", "name": "Silver MCX (INR/kg)", "short": "MCX SILVER"},
+    {"symbol": "CRUDEOIL.NS", "name": "Crude Oil MCX", "short": "MCX CRUDE"},
+    {"symbol": "NATURALGAS.NS", "name": "Natural Gas MCX", "short": "MCX GAS"},
+    {"symbol": "COPPER.NS", "name": "Copper MCX", "short": "MCX COPPER"},
+    {"symbol": "ZINC.NS", "name": "Zinc MCX", "short": "MCX ZINC"},
+    {"symbol": "LEAD.NS", "name": "Lead MCX", "short": "MCX LEAD"},
+    {"symbol": "ALUMINIUM.NS", "name": "Aluminium MCX", "short": "MCX ALUM"},
+]
+
+# All commodities combined (for backward compatibility)
+COMMODITIES = PRECIOUS_METALS + ENERGY_COMMODITIES + AGRICULTURAL_COMMODITIES
 
 # All markets combined
 ALL_GLOBAL_MARKETS = {

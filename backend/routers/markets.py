@@ -124,32 +124,48 @@ async def get_commodities(
     multi: bool = Query(False, description="Return all timeframes")
 ):
     """
-    Get commodity futures with price data
+    Get commodity futures with price data grouped by category
     
     Includes:
-    - Precious Metals (Gold, Silver, Platinum, Copper)
-    - Energy (Crude Oil WTI, Brent, Natural Gas, Gasoline)
-    - Agricultural (Corn, Wheat, Soybean, Coffee, Sugar, Cocoa, Cotton)
+    - Precious Metals (Gold, Silver, Platinum, Copper) - COMEX/NYMEX
+    - Energy (Crude Oil WTI, Brent, Natural Gas, Gasoline) - NYMEX/ICE
+    - Agricultural (Corn, Wheat, Soybean, Coffee, Sugar, Cocoa, Cotton) - CBOT/ICE
+    - MCX Commodities (Indian Exchange) - Gold, Silver, Crude, Natural Gas, Copper, Zinc, Lead, Aluminium
     
     Parameters:
     - **timeframe**: Single timeframe to fetch
     - **multi**: If true, returns data for all timeframes
     """
     try:
-        from core.global_markets import COMMODITIES
+        from core.global_markets import PRECIOUS_METALS, ENERGY_COMMODITIES, AGRICULTURAL_COMMODITIES, MCX_COMMODITIES
+        
+        commodity_groups = {
+            'precious_metals': PRECIOUS_METALS,
+            'energy_commodities': ENERGY_COMMODITIES,
+            'agricultural_commodities': AGRICULTURAL_COMMODITIES,
+            'mcx_commodities': MCX_COMMODITIES
+        }
         
         if multi:
-            # Multi-timeframe logic similar to global markets
+            # Multi-timeframe logic
             timeframes = ['1h', '4h', 'daily', 'weekly', 'monthly', '3m']
             all_timeframe_data = {}
             sentiments = {}
             
+            # Fetch data for each timeframe and group
             for tf in timeframes:
-                result = GlobalMarketsService.fetch_market_group(COMMODITIES, tf)
-                all_timeframe_data[tf] = result
+                tf_data = {}
+                all_commodities = []
                 
-                # Calculate sentiment for this timeframe (exclude errors/None values)
-                valid_results = [c for c in result if c.get('change_pct') is not None and not c.get('error', False)]
+                for group_key, group_list in commodity_groups.items():
+                    group_result = GlobalMarketsService.fetch_market_group(group_list, tf)
+                    tf_data[group_key] = group_result
+                    all_commodities.extend(group_result)
+                
+                all_timeframe_data[tf] = tf_data
+                
+                # Calculate overall sentiment for this timeframe
+                valid_results = [c for c in all_commodities if c.get('change_pct') is not None and not c.get('error', False)]
                 total = len(valid_results)
                 bullish = sum(1 for c in valid_results if c.get('change_pct', 0) > 0)
                 bearish = sum(1 for c in valid_results if c.get('change_pct', 0) < 0)
@@ -166,42 +182,53 @@ async def get_commodities(
                     }
                 }
             
-            # Restructure for multi-timeframe display
-            commodities_list = []
-            base_commodities = all_timeframe_data['daily']
-            
-            for commodity in base_commodities:
-                symbol = commodity['symbol']
-                commodity_data = {
-                    'symbol': symbol,
-                    'name': commodity['name'],
-                    'short': commodity['short'],
-                    'price': commodity.get('price'),
-                    'timeframes': {}
-                }
+            # Restructure for multi-timeframe display by group
+            result = {}
+            for group_key in commodity_groups.keys():
+                commodities_list = []
+                base_commodities = all_timeframe_data['daily'][group_key]
                 
-                for tf in timeframes:
-                    tf_commodity = next((c for c in all_timeframe_data[tf] if c['symbol'] == symbol), None)
-                    if tf_commodity:
-                        commodity_data['timeframes'][tf] = {
-                            'change': tf_commodity.get('change'),
-                            'change_pct': tf_commodity.get('change_pct'),
-                            'error': tf_commodity.get('error', False)
-                        }
+                for commodity in base_commodities:
+                    symbol = commodity['symbol']
+                    commodity_data = {
+                        'symbol': symbol,
+                        'name': commodity['name'],
+                        'short': commodity['short'],
+                        'price': commodity.get('price'),
+                        'timeframes': {}
+                    }
+                    
+                    for tf in timeframes:
+                        tf_commodity = next((c for c in all_timeframe_data[tf][group_key] if c['symbol'] == symbol), None)
+                        if tf_commodity:
+                            commodity_data['timeframes'][tf] = {
+                                'change': tf_commodity.get('change'),
+                                'change_pct': tf_commodity.get('change_pct'),
+                                'error': tf_commodity.get('error', False)
+                            }
+                    
+                    commodities_list.append(commodity_data)
                 
-                commodities_list.append(commodity_data)
+                result[group_key] = commodities_list
             
             return {
-                'commodities': commodities_list,
+                **result,
                 'sentiments': sentiments,
                 'timestamp': datetime.now().isoformat(),
                 'mode': 'multi_timeframe'
             }
         else:
-            result = GlobalMarketsService.fetch_market_group(COMMODITIES, timeframe)
+            # Single timeframe logic
+            result = {}
+            all_commodities = []
             
-            # Calculate sentiment (exclude errors/None values)
-            valid_results = [c for c in result if c.get('change_pct') is not None and not c.get('error', False)]
+            for group_key, group_list in commodity_groups.items():
+                group_result = GlobalMarketsService.fetch_market_group(group_list, timeframe)
+                result[group_key] = group_result
+                all_commodities.extend(group_result)
+            
+            # Calculate overall sentiment
+            valid_results = [c for c in all_commodities if c.get('change_pct') is not None and not c.get('error', False)]
             total = len(valid_results)
             bullish = sum(1 for c in valid_results if c.get('change_pct', 0) > 0)
             bearish = sum(1 for c in valid_results if c.get('change_pct', 0) < 0)
@@ -219,7 +246,7 @@ async def get_commodities(
             }
             
             return {
-                'commodities': result,
+                **result,
                 'sentiment': sentiment,
                 'timeframe': timeframe,
                 'timestamp': datetime.now().isoformat()
