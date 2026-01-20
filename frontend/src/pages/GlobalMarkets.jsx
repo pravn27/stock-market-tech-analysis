@@ -499,7 +499,7 @@ const GlobalMarkets = () => {
       >
         <Row gutter={[16, 16]} align="middle" justify="space-between" wrap>
           <Col xs={24} md={18} lg={16}>
-            <Space wrap size={12}>
+            <Space wrap size={16}>
               {/* Analysis Mode Toggle */}
               <div>
                 <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
@@ -546,45 +546,46 @@ const GlobalMarkets = () => {
                 </Space>
               </div>
 
-              {/* View Mode & Timeframe - Only show when NOT in multi-timeframe */}
+              {/* Timeframe - Right next to Analysis Mode, only in single mode */}
               {!multiTimeframe && (
-                <>
-                  <div>
-                    <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                      View Mode
-                    </Text>
-                    <Segmented
-                      value={viewMode}
-                      onChange={setViewMode}
-                      size={screens.md ? 'middle' : 'large'}
-                      options={[
-                        { 
-                          value: 'cards', 
-                          icon: <AppstoreOutlined />, 
-                          label: screens.md ? 'Cards' : ''
-                        },
-                        { 
-                          value: 'table', 
-                          icon: <TableOutlined />, 
-                          label: screens.md ? 'Table' : '' 
-                        },
-                      ]}
-                    />
-                  </div>
+                <div>
+                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                    Timeframe
+                  </Text>
+                  <Select
+                    value={timeframe}
+                    onChange={setTimeframe}
+                    options={TIMEFRAMES.map(tf => ({ value: tf.value, label: tf.fullLabel }))}
+                    style={{ width: screens.md ? 140 : 120 }}
+                    size={screens.md ? 'middle' : 'large'}
+                  />
+                </div>
+              )}
 
-                  <div>
-                    <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                      Timeframe
-                    </Text>
-                    <Select
-                      value={timeframe}
-                      onChange={setTimeframe}
-                      options={TIMEFRAMES.map(tf => ({ value: tf.value, label: tf.fullLabel }))}
-                      style={{ width: screens.md ? 140 : 120 }}
-                      size={screens.md ? 'middle' : 'large'}
-                    />
-                  </div>
-                </>
+              {/* View Mode - After Timeframe */}
+              {!multiTimeframe && (
+                <div>
+                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
+                    View Mode
+                  </Text>
+                  <Segmented
+                    value={viewMode}
+                    onChange={setViewMode}
+                    size={screens.md ? 'middle' : 'large'}
+                    options={[
+                      { 
+                        value: 'cards', 
+                        icon: <AppstoreOutlined />, 
+                        label: screens.md ? 'Cards' : ''
+                      },
+                      { 
+                        value: 'table', 
+                        icon: <TableOutlined />, 
+                        label: screens.md ? 'Table' : '' 
+                      },
+                    ]}
+                  />
+                </div>
               )}
             </Space>
           </Col>
