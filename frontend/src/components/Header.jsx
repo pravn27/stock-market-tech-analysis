@@ -158,7 +158,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
           gap: 10, 
           cursor: 'pointer' 
         }}
-        onClick={() => onPageChange('overview')}
+        onClick={() => onPageChange('global')}
       >
         <LineChartOutlined 
           style={{ 
