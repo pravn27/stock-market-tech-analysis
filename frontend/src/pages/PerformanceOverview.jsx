@@ -355,7 +355,7 @@ const PerformanceOverview = () => {
                   Relative Performance Overview
                 </Title>
                 <Text type="secondary" style={{ fontSize: 14 }}>
-                  All Indices vs NIFTY 50
+                  Relative Comparision of all major Indices, Sectors v/s Nifty 50
                 </Text>
               </div>
             </Space>
