@@ -99,7 +99,7 @@ const PerformanceOverview = () => {
   const [data, setData] = useState(null)
   const [lookback, setLookback] = useState(1)
   const [isMultiTimeframe, setIsMultiTimeframe] = useState(false)
-  const [timeframe, setTimeframe] = useState('weekly')
+  const [timeframe, setTimeframe] = useState('daily')
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
