@@ -30,8 +30,7 @@ const MarketGroup = ({
   if (filteredMarkets.length === 0) return null
 
   // Calculate group sentiment
-  const { bullishPercent } = calculateGroupSentiment(markets, excludeSymbols)
-  const isBullish = bullishPercent >= 50
+  const { dominantPercent, dominantLabel, dominantColor } = calculateGroupSentiment(markets, excludeSymbols)
 
   return (
     <div style={{ marginBottom: 32, ...style }}>
@@ -63,10 +62,10 @@ const MarketGroup = ({
               </div>
             </Space>
             <Tag
-              color={isBullish ? 'green' : 'red'}
+              color={dominantColor}
               style={{ fontSize: 13, padding: '4px 12px', fontWeight: 600 }}
             >
-              {isBullish ? <RiseOutlined /> : <FallOutlined />} {bullishPercent}% Bullish
+              {dominantLabel === 'Bullish' ? <RiseOutlined /> : dominantLabel === 'Bearish' ? <FallOutlined /> : null} {dominantPercent}% {dominantLabel}
             </Tag>
           </Space>
         }

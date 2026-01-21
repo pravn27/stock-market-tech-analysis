@@ -39,7 +39,7 @@ export const calculateSentiment = (items = [], excludeSymbols = []) => {
  * Calculate group sentiment for a specific market group
  * @param {Array} markets - Array of markets in the group
  * @param {Array} excludeSymbols - Symbols to exclude
- * @returns {Object} - { bullishCount, bearishCount, neutralCount, total, bullishPercent }
+ * @returns {Object} - { bullishCount, bearishCount, neutralCount, total, bullishPercent, dominantSentiment, dominantPercent, dominantLabel }
  */
 export const calculateGroupSentiment = (markets = [], excludeSymbols = []) => {
   const filtered = markets.filter(m => !excludeSymbols.includes(m.symbol))
@@ -51,13 +51,39 @@ export const calculateGroupSentiment = (markets = [], excludeSymbols = []) => {
   }).length
   const total = filtered.length
   const bullishPercent = total > 0 ? Math.round((bullishCount / total) * 100) : 0
+  const bearishPercent = total > 0 ? Math.round((bearishCount / total) * 100) : 0
+  const neutralPercent = total > 0 ? Math.round((neutralCount / total) * 100) : 0
+
+  // Determine dominant sentiment
+  let dominantSentiment = 'neutral'
+  let dominantPercent = neutralPercent
+  let dominantLabel = 'Neutral'
+  let dominantColor = 'default'
+
+  if (bullishPercent >= bearishPercent && bullishPercent >= neutralPercent) {
+    dominantSentiment = 'bullish'
+    dominantPercent = bullishPercent
+    dominantLabel = 'Bullish'
+    dominantColor = 'green'
+  } else if (bearishPercent >= bullishPercent && bearishPercent >= neutralPercent) {
+    dominantSentiment = 'bearish'
+    dominantPercent = bearishPercent
+    dominantLabel = 'Bearish'
+    dominantColor = 'red'
+  }
 
   return {
     bullishCount,
     bearishCount,
     neutralCount,
     total,
-    bullishPercent
+    bullishPercent,
+    bearishPercent,
+    neutralPercent,
+    dominantSentiment,
+    dominantPercent,
+    dominantLabel,
+    dominantColor
   }
 }
 

@@ -43,10 +43,9 @@ const MarketTable = ({
   if (filteredMarkets.length === 0) return null
 
   // Calculate group sentiment for single timeframe
-  const { bullishPercent } = !multiTimeframe 
+  const sentimentData = !multiTimeframe 
     ? calculateGroupSentiment(markets, excludeSymbols)
-    : { bullishPercent: 0 }
-  const isBullish = bullishPercent >= 50
+    : { dominantPercent: 0, dominantLabel: 'Neutral', dominantColor: 'default' }
 
   // Single timeframe columns
   const singleTimeframeColumns = [
@@ -247,11 +246,11 @@ const MarketTable = ({
             </Space>
             {!multiTimeframe && (
               <Tag
-                color={isBullish ? 'green' : 'red'}
-                icon={isBullish ? <RiseOutlined /> : <FallOutlined />}
+                color={sentimentData.dominantColor}
+                icon={sentimentData.dominantLabel === 'Bullish' ? <RiseOutlined /> : sentimentData.dominantLabel === 'Bearish' ? <FallOutlined /> : null}
                 style={{ fontSize: 13, padding: '4px 12px', fontWeight: 600 }}
               >
-                {bullishPercent}% Bullish
+                {sentimentData.dominantPercent}% {sentimentData.dominantLabel}
               </Tag>
             )}
           </div>
