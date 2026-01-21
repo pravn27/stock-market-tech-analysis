@@ -1,19 +1,25 @@
 /**
- * Relative Performance Overview Page - Ant Design Implementation
+ * Relative Performance Overview Page - Refactored with Reusable Components
  * Shows all sectors across ALL timeframes in one sortable table
  */
 
 import { useState, useMemo } from 'react'
 import { 
   Card, Table, Select, InputNumber, Button, Space, Tag, Modal, 
-  Typography, Empty, Spin, Alert, Row, Col, Tooltip, Grid, Switch, Statistic, Progress
+  Typography, Row, Col, Tooltip, Grid
 } from 'antd'
 import { 
   ReloadOutlined, BarChartOutlined, ArrowUpOutlined, 
-  ArrowDownOutlined, MinusOutlined, RiseOutlined, FallOutlined
+  ArrowDownOutlined, MinusOutlined
 } from '@ant-design/icons'
 import { getTopPerformers, getSectorStocks } from '../api/scanner'
-import { useTheme } from '../context/ThemeContext'
+import {
+  PageHeader,
+  FilterControls,
+  SentimentCards,
+  LoadingState,
+  EmptyState
+} from '../components/markets'
 
 const { Title, Text } = Typography
 const { useBreakpoint } = Grid
@@ -22,12 +28,12 @@ const TIMEFRAMES = ['3M', 'M', 'W', 'D', '4H', '1H']
 const TF_KEY_MAP = { '3M': 'three_month', 'M': 'monthly', 'W': 'weekly', 'D': 'daily', '4H': 'four_hour', '1H': 'one_hour' }
 
 const TIMEFRAME_OPTIONS = [
-  { value: 'three_month', label: '3 Month' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'daily', label: 'Daily' },
-  { value: 'four_hour', label: '4 Hour' },
-  { value: 'one_hour', label: '1 Hour' },
+  { value: 'three_month', label: '3 Month', fullLabel: '3 Month' },
+  { value: 'monthly', label: 'Monthly', fullLabel: 'Monthly' },
+  { value: 'weekly', label: 'Weekly', fullLabel: 'Weekly' },
+  { value: 'daily', label: 'Daily', fullLabel: 'Daily' },
+  { value: 'four_hour', label: '4 Hour', fullLabel: '4 Hour' },
+  { value: 'one_hour', label: '1 Hour', fullLabel: '1 Hour' },
 ]
 
 // Index group configurations
@@ -93,12 +99,11 @@ const getStatusIcon = (weeklyRs) => {
 
 const PerformanceOverview = () => {
   const screens = useBreakpoint()
-  const { isDarkMode } = useTheme()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
   const [lookback, setLookback] = useState(1)
-  const [isMultiTimeframe, setIsMultiTimeframe] = useState(false)
+  const [multiTimeframe, setMultiTimeframe] = useState(false)
   const [timeframe, setTimeframe] = useState('daily')
 
   // Modal state
@@ -107,23 +112,25 @@ const PerformanceOverview = () => {
   const [stocksData, setStocksData] = useState(null)
   const [stocksLoading, setStocksLoading] = useState(false)
 
-  const fetchData = async () => {
+  const fetchData = async (signal) => {
     setLoading(true)
     setError(null)
     try {
-      const result = await getTopPerformers(100, 'all', lookback)
+      const result = await getTopPerformers(100, 'all', lookback, signal)
       setData(result)
     } catch (err) {
-      const detail = err.response?.data?.detail
-      let errorMsg = 'Failed to fetch data'
-      if (typeof detail === 'string') {
-        errorMsg = detail
-      } else if (Array.isArray(detail) && detail[0]?.msg) {
-        errorMsg = detail[0].msg
-      } else if (err.message) {
-        errorMsg = err.message
+      if (err.name !== 'CanceledError') {
+        const detail = err.response?.data?.detail
+        let errorMsg = 'Failed to fetch data'
+        if (typeof detail === 'string') {
+          errorMsg = detail
+        } else if (Array.isArray(detail) && detail[0]?.msg) {
+          errorMsg = detail[0].msg
+        } else if (err.message) {
+          errorMsg = err.message
+        }
+        setError(errorMsg)
       }
-      setError(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -148,14 +155,13 @@ const PerformanceOverview = () => {
           if (!item || !item.name) return
           
           if (!sectorsMap.has(item.name)) {
-            sectorsMap.set(item.name, {
-              key: item.name,
-              name: item.name,
-              symbol: item.symbol || '',
-              values: {},
-              group: categorizeIndex(item.name) // Add group categorization
+            sectorsMap.set(item.name, { 
+              name: item.name, 
+              category: categorizeIndex(item.name),
+              values: {} 
             })
           }
+          
           sectorsMap.get(item.name).values[tf] = item.rs
         })
       })
@@ -164,19 +170,11 @@ const PerformanceOverview = () => {
     return Array.from(sectorsMap.values())
   }, [data])
 
-  // Group sectors by index type
+  // Group sectors by category
   const groupedSectors = useMemo(() => {
-    const grouped = {
-      sectorial: [],
-      broader_market: [],
-      thematic: []
-    }
-
-    allSectors.forEach(sector => {
-      const groupKey = sector.group || 'broader_market'
-      if (grouped[groupKey]) {
-        grouped[groupKey].push(sector)
-      }
+    const grouped = {}
+    INDEX_GROUPS.forEach(group => {
+      grouped[group.key] = allSectors.filter(s => s.category === group.key)
     })
 
     return grouped
@@ -210,6 +208,29 @@ const PerformanceOverview = () => {
     }
     return mapping[tfValue] || tfValue
   }
+
+  // Calculate sentiment for selected timeframe
+  const calculateSentiment = () => {
+    const tfLabel = multiTimeframe ? 'W' : getTimeframeLabel(timeframe)
+    const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
+    const neutralCount = allSectors.filter(s => {
+      const val = s.values?.[tfLabel] || 0
+      return val >= -0.5 && val <= 0.5
+    }).length
+    const bearishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) < -0.5).length
+    const totalCount = allSectors.length
+    const bullishPercent = Math.round((bullishCount / totalCount) * 100)
+
+    return {
+      bullish: bullishCount,
+      neutral: neutralCount,
+      bearish: bearishCount,
+      total: totalCount,
+      bullishPercent
+    }
+  }
+
+  const sentiment = allSectors.length > 0 ? calculateSentiment() : null
 
   // Single timeframe columns
   const singleTimeframeColumns = [
@@ -279,159 +300,76 @@ const PerformanceOverview = () => {
       ),
     },
     ...TIMEFRAMES.map(tf => ({
-      title: tf,
+      title: <Tooltip title={TF_KEY_MAP[tf]}><Text strong>{tf}</Text></Tooltip>,
+      dataIndex: ['values', tf],
       key: tf,
       align: 'center',
-      width: 90,
+      width: 100,
       sorter: (a, b) => (a.values?.[tf] ?? -999) - (b.values?.[tf] ?? -999),
-      defaultSortOrder: tf === 'W' ? 'descend' : null,
-      render: (_, record) => getStatusTag(record.values?.[tf]),
+      render: (value) => getStatusTag(value),
     })),
   ]
 
-  // Choose columns based on mode
-  const columns = isMultiTimeframe ? multiTimeframeColumns : singleTimeframeColumns
+  // Render table for a specific group
+  const renderGroupTable = (groupInfo) => {
+    const groupData = groupedSectors[groupInfo.key]
+    if (!groupData || groupData.length === 0) return null
 
-  // Stocks modal columns
-  const stockColumns = [
-    {
-      title: '#',
-      key: 'index',
-      width: 50,
-      align: 'center',
-      render: (_, __, index) => <Text type="secondary">{index + 1}</Text>,
-    },
-    {
-      title: 'Stock',
-      dataIndex: 'name',
-      key: 'name',
-      width: 180,
-      render: (name, record) => (
-        <Space>
-          {getStatusIcon(record.relative_strength?.weekly)}
-          <Text strong>{name}</Text>
-        </Space>
-      ),
-    },
-    ...TIMEFRAMES.map(tf => ({
-      title: tf,
-      key: tf,
-      align: 'center',
-      width: 85,
-      sorter: (a, b) => {
-        const tfKey = TF_KEY_MAP[tf]
-        return (a.relative_strength?.[tfKey] ?? -999) - (b.relative_strength?.[tfKey] ?? -999)
-      },
-      defaultSortOrder: tf === 'W' ? 'descend' : null,
-      render: (_, record) => {
-        const tfKey = TF_KEY_MAP[tf]
-        return getStatusTag(record.relative_strength?.[tfKey])
-      },
-    })),
-  ]
+    return (
+      <div key={groupInfo.key} style={{ marginBottom: 24 }}>
+        <Card
+          title={
+            <Space>
+              <span style={{ fontSize: 20 }}>{groupInfo.icon}</span>
+              <div>
+                <Text strong style={{ fontSize: 16 }}>{groupInfo.title}</Text>
+                <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                  ({groupData.length} indices)
+                </Text>
+              </div>
+            </Space>
+          }
+          size="small"
+          bodyStyle={{ padding: 0 }}
+        >
+          <Table
+            columns={multiTimeframe ? multiTimeframeColumns : singleTimeframeColumns}
+            dataSource={groupData.map((item, i) => ({ ...item, key: i }))}
+            pagination={false}
+            size="small"
+            scroll={{ x: multiTimeframe ? 900 : 500 }}
+          />
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div>
       {/* Page Header */}
-      <Card
-        style={{
-          marginBottom: 24,
-          background: isDarkMode
-            ? 'linear-gradient(135deg, rgba(24, 144, 255, 0.12) 0%, rgba(24, 144, 255, 0.04) 100%)'
-            : 'linear-gradient(135deg, rgba(24, 144, 255, 0.08) 0%, rgba(24, 144, 255, 0.02) 100%)',
-          borderLeft: '4px solid #1890ff',
-          boxShadow: isDarkMode
-            ? '0 2px 8px rgba(0, 0, 0, 0.3)'
-            : '0 2px 8px rgba(0, 0, 0, 0.08)',
-        }}
-        bodyStyle={{ padding: screens.md ? 24 : 16 }}
-      >
-        <Row justify="space-between" align="middle">
-          <Col>
-            <Space align="center">
-              <BarChartOutlined style={{ fontSize: 32, color: '#1890ff' }} />
-              <div>
-                <Title level={screens.md ? 3 : 4} style={{ margin: 0 }}>
-                  Relative Performance Overview
-                </Title>
-                <Text type="secondary" style={{ fontSize: 14 }}>
-                  Relative Comparision of all major Indices, Sectors v/s Nifty 50
-                </Text>
-              </div>
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+      <PageHeader
+        icon={BarChartOutlined}
+        title="Relative Performance Overview"
+        subtitle="Relative Comparision of all major Indices, Sectors v/s Nifty 50"
+      />
 
-      {/* Filters */}
-      <Card 
-        style={{ 
-          marginBottom: 24,
-          boxShadow: isDarkMode 
-            ? '0 2px 8px rgba(0, 0, 0, 0.3)' 
-            : '0 2px 8px rgba(0, 0, 0, 0.06)',
-        }}
-      >
+      {/* Filter Controls - Custom for this page */}
+      <Card style={{ marginBottom: 24 }}>
         <Row gutter={[16, 16]} align="middle" justify="space-between" wrap>
           <Col xs={24} md={18} lg={16}>
             <Space wrap size={16}>
-              {/* Analysis Mode Toggle */}
-              <div>
-                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                  Analysis Mode
-                </Text>
-                <Space
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: 2,
-                    border: `1px solid ${isDarkMode ? '#434343' : '#d9d9d9'}`,
-                    background: isDarkMode ? '#1f1f1f' : '#fafafa',
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: !isMultiTimeframe ? 600 : 400,
-                      color: !isMultiTimeframe ? '#1890ff' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
-                    }}
-                  >
-                    Single
-                  </Text>
-                  <Switch
-                    checked={isMultiTimeframe}
-                    onChange={setIsMultiTimeframe}
-                    style={{
-                      background: isMultiTimeframe ? '#52c41a' : undefined
-                    }}
-                  />
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: isMultiTimeframe ? 600 : 400,
-                      color: isMultiTimeframe ? '#52c41a' : (isDarkMode ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)')
-                    }}
-                  >
-                    All Timeframes
-                  </Text>
-                </Space>
-              </div>
-
-              {/* Timeframe - Only in single mode */}
-              {!isMultiTimeframe && (
-                <div>
-                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                    Timeframe
-                  </Text>
-                  <Select
-                    value={timeframe}
-                    onChange={setTimeframe}
-                    options={TIMEFRAME_OPTIONS}
-                    style={{ width: screens.md ? 140 : 120 }}
-                    size={screens.md ? 'middle' : 'large'}
-                  />
-                </div>
-              )}
-
+              <FilterControls
+                showAnalysisMode
+                multiTimeframe={multiTimeframe}
+                onMultiTimeframeChange={setMultiTimeframe}
+                showTimeframeSelector
+                timeframe={timeframe}
+                onTimeframeChange={setTimeframe}
+                timeframes={TIMEFRAME_OPTIONS}
+                showViewMode={false}
+                showRefresh={false}
+                style={{ marginBottom: 0, boxShadow: 'none' }}
+              />
               {/* Lookback */}
               <div>
                 <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
@@ -455,7 +393,7 @@ const PerformanceOverview = () => {
             <Button
               type="primary"
               icon={<ReloadOutlined spin={loading} />}
-              onClick={fetchData}
+              onClick={() => fetchData()}
               loading={loading}
               size={screens.md ? 'middle' : 'large'}
               style={{ minWidth: 120 }}
@@ -466,421 +404,69 @@ const PerformanceOverview = () => {
         </Row>
       </Card>
 
-      {/* Overall Sentiment */}
-      {!loading && data && allSectors.length > 0 && (
-        <Row gutter={[16, 16]} style={{ marginBottom: 32 }}>
-          <Col xs={24} lg={10}>
-            <Card
-              style={{
-                background: (() => {
-                  const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                  const totalCount = allSectors.length
-                  const bullishPercent = Math.round((bullishCount / totalCount) * 100)
-                  const isPositive = bullishPercent >= 50
-                  return isPositive
-                    ? (isDarkMode
-                        ? 'linear-gradient(135deg, rgba(82, 196, 26, 0.12) 0%, rgba(82, 196, 26, 0.04) 100%)'
-                        : 'linear-gradient(135deg, rgba(82, 196, 26, 0.08) 0%, rgba(82, 196, 26, 0.02) 100%)')
-                    : (isDarkMode
-                        ? 'linear-gradient(135deg, rgba(255, 77, 79, 0.12) 0%, rgba(255, 77, 79, 0.04) 100%)'
-                        : 'linear-gradient(135deg, rgba(255, 77, 79, 0.08) 0%, rgba(255, 77, 79, 0.02) 100%)')
-                })(),
-                borderLeft: (() => {
-                  const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                  const totalCount = allSectors.length
-                  const bullishPercent = Math.round((bullishCount / totalCount) * 100)
-                  return `4px solid ${bullishPercent >= 50 ? '#52c41a' : '#ff4d4f'}`
-                })(),
-                height: '100%',
-                boxShadow: isDarkMode
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
-                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
-              }}
-              bodyStyle={{ padding: 20 }}
-            >
-              <Space direction="vertical" size={16} style={{ width: '100%' }}>
-                <div>
-                  <Text strong style={{ fontSize: 18, display: 'block', marginBottom: 8, fontWeight: 700 }}>
-                    Overall Market Sentiment ({TIMEFRAME_OPTIONS.find(tf => tf.value === (isMultiTimeframe ? 'weekly' : timeframe))?.label})
-                  </Text>
-                  <Space size={16} align="end">
-                    <Statistic
-                      value={(() => {
-                        const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                        const totalCount = allSectors.length
-                        return Math.round((bullishCount / totalCount) * 100)
-                      })()}
-                      suffix="%"
-                      prefix={(() => {
-                        const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                        const totalCount = allSectors.length
-                        const bullishPercent = Math.round((bullishCount / totalCount) * 100)
-                        return bullishPercent >= 50 ? <RiseOutlined /> : <FallOutlined />
-                      })()}
-                      valueStyle={{
-                        color: (() => {
-                          const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                          const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                          const totalCount = allSectors.length
-                          const bullishPercent = Math.round((bullishCount / totalCount) * 100)
-                          return bullishPercent >= 50 ? '#52c41a' : '#ff4d4f'
-                        })(),
-                        fontSize: 40,
-                        fontWeight: 700
-                      }}
-                    />
-                    <Tag
-                      color={(() => {
-                        const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                        const totalCount = allSectors.length
-                        const bullishPercent = Math.round((bullishCount / totalCount) * 100)
-                        return bullishPercent >= 50 ? 'green' : 'red'
-                      })()}
-                      style={{ fontSize: 16, padding: '6px 16px', fontWeight: 600 }}
-                    >
-                      {(() => {
-                        const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                        const totalCount = allSectors.length
-                        const bullishPercent = Math.round((bullishCount / totalCount) * 100)
-                        return bullishPercent >= 50 ? 'BULLISH' : 'BEARISH'
-                      })()}
-                    </Tag>
-                  </Space>
-                </div>
-                <Progress
-                  percent={(() => {
-                    const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                    const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                    const totalCount = allSectors.length
-                    return Math.round((bullishCount / totalCount) * 100)
-                  })()}
-                  strokeColor={{
-                    '0%': (() => {
-                      const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                      const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                      const totalCount = allSectors.length
-                      const bullishPercent = Math.round((bullishCount / totalCount) * 100)
-                      return bullishPercent >= 50 ? '#52c41a' : '#ff4d4f'
-                    })(),
-                    '100%': (() => {
-                      const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                      const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                      const totalCount = allSectors.length
-                      const bullishPercent = Math.round((bullishCount / totalCount) * 100)
-                      return bullishPercent >= 50 ? '#87d068' : '#f5222d'
-                    })(),
-                  }}
-                  trailColor={isDarkMode ? '#434343' : '#f0f0f0'}
-                  showInfo={false}
-                  style={{ marginTop: 8 }}
-                />
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  {(() => {
-                    const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                    const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                    const totalCount = allSectors.length
-                    const bullishPercent = Math.round((bullishCount / totalCount) * 100)
-                    return bullishPercent >= 50 ? 'Bullish' : 'Bearish'
-                  })()} • {allSectors.length} indices
-                </Text>
-              </Space>
-            </Card>
-          </Col>
-          <Col xs={8} lg={4}>
-            <Card
-              hoverable
-              style={{
-                height: '100%',
-                borderTop: '3px solid #52c41a',
-                boxShadow: isDarkMode
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
-                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
-                transition: 'all 0.3s ease'
-              }}
-              bodyStyle={{ padding: 20 }}
-            >
-              <Statistic
-                title={<Text strong style={{ fontSize: 13 }}>Bullish</Text>}
-                value={(() => {
-                  const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  return allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                })()}
-                valueStyle={{ color: '#52c41a', fontSize: 32, fontWeight: 700 }}
-                prefix={<ArrowUpOutlined style={{ fontSize: 24 }} />}
-              />
-              <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
-                {(() => {
-                  const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-                  return Math.round((bullishCount / allSectors.length) * 100)
-                })()}% of indices
-              </Text>
-            </Card>
-          </Col>
-          <Col xs={8} lg={4}>
-            <Card
-              hoverable
-              style={{
-                height: '100%',
-                borderTop: '3px solid #999',
-                boxShadow: isDarkMode
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
-                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
-                transition: 'all 0.3s ease'
-              }}
-              bodyStyle={{ padding: 20 }}
-            >
-              <Statistic
-                title={<Text strong style={{ fontSize: 13 }}>Neutral</Text>}
-                value={(() => {
-                  const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  return allSectors.filter(s => {
-                    const val = s.values?.[tfLabel] || 0
-                    return val >= -1 && val <= 1
-                  }).length
-                })()}
-                valueStyle={{ color: '#999', fontSize: 32, fontWeight: 700 }}
-              />
-              <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
-                {(() => {
-                  const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  const neutralCount = allSectors.filter(s => {
-                    const val = s.values?.[tfLabel] || 0
-                    return val >= -0.5 && val <= 0.5
-                  }).length
-                  return Math.round((neutralCount / allSectors.length) * 100)
-                })()}% of indices
-              </Text>
-            </Card>
-          </Col>
-          <Col xs={8} lg={4}>
-            <Card
-              hoverable
-              style={{
-                height: '100%',
-                borderTop: '3px solid #ff4d4f',
-                boxShadow: isDarkMode
-                  ? '0 2px 8px rgba(0, 0, 0, 0.3)'
-                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
-                transition: 'all 0.3s ease'
-              }}
-              bodyStyle={{ padding: 20 }}
-            >
-              <Statistic
-                title={<Text strong style={{ fontSize: 13 }}>Bearish</Text>}
-                value={(() => {
-                  const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  return allSectors.filter(s => (s.values?.[tfLabel] || 0) < -0.5).length
-                })()}
-                valueStyle={{ color: '#ff4d4f', fontSize: 32, fontWeight: 700 }}
-                prefix={<ArrowDownOutlined style={{ fontSize: 24 }} />}
-              />
-              <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
-                {(() => {
-                  const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  const bearishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) < -0.5).length
-                  return Math.round((bearishCount / allSectors.length) * 100)
-                })()}% of indices
-              </Text>
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-      {/* Error Alert */}
-      {error && (
-        <Alert
-          message="Error"
-          description={error}
-          type="error"
-          showIcon
-          closable
-          style={{ marginBottom: 24 }}
-          action={
-            <Button size="small" onClick={fetchData}>
-              Retry
-            </Button>
-          }
+      {/* Sentiment Cards */}
+      {!loading && sentiment && (
+        <SentimentCards
+          sentiment={sentiment}
+          total={sentiment.total}
+          subtitle={`${sentiment.bullishPercent >= 50 ? 'Bullish' : 'Bearish'} • ${sentiment.total} indices`}
         />
       )}
 
       {/* Loading State */}
       {loading && (
-        <Card>
-          <div style={{ textAlign: 'center', padding: 60 }}>
-            <Spin size="large" />
-            <div style={{ marginTop: 16 }}>
-              <Text type="secondary">Loading all timeframes...</Text>
-            </div>
-          </div>
-        </Card>
+        <LoadingState
+          title="Loading Performance Data"
+          message="Fetching relative performance data..."
+        />
       )}
 
       {/* Empty State */}
-      {!loading && !error && !data && (
-        <Card>
-          <Empty
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description={
-              <Space direction="vertical" size={4}>
-                <Text>No data loaded</Text>
-                <Text type="secondary">Click Refresh to load sector performance across all timeframes</Text>
-              </Space>
-            }
-          >
-            <Button type="primary" onClick={fetchData}>
-              Load Data
-            </Button>
-          </Empty>
-        </Card>
+      {!loading && error && (
+        <EmptyState
+          title="Error Loading Data"
+          description={error}
+          onRefresh={() => fetchData()}
+        />
       )}
 
-      {/* Index Group Tables */}
-      {!loading && data && (
+      {/* Group Tables */}
+      {!loading && !error && data && (
         <div>
-          {INDEX_GROUPS.map(groupInfo => {
-            const groupData = groupedSectors[groupInfo.key]
-            if (!groupData || groupData.length === 0) return null
-
-            return (
-              <div key={groupInfo.key} style={{ marginBottom: 24 }}>
-                <Card
-                  title={
-                    <Space size={12}>
-                      <span style={{ fontSize: 20 }}>{groupInfo.icon}</span>
-                      <div>
-                        <Text strong style={{ fontSize: 16 }}>{groupInfo.title}</Text>
-                        <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-                          ({groupData.length} indices)
-                        </Text>
-                      </div>
-                    </Space>
-                  }
-                  extra={
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      {groupInfo.subtitle}
-                    </Text>
-                  }
-                  size="small"
-                  bodyStyle={{ padding: 0 }}
-                  style={{
-                    boxShadow: isDarkMode
-                      ? '0 2px 8px rgba(0, 0, 0, 0.3)'
-                      : '0 2px 8px rgba(0, 0, 0, 0.08)',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  <Table
-                    columns={columns}
-                    dataSource={groupData}
-                    pagination={false}
-                    scroll={{ x: 800 }}
-                    size={screens.md ? 'middle' : 'small'}
-                    onRow={(record) => ({
-                      onClick: () => openStocksModal(record.name),
-                      style: { cursor: 'pointer' },
-                    })}
-                    rowClassName={(record) => {
-                      const w = record.values?.['W']
-                      if (w > 1) return 'ant-table-row-success'
-                      if (w < -1) return 'ant-table-row-error'
-                      return ''
-                    }}
-                  />
-                </Card>
-              </div>
-            )
-          })}
-
-          {/* Legend */}
-          <Card size="small">
-            <Row justify="center" gutter={[24, 8]}>
-              <Col>
-                <Space>
-                  <ArrowUpOutlined style={{ color: '#52c41a' }} />
-                  <Text>Outperforming (RS &gt; 1%)</Text>
-                </Space>
-              </Col>
-              <Col>
-                <Space>
-                  <MinusOutlined style={{ color: '#999' }} />
-                  <Text>Neutral (-1% to +1%)</Text>
-                </Space>
-              </Col>
-              <Col>
-                <Space>
-                  <ArrowDownOutlined style={{ color: '#ff4d4f' }} />
-                  <Text>Underperforming (RS &lt; -1%)</Text>
-                </Space>
-              </Col>
-            </Row>
-            <div style={{ textAlign: 'center', marginTop: 8 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>
-                💡 Click any row to see top stocks • Click column headers to sort
-              </Text>
-            </div>
-          </Card>
+          {INDEX_GROUPS.map(group => renderGroupTable(group))}
         </div>
       )}
 
       {/* Stocks Modal */}
       <Modal
-        title={`📈 ${modalSector} - Stocks`}
+        title={<><BarChartOutlined /> Stocks in {modalSector}</>}
         open={modalOpen}
         onCancel={() => setModalOpen(false)}
         footer={null}
-        width={screens.md ? 1000 : '95%'}
-        centered
+        width={screens.lg ? 900 : '95%'}
       >
-        {stocksLoading && (
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <Spin size="large" />
-            <div style={{ marginTop: 16 }}>
-              <Text type="secondary">Loading stocks...</Text>
-            </div>
-          </div>
-        )}
-
-        {!stocksLoading && stocksData?.stocks?.length > 0 && (
-          <>
-            <Table
-              columns={stockColumns}
-              dataSource={stocksData.stocks.map(s => ({ ...s, key: s.symbol }))}
-              pagination={{ pageSize: 20, size: 'small' }}
-              scroll={{ x: 700 }}
-              size="small"
-            />
-            <Row justify="center" gutter={[16, 8]} style={{ marginTop: 16 }}>
-              <Col>
-                <Space>
-                  <ArrowUpOutlined style={{ color: '#52c41a' }} />
-                  <Text type="secondary">Outperforming</Text>
-                </Space>
-              </Col>
-              <Col>
-                <Space>
-                  <MinusOutlined style={{ color: '#999' }} />
-                  <Text type="secondary">Neutral</Text>
-                </Space>
-              </Col>
-              <Col>
-                <Space>
-                  <ArrowDownOutlined style={{ color: '#ff4d4f' }} />
-                  <Text type="secondary">Underperforming</Text>
-                </Space>
-              </Col>
-            </Row>
-          </>
-        )}
-
-        {!stocksLoading && (!stocksData?.stocks || stocksData.stocks.length === 0) && (
-          <Empty description="No stocks data available" />
+        {stocksLoading && <div style={{ textAlign: 'center', padding: 40 }}><LoadingState title="Loading Stocks" message="Fetching stock data..." /></div>}
+        
+        {!stocksLoading && stocksData && (
+          <Table
+            columns={[
+              { title: '#', key: 'idx', width: 50, render: (_, __, i) => i + 1 },
+              { title: 'Symbol', dataIndex: 'symbol', key: 'symbol' },
+              { title: 'Name', dataIndex: 'name', key: 'name', ellipsis: true },
+              { 
+                title: 'RS vs Nifty 50', 
+                dataIndex: 'rs', 
+                key: 'rs',
+                sorter: (a, b) => (a.rs || 0) - (b.rs || 0),
+                defaultSortOrder: 'descend',
+                render: (rs) => getStatusTag(rs)
+              },
+            ]}
+            dataSource={stocksData.stocks?.map((s, i) => ({ ...s, key: i })) || []}
+            pagination={false}
+            size="small"
+            scroll={{ y: 400 }}
+          />
         )}
       </Modal>
     </div>
