@@ -264,10 +264,10 @@ const GlobalMarkets = () => {
     const columns = multiTimeframe ? multiTimeframeColumns : tableColumns
 
     // Extract VIX data for display in header
-    const vixData = group.key === 'us_markets' 
+    const vixData = group.key === 'us_markets'
       ? allMarkets.find(m => m.symbol === '^VIX')
       : null
-    
+
     const indiaVixData = group.key === 'asian_markets'
       ? allMarkets.find(m => m.symbol === '^INDIAVIX')
       : null
@@ -297,10 +297,10 @@ const GlobalMarkets = () => {
                       <Text strong style={{ fontSize: 14, color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
                         {vixData.price?.toFixed(2)}
                       </Text>
-                      <Text 
-                        style={{ 
-                          fontSize: 12, 
-                          color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' 
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a'
                         }}
                       >
                         ({vixData.change_pct > 0 ? '+' : ''}{vixData.change_pct?.toFixed(2)}%)
@@ -313,10 +313,10 @@ const GlobalMarkets = () => {
                       <Text strong style={{ fontSize: 14, color: indiaVixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
                         {indiaVixData.price?.toFixed(2)}
                       </Text>
-                      <Text 
-                        style={{ 
-                          fontSize: 12, 
-                          color: indiaVixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' 
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          color: indiaVixData.change_pct > 0 ? '#ff4d4f' : '#52c41a'
                         }}
                       >
                         ({indiaVixData.change_pct > 0 ? '+' : ''}{indiaVixData.change_pct?.toFixed(2)}%)
@@ -462,10 +462,10 @@ const GlobalMarkets = () => {
     if (allMarkets.length === 0) return null
 
     // Extract VIX data for display in header
-    const vixData = group.key === 'us_markets' 
+    const vixData = group.key === 'us_markets'
       ? allMarkets.find(m => m.symbol === '^VIX')
       : null
-    
+
     const indiaVixData = group.key === 'asian_markets'
       ? allMarkets.find(m => m.symbol === '^INDIAVIX')
       : null
