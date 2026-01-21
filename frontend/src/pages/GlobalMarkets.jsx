@@ -77,12 +77,13 @@ const GlobalMarkets = () => {
   }, [timeframe, multiTimeframe])
 
   // Flatten all market groups - handle both single and multi-timeframe data
+  // Exclude VIX indices from sentiment calculation
   const allIndices = data && !multiTimeframe ? [
     ...(data.us_markets || []),
     ...(data.european_markets || []),
     ...(data.asian_markets || []),
     ...(data.india_adrs || []),
-  ] : []
+  ].filter(idx => idx.symbol !== '^VIX' && idx.symbol !== '^INDIAVIX') : []
 
   // Calculate sentiment for single timeframe mode (multi-timeframe has its own sentiments)
   // Using ±0.5% threshold for meaningful categorization
@@ -257,15 +258,22 @@ const GlobalMarkets = () => {
 
   // Render table view for a market group with enhanced styling
   const renderMarketTable = (group) => {
-    const markets = data?.[group.key] || []
-    if (markets.length === 0) return null
+    const allMarkets = data?.[group.key] || []
+    if (allMarkets.length === 0) return null
 
     const columns = multiTimeframe ? multiTimeframeColumns : tableColumns
 
-    // Extract VIX data for US Markets
+    // Extract VIX data for display in header
     const vixData = group.key === 'us_markets' 
-      ? markets.find(m => m.symbol === '^VIX')
+      ? allMarkets.find(m => m.symbol === '^VIX')
       : null
+    
+    const indiaVixData = group.key === 'asian_markets'
+      ? allMarkets.find(m => m.symbol === '^INDIAVIX')
+      : null
+
+    // Filter out VIX indices from table display
+    const markets = allMarkets.filter(m => m.symbol !== '^VIX' && m.symbol !== '^INDIAVIX')
 
     return (
       <div key={group.key} style={{ marginBottom: 24 }}>
@@ -281,20 +289,40 @@ const GlobalMarkets = () => {
                   </Text>
                 </div>
               </Space>
-              {vixData && (
+              {(vixData || indiaVixData) && (
                 <Space size={8} style={{ marginLeft: 'auto' }}>
-                  <Text type="secondary" style={{ fontSize: 12 }}>VIX:</Text>
-                  <Text strong style={{ fontSize: 14, color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
-                    {vixData.price?.toFixed(2)}
-                  </Text>
-                  <Text 
-                    style={{ 
-                      fontSize: 12, 
-                      color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' 
-                    }}
-                  >
-                    ({vixData.change_pct > 0 ? '+' : ''}{vixData.change_pct?.toFixed(2)}%)
-                  </Text>
+                  {vixData && (
+                    <>
+                      <Text type="secondary" style={{ fontSize: 12 }}>VIX:</Text>
+                      <Text strong style={{ fontSize: 14, color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
+                        {vixData.price?.toFixed(2)}
+                      </Text>
+                      <Text 
+                        style={{ 
+                          fontSize: 12, 
+                          color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' 
+                        }}
+                      >
+                        ({vixData.change_pct > 0 ? '+' : ''}{vixData.change_pct?.toFixed(2)}%)
+                      </Text>
+                    </>
+                  )}
+                  {indiaVixData && (
+                    <>
+                      <Text type="secondary" style={{ fontSize: 12 }}>India VIX:</Text>
+                      <Text strong style={{ fontSize: 14, color: indiaVixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
+                        {indiaVixData.price?.toFixed(2)}
+                      </Text>
+                      <Text 
+                        style={{ 
+                          fontSize: 12, 
+                          color: indiaVixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' 
+                        }}
+                      >
+                        ({indiaVixData.change_pct > 0 ? '+' : ''}{indiaVixData.change_pct?.toFixed(2)}%)
+                      </Text>
+                    </>
+                  )}
                 </Space>
               )}
             </Space>
@@ -430,17 +458,24 @@ const GlobalMarkets = () => {
 
   // Render a market group section with enhanced styling
   const renderMarketGroup = (group) => {
-    const markets = data?.[group.key] || []
-    if (markets.length === 0) return null
+    const allMarkets = data?.[group.key] || []
+    if (allMarkets.length === 0) return null
 
-    // Calculate group sentiment (using ±0.5% threshold)
+    // Extract VIX data for display in header
+    const vixData = group.key === 'us_markets' 
+      ? allMarkets.find(m => m.symbol === '^VIX')
+      : null
+    
+    const indiaVixData = group.key === 'asian_markets'
+      ? allMarkets.find(m => m.symbol === '^INDIAVIX')
+      : null
+
+    // Filter out VIX indices from card display
+    const markets = allMarkets.filter(m => m.symbol !== '^VIX' && m.symbol !== '^INDIAVIX')
+
+    // Calculate group sentiment (using ±0.5% threshold, excluding VIX)
     const groupBullish = markets.filter(m => m.change_pct > 0.5).length
     const groupPercent = Math.round((groupBullish / markets.length) * 100)
-
-    // Extract VIX data for US Markets
-    const vixData = group.key === 'us_markets' 
-      ? markets.find(m => m.symbol === '^VIX')
-      : null
 
     return (
       <div key={group.key} style={{ marginBottom: 32 }}>
@@ -461,6 +496,16 @@ const GlobalMarkets = () => {
                       </Text>
                       <Text style={{ color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a', marginLeft: 4 }}>
                         ({vixData.change_pct > 0 ? '+' : ''}{vixData.change_pct?.toFixed(2)}%)
+                      </Text>
+                    </Text>
+                  )}
+                  {indiaVixData && (
+                    <Text type="secondary" style={{ fontSize: 12, marginLeft: 12 }}>
+                      | India VIX: <Text strong style={{ color: indiaVixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
+                        {indiaVixData.price?.toFixed(2)}
+                      </Text>
+                      <Text style={{ color: indiaVixData.change_pct > 0 ? '#ff4d4f' : '#52c41a', marginLeft: 4 }}>
+                        ({indiaVixData.change_pct > 0 ? '+' : ''}{indiaVixData.change_pct?.toFixed(2)}%)
                       </Text>
                     </Text>
                   )}
