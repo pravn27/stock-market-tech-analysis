@@ -85,9 +85,10 @@ const GlobalMarkets = () => {
   ] : []
 
   // Calculate sentiment for single timeframe mode (multi-timeframe has its own sentiments)
+  // Using ±0.5% threshold for meaningful categorization
   const sentiment = !multiTimeframe && allIndices.length > 0 ? allIndices.reduce((acc, idx) => {
-    if (idx.change_pct > 0) acc.bullish++
-    else if (idx.change_pct < 0) acc.bearish++
+    if (idx.change_pct > 0.5) acc.bullish++
+    else if (idx.change_pct < -0.5) acc.bearish++
     else acc.neutral++
     return acc
   }, { bullish: 0, bearish: 0, neutral: 0 }) : { bullish: 0, bearish: 0, neutral: 0 }
@@ -409,8 +410,8 @@ const GlobalMarkets = () => {
     const markets = data?.[group.key] || []
     if (markets.length === 0) return null
 
-    // Calculate group sentiment
-    const groupBullish = markets.filter(m => m.change_pct > 0).length
+    // Calculate group sentiment (using ±0.5% threshold)
+    const groupBullish = markets.filter(m => m.change_pct > 0.5).length
     const groupPercent = Math.round((groupBullish / markets.length) * 100)
 
     return (

@@ -142,7 +142,10 @@ class GlobalMarketsService:
             }
         
         # 1. Breadth Score (40% weight)
-        positive_count = sum(1 for idx in all_indices if idx['change_pct'] > 0)
+        # Using ±0.5% threshold for meaningful categorization
+        positive_count = sum(1 for idx in all_indices if idx['change_pct'] > 0.5)
+        negative_count = sum(1 for idx in all_indices if idx['change_pct'] < -0.5)
+        neutral_count = sum(1 for idx in all_indices if -0.5 <= idx['change_pct'] <= 0.5)
         total_count = len(all_indices)
         breadth_pct = (positive_count / total_count) * 100 if total_count > 0 else 50
         breadth_score = breadth_pct  # 0-100
@@ -211,7 +214,8 @@ class GlobalMarketsService:
             'color': color,
             'breadth': {
                 'positive': positive_count,
-                'negative': total_count - positive_count,
+                'negative': negative_count,
+                'neutral': neutral_count,
                 'total': total_count,
                 'percentage': round(breadth_pct, 1)
             },

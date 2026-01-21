@@ -163,11 +163,12 @@ async def get_commodities(
                 all_timeframe_data[tf] = tf_data
                 
                 # Calculate overall sentiment for this timeframe
+                # Using ±0.5% threshold for meaningful categorization
                 valid_results = [c for c in all_commodities if c.get('change_pct') is not None and not c.get('error', False)]
                 total = len(valid_results)
-                bullish = sum(1 for c in valid_results if c.get('change_pct', 0) > 0)
-                bearish = sum(1 for c in valid_results if c.get('change_pct', 0) < 0)
-                neutral = total - bullish - bearish
+                bullish = sum(1 for c in valid_results if c.get('change_pct', 0) > 0.5)
+                bearish = sum(1 for c in valid_results if c.get('change_pct', 0) < -0.5)
+                neutral = sum(1 for c in valid_results if -0.5 <= c.get('change_pct', 0) <= 0.5)
                 bullish_pct = round((bullish / total * 100) if total > 0 else 0, 1)
                 
                 sentiments[tf] = {
@@ -226,11 +227,12 @@ async def get_commodities(
                 all_commodities.extend(group_result)
             
             # Calculate overall sentiment
+            # Using ±0.5% threshold for meaningful categorization
             valid_results = [c for c in all_commodities if c.get('change_pct') is not None and not c.get('error', False)]
             total = len(valid_results)
-            bullish = sum(1 for c in valid_results if c.get('change_pct', 0) > 0)
-            bearish = sum(1 for c in valid_results if c.get('change_pct', 0) < 0)
-            neutral = total - bullish - bearish
+            bullish = sum(1 for c in valid_results if c.get('change_pct', 0) > 0.5)
+            bearish = sum(1 for c in valid_results if c.get('change_pct', 0) < -0.5)
+            neutral = sum(1 for c in valid_results if -0.5 <= c.get('change_pct', 0) <= 0.5)
             bullish_pct = round((bullish / total * 100) if total > 0 else 0, 1)
             
             sentiment = {

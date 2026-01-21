@@ -552,9 +552,10 @@ class ScannerService:
                     'rs': rs
                 }
                 
-                if rs > 1:
+                # Using ±0.5% threshold for meaningful categorization
+                if rs > 0.5:
                     outperforming.append(item)
-                elif rs < -1:
+                elif rs < -0.5:
                     underperforming.append(item)
                 else:
                     neutral.append(item)

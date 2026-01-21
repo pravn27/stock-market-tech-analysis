@@ -474,7 +474,7 @@ const PerformanceOverview = () => {
               style={{
                 background: (() => {
                   const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                  const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                   const totalCount = allSectors.length
                   const bullishPercent = Math.round((bullishCount / totalCount) * 100)
                   const isPositive = bullishPercent >= 50
@@ -488,7 +488,7 @@ const PerformanceOverview = () => {
                 })(),
                 borderLeft: (() => {
                   const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                  const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                   const totalCount = allSectors.length
                   const bullishPercent = Math.round((bullishCount / totalCount) * 100)
                   return `4px solid ${bullishPercent >= 50 ? '#52c41a' : '#ff4d4f'}`
@@ -509,14 +509,14 @@ const PerformanceOverview = () => {
                     <Statistic
                       value={(() => {
                         const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                         const totalCount = allSectors.length
                         return Math.round((bullishCount / totalCount) * 100)
                       })()}
                       suffix="%"
                       prefix={(() => {
                         const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                         const totalCount = allSectors.length
                         const bullishPercent = Math.round((bullishCount / totalCount) * 100)
                         return bullishPercent >= 50 ? <RiseOutlined /> : <FallOutlined />
@@ -524,7 +524,7 @@ const PerformanceOverview = () => {
                       valueStyle={{
                         color: (() => {
                           const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                          const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                          const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                           const totalCount = allSectors.length
                           const bullishPercent = Math.round((bullishCount / totalCount) * 100)
                           return bullishPercent >= 50 ? '#52c41a' : '#ff4d4f'
@@ -536,7 +536,7 @@ const PerformanceOverview = () => {
                     <Tag
                       color={(() => {
                         const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                         const totalCount = allSectors.length
                         const bullishPercent = Math.round((bullishCount / totalCount) * 100)
                         return bullishPercent >= 50 ? 'green' : 'red'
@@ -545,7 +545,7 @@ const PerformanceOverview = () => {
                     >
                       {(() => {
                         const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                        const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                         const totalCount = allSectors.length
                         const bullishPercent = Math.round((bullishCount / totalCount) * 100)
                         return bullishPercent >= 50 ? 'BULLISH' : 'BEARISH'
@@ -556,21 +556,21 @@ const PerformanceOverview = () => {
                 <Progress
                   percent={(() => {
                     const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                    const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                    const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                     const totalCount = allSectors.length
                     return Math.round((bullishCount / totalCount) * 100)
                   })()}
                   strokeColor={{
                     '0%': (() => {
                       const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                      const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                      const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                       const totalCount = allSectors.length
                       const bullishPercent = Math.round((bullishCount / totalCount) * 100)
                       return bullishPercent >= 50 ? '#52c41a' : '#ff4d4f'
                     })(),
                     '100%': (() => {
                       const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                      const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                      const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                       const totalCount = allSectors.length
                       const bullishPercent = Math.round((bullishCount / totalCount) * 100)
                       return bullishPercent >= 50 ? '#87d068' : '#f5222d'
@@ -583,7 +583,7 @@ const PerformanceOverview = () => {
                 <Text type="secondary" style={{ fontSize: 12 }}>
                   {(() => {
                     const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                    const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                    const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                     const totalCount = allSectors.length
                     const bullishPercent = Math.round((bullishCount / totalCount) * 100)
                     return bullishPercent >= 50 ? 'Bullish' : 'Bearish'
@@ -609,7 +609,7 @@ const PerformanceOverview = () => {
                 title={<Text strong style={{ fontSize: 13 }}>Bullish</Text>}
                 value={(() => {
                   const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  return allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                  return allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                 })()}
                 valueStyle={{ color: '#52c41a', fontSize: 32, fontWeight: 700 }}
                 prefix={<ArrowUpOutlined style={{ fontSize: 24 }} />}
@@ -617,7 +617,7 @@ const PerformanceOverview = () => {
               <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
                 {(() => {
                   const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 1).length
+                  const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
                   return Math.round((bullishCount / allSectors.length) * 100)
                 })()}% of indices
               </Text>
@@ -652,7 +652,7 @@ const PerformanceOverview = () => {
                   const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
                   const neutralCount = allSectors.filter(s => {
                     const val = s.values?.[tfLabel] || 0
-                    return val >= -1 && val <= 1
+                    return val >= -0.5 && val <= 0.5
                   }).length
                   return Math.round((neutralCount / allSectors.length) * 100)
                 })()}% of indices
@@ -676,7 +676,7 @@ const PerformanceOverview = () => {
                 title={<Text strong style={{ fontSize: 13 }}>Bearish</Text>}
                 value={(() => {
                   const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  return allSectors.filter(s => (s.values?.[tfLabel] || 0) < -1).length
+                  return allSectors.filter(s => (s.values?.[tfLabel] || 0) < -0.5).length
                 })()}
                 valueStyle={{ color: '#ff4d4f', fontSize: 32, fontWeight: 700 }}
                 prefix={<ArrowDownOutlined style={{ fontSize: 24 }} />}
@@ -684,7 +684,7 @@ const PerformanceOverview = () => {
               <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
                 {(() => {
                   const tfLabel = isMultiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-                  const bearishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) < -1).length
+                  const bearishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) < -0.5).length
                   return Math.round((bearishCount / allSectors.length) * 100)
                 })()}% of indices
               </Text>
