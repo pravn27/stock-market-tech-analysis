@@ -262,18 +262,41 @@ const GlobalMarkets = () => {
 
     const columns = multiTimeframe ? multiTimeframeColumns : tableColumns
 
+    // Extract VIX data for US Markets
+    const vixData = group.key === 'us_markets' 
+      ? markets.find(m => m.symbol === '^VIX')
+      : null
+
     return (
       <div key={group.key} style={{ marginBottom: 24 }}>
         <Card
           title={
-            <Space size={12}>
-              <span style={{ fontSize: 20 }}>{group.emoji}</span>
-              <div>
-                <Text strong style={{ fontSize: 16 }}>{group.title}</Text>
-                <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-                  ({markets.length} indices)
-                </Text>
-              </div>
+            <Space size={12} style={{ width: '100%', justifyContent: 'space-between' }}>
+              <Space size={12}>
+                <span style={{ fontSize: 20 }}>{group.emoji}</span>
+                <div>
+                  <Text strong style={{ fontSize: 16 }}>{group.title}</Text>
+                  <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                    ({markets.length} indices)
+                  </Text>
+                </div>
+              </Space>
+              {vixData && (
+                <Space size={8} style={{ marginLeft: 'auto' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>VIX:</Text>
+                  <Text strong style={{ fontSize: 14, color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
+                    {vixData.price?.toFixed(2)}
+                  </Text>
+                  <Text 
+                    style={{ 
+                      fontSize: 12, 
+                      color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' 
+                    }}
+                  >
+                    ({vixData.change_pct > 0 ? '+' : ''}{vixData.change_pct?.toFixed(2)}%)
+                  </Text>
+                </Space>
+              )}
             </Space>
           }
           size="small"
@@ -414,11 +437,16 @@ const GlobalMarkets = () => {
     const groupBullish = markets.filter(m => m.change_pct > 0.5).length
     const groupPercent = Math.round((groupBullish / markets.length) * 100)
 
+    // Extract VIX data for US Markets
+    const vixData = group.key === 'us_markets' 
+      ? markets.find(m => m.symbol === '^VIX')
+      : null
+
     return (
       <div key={group.key} style={{ marginBottom: 32 }}>
         <Card
           title={
-            <Space size={12} style={{ width: '100%', justifyContent: 'space-between' }}>
+            <Space size={12} style={{ width: '100%', justifyContent: 'space-between', flexWrap: 'wrap' }}>
               <Space size={12}>
                 <span style={{ fontSize: 22 }}>{group.emoji}</span>
                 <div>
@@ -426,6 +454,16 @@ const GlobalMarkets = () => {
                   <Text type="secondary" style={{ fontSize: 12, marginLeft: 12 }}>
                     {markets.length} indices
                   </Text>
+                  {vixData && (
+                    <Text type="secondary" style={{ fontSize: 12, marginLeft: 12 }}>
+                      | VIX: <Text strong style={{ color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
+                        {vixData.price?.toFixed(2)}
+                      </Text>
+                      <Text style={{ color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a', marginLeft: 4 }}>
+                        ({vixData.change_pct > 0 ? '+' : ''}{vixData.change_pct?.toFixed(2)}%)
+                      </Text>
+                    </Text>
+                  )}
                 </div>
               </Space>
               <Tag

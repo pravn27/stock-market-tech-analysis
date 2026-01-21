@@ -115,21 +115,31 @@ class GlobalMarketsService:
         """
         all_indices = []
         vix_value = None
+        india_vix_value = None
         dxy_change = 0
         
-        # Collect all indices (including India ADRs)
+        # VIX symbols to exclude from sentiment calculation
+        vix_symbols = ['^VIX', '^INDIAVIX']
+        
+        # Collect all indices (including India ADRs), excluding VIX indices
         for region in ['us_markets', 'european_markets', 'asian_markets', 'india_adrs']:
             for idx in markets_data.get(region, []):
                 if idx.get('change_pct') is not None and not idx.get('error', False):
-                    all_indices.append(idx)
-                    
-                    # Capture VIX value
+                    # Capture VIX values but don't include in sentiment calculation
                     if idx['symbol'] == '^VIX':
                         vix_value = idx['price']
+                        continue  # Skip VIX from sentiment
+                    
+                    if idx['symbol'] == '^INDIAVIX':
+                        india_vix_value = idx['price']
+                        continue  # Skip India VIX from sentiment
                     
                     # Capture DXY change
                     if idx['symbol'] == 'DX-Y.NYB':
                         dxy_change = idx['change_pct']
+                    
+                    # Add to indices for sentiment calculation
+                    all_indices.append(idx)
         
         if not all_indices:
             return {
@@ -221,7 +231,8 @@ class GlobalMarketsService:
             },
             'vix': {
                 'value': vix_value,
-                'status': vix_status
+                'status': vix_status,
+                'india_vix': india_vix_value
             },
             'factors': {
                 'breadth_score': round(breadth_score, 1),
