@@ -52,7 +52,7 @@ const MarketGroup = ({
                 </Text>
                 {vixData && (
                   <Text type="secondary" style={{ fontSize: 12, marginLeft: 12 }}>
-                    | VIX: <Text strong style={{ color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
+                    | {vixData.label || 'VIX'}: <Text strong style={{ color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
                       {vixData.price?.toFixed(2)}
                     </Text>
                     <Text style={{ color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a', marginLeft: 4 }}>

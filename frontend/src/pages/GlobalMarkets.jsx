@@ -178,7 +178,7 @@ const GlobalMarkets = () => {
                 excludeSymbols={VIX_SYMBOLS}
                 multiTimeframe={multiTimeframe}
                 selectedTimeframe={selectedTimeframe}
-                vixData={vixData ? { ...vixData, label: vixSymbol === '^INDIAVIX' ? 'India VIX' : 'VIX' } : null}
+                vixData={vixData ? { ...vixData, label: vixSymbol === '^INDIAVIX' ? 'India VIX' : 'US VIX' } : null}
               />
             )
           })}
@@ -200,7 +200,7 @@ const GlobalMarkets = () => {
                 icon={group.emoji}
                 markets={markets}
                 excludeSymbols={VIX_SYMBOLS}
-                vixData={vixData}
+                vixData={vixData ? { ...vixData, label: vixSymbol === '^INDIAVIX' ? 'India VIX' : 'US VIX' } : null}
               />
             )
           })}

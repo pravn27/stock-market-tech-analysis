@@ -4,10 +4,10 @@
  */
 
 import { Card, Table, Typography, Space, Tag, Grid } from 'antd'
-import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons'
+import { ArrowUpOutlined, ArrowDownOutlined, RiseOutlined, FallOutlined } from '@ant-design/icons'
 import { useTheme } from '../../context/ThemeContext'
 import { formatPrice, formatChange, formatPercentage } from '../../utils/formatters'
-import { getSentimentColor, getSentimentTagColor } from '../../utils/marketCalculations'
+import { getSentimentColor, getSentimentTagColor, calculateGroupSentiment } from '../../utils/marketCalculations'
 
 const { Text } = Typography
 const { useBreakpoint } = Grid
@@ -41,6 +41,12 @@ const MarketTable = ({
   const filteredMarkets = markets.filter(m => !excludeSymbols.includes(m.symbol))
   
   if (filteredMarkets.length === 0) return null
+
+  // Calculate group sentiment for single timeframe
+  const { bullishPercent } = !multiTimeframe 
+    ? calculateGroupSentiment(markets, excludeSymbols)
+    : { bullishPercent: 0 }
+  const isBullish = bullishPercent >= 50
 
   // Single timeframe columns
   const singleTimeframeColumns = [
@@ -202,7 +208,7 @@ const MarketTable = ({
     <div style={{ marginBottom: 24, ...style }}>
       <Card
         title={
-          <Space size={12} style={{ width: '100%', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
             <Space size={12}>
               {icon && <span style={{ fontSize: 20 }}>{icon}</span>}
               <div>
@@ -215,27 +221,40 @@ const MarketTable = ({
                 <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
                   ({filteredMarkets.length} {filteredMarkets.length === 1 ? 'index' : 'indices'})
                 </Text>
+                {vixData && (
+                  <span style={{ marginLeft: 12 }}>
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      | {vixData.label || 'VIX'}:
+                    </Text>
+                    <Text strong style={{ fontSize: 14, marginLeft: 6, color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
+                      {vixData.price?.toFixed(2)}
+                    </Text>
+                    <Tag
+                      color={vixData.change_pct > 0 ? 'red' : 'green'}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: '2px 8px',
+                        marginLeft: 8
+                      }}
+                    >
+                      {vixData.change_pct > 0 ? <ArrowUpOutlined style={{ marginRight: 4 }} /> : <ArrowDownOutlined style={{ marginRight: 4 }} />}
+                      {vixData.change_pct > 0 ? '+' : ''}{vixData.change_pct?.toFixed(2)}%
+                    </Tag>
+                  </span>
+                )}
               </div>
             </Space>
-            {vixData && (
-              <Space size={8} style={{ marginLeft: 'auto' }}>
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  {vixData.label || 'VIX'}:
-                </Text>
-                <Text strong style={{ fontSize: 14, color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
-                  {vixData.price?.toFixed(2)}
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a'
-                  }}
-                >
-                  ({vixData.change_pct > 0 ? '+' : ''}{vixData.change_pct?.toFixed(2)}%)
-                </Text>
-              </Space>
+            {!multiTimeframe && (
+              <Tag
+                color={isBullish ? 'green' : 'red'}
+                icon={isBullish ? <RiseOutlined /> : <FallOutlined />}
+                style={{ fontSize: 13, padding: '4px 12px', fontWeight: 600 }}
+              >
+                {bullishPercent}% Bullish
+              </Tag>
             )}
-          </Space>
+          </div>
         }
         size="small"
         bodyStyle={{ padding: 0 }}
