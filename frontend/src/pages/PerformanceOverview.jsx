@@ -111,6 +111,7 @@ const PerformanceOverview = () => {
   const [modalSector, setModalSector] = useState(null)
   const [stocksData, setStocksData] = useState(null)
   const [stocksLoading, setStocksLoading] = useState(false)
+  const [thresholdModalOpen, setThresholdModalOpen] = useState(false)
 
   const fetchData = async (signal) => {
     setLoading(true)
@@ -399,11 +400,23 @@ const PerformanceOverview = () => {
   return (
     <div>
       {/* Page Header */}
-      <PageHeader
-        icon={BarChartOutlined}
-        title="Relative Performance Overview"
-        subtitle="Relative Comparision of All Major Indices, Sectors v/s Nifty 50"
-      />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+        <PageHeader
+          icon={BarChartOutlined}
+          title="Relative Performance Overview"
+          subtitle="Relative Comparision of All Major Indices, Sectors v/s Nifty 50"
+          style={{ marginBottom: 0, flex: 1 }}
+        />
+        <Tooltip title="Color & Sentiment Thresholds">
+          <Button
+            type="text"
+            icon={<InfoCircleOutlined style={{ fontSize: 20, color: '#1890ff' }} />}
+            onClick={() => setThresholdModalOpen(true)}
+            size="large"
+            style={{ marginTop: 8 }}
+          />
+        </Tooltip>
+      </div>
 
       {/* Filter Controls - Custom for this page */}
       <Card style={{ marginBottom: 24 }} bodyStyle={{ padding: screens.md ? '16px 24px' : '16px' }}>
@@ -487,46 +500,6 @@ const PerformanceOverview = () => {
         </Row>
       </Card>
 
-      {/* Threshold Information */}
-      <Alert
-        message={
-          <Space size={8} align="center">
-            <InfoCircleOutlined style={{ fontSize: 16 }} />
-            <Text strong>Color & Sentiment Thresholds</Text>
-          </Space>
-        }
-        description={
-          <Space direction="vertical" size={4} style={{ width: '100%' }}>
-            <Space wrap size={16}>
-              <Space size={4}>
-                <Tag color="green" style={{ minWidth: 70, textAlign: 'center' }}>+0.50%</Tag>
-                <Text style={{ fontSize: 13 }}>
-                  <Text strong style={{ color: '#52c41a' }}>Bullish:</Text> RS ≥ +0.15%
-                </Text>
-              </Space>
-              <Space size={4}>
-                <Tag color="default" style={{ minWidth: 70, textAlign: 'center' }}>+0.10%</Tag>
-                <Text style={{ fontSize: 13 }}>
-                  <Text strong style={{ color: '#999' }}>Neutral:</Text> -0.15% {'<'} RS {'<'} +0.15%
-                </Text>
-              </Space>
-              <Space size={4}>
-                <Tag color="red" style={{ minWidth: 70, textAlign: 'center' }}>-0.50%</Tag>
-                <Text style={{ fontSize: 13 }}>
-                  <Text strong style={{ color: '#ff4d4f' }}>Bearish:</Text> RS ≤ -0.15%
-                </Text>
-              </Space>
-            </Space>
-            <Text type="secondary" style={{ fontSize: 12, marginTop: 4 }}>
-              RS = Relative Strength vs Nifty 50. Group badges show the dominant sentiment percentage.
-            </Text>
-          </Space>
-        }
-        type="info"
-        showIcon={false}
-        style={{ marginBottom: 24 }}
-      />
-
       {/* Sentiment Cards */}
       {!loading && sentiment && (
         <SentimentCards
@@ -591,6 +564,125 @@ const PerformanceOverview = () => {
             scroll={{ y: 400 }}
           />
         )}
+      </Modal>
+
+      {/* Threshold Information Modal */}
+      <Modal
+        title={
+          <Space size={8}>
+            <InfoCircleOutlined style={{ color: '#1890ff' }} />
+            <Text strong>Color & Sentiment Thresholds</Text>
+          </Space>
+        }
+        open={thresholdModalOpen}
+        onCancel={() => setThresholdModalOpen(false)}
+        footer={null}
+        width={600}
+      >
+        <Space direction="vertical" size={24} style={{ width: '100%' }}>
+          {/* Threshold Definitions */}
+          <div>
+            <Text strong style={{ fontSize: 15, display: 'block', marginBottom: 16 }}>
+              📊 Performance Classification
+            </Text>
+            <Space direction="vertical" size={12} style={{ width: '100%' }}>
+              <Card size="small" style={{ background: '#f6ffed', borderColor: '#b7eb8f' }}>
+                <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                  <Space size={8} align="center">
+                    <Tag color="green" style={{ minWidth: 80, textAlign: 'center', fontSize: 14, padding: '4px 8px' }}>
+                      +0.50%
+                    </Tag>
+                    <Text strong style={{ fontSize: 14, color: '#52c41a' }}>
+                      🟢 Bullish (Outperforming)
+                    </Text>
+                  </Space>
+                  <Text style={{ fontSize: 13, paddingLeft: 88 }}>
+                    Relative Strength <Text strong>≥ +0.15%</Text> vs Nifty 50
+                  </Text>
+                </Space>
+              </Card>
+
+              <Card size="small" style={{ background: '#fafafa', borderColor: '#d9d9d9' }}>
+                <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                  <Space size={8} align="center">
+                    <Tag color="default" style={{ minWidth: 80, textAlign: 'center', fontSize: 14, padding: '4px 8px' }}>
+                      +0.10%
+                    </Tag>
+                    <Text strong style={{ fontSize: 14, color: '#999' }}>
+                      ⚪ Neutral (In Line)
+                    </Text>
+                  </Space>
+                  <Text style={{ fontSize: 13, paddingLeft: 88 }}>
+                    Relative Strength between <Text strong>-0.15%</Text> and <Text strong>+0.15%</Text>
+                  </Text>
+                </Space>
+              </Card>
+
+              <Card size="small" style={{ background: '#fff1f0', borderColor: '#ffa39e' }}>
+                <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                  <Space size={8} align="center">
+                    <Tag color="red" style={{ minWidth: 80, textAlign: 'center', fontSize: 14, padding: '4px 8px' }}>
+                      -0.50%
+                    </Tag>
+                    <Text strong style={{ fontSize: 14, color: '#ff4d4f' }}>
+                      🔴 Bearish (Underperforming)
+                    </Text>
+                  </Space>
+                  <Text style={{ fontSize: 13, paddingLeft: 88 }}>
+                    Relative Strength <Text strong>≤ -0.15%</Text> vs Nifty 50
+                  </Text>
+                </Space>
+              </Card>
+            </Space>
+          </div>
+
+          {/* Explanation */}
+          <div>
+            <Text strong style={{ fontSize: 15, display: 'block', marginBottom: 12 }}>
+              📈 Understanding Relative Strength (RS)
+            </Text>
+            <Space direction="vertical" size={8}>
+              <Text style={{ fontSize: 13 }}>
+                <Text strong>Relative Strength</Text> measures how an index/sector performs compared to Nifty 50.
+              </Text>
+              <Text style={{ fontSize: 13 }}>
+                • <Text strong>Positive RS:</Text> Index is outperforming Nifty 50
+              </Text>
+              <Text style={{ fontSize: 13 }}>
+                • <Text strong>Negative RS:</Text> Index is underperforming Nifty 50
+              </Text>
+              <Text style={{ fontSize: 13 }}>
+                • <Text strong>Near Zero:</Text> Index moving in line with Nifty 50
+              </Text>
+            </Space>
+          </div>
+
+          {/* Group Badges */}
+          <div>
+            <Text strong style={{ fontSize: 15, display: 'block', marginBottom: 12 }}>
+              🏷️ Group Sentiment Badges
+            </Text>
+            <Space direction="vertical" size={8}>
+              <Text style={{ fontSize: 13 }}>
+                Each group (Sectorial, Broader Market, Thematic) shows a <Text strong>dominant sentiment badge</Text>.
+              </Text>
+              <Text style={{ fontSize: 13 }}>
+                • Badge shows the <Text strong>highest percentage</Text> among Bullish/Neutral/Bearish
+              </Text>
+              <Text style={{ fontSize: 13 }}>
+                • Example: If 14 out of 18 indices are bullish → Shows <Tag color="green" style={{ margin: '0 4px' }}>78% Bullish</Tag>
+              </Text>
+            </Space>
+          </div>
+
+          {/* Note */}
+          <Alert
+            message="The ±0.15% threshold provides sensitive classification for relative performance analysis."
+            type="info"
+            showIcon
+            style={{ marginTop: 8 }}
+          />
+        </Space>
       </Modal>
     </div>
   )
