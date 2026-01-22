@@ -4,18 +4,17 @@
  */
 
 import { useState, useMemo } from 'react'
-import { 
-  Card, Table, Select, InputNumber, Button, Space, Tag, Modal, 
-  Typography, Row, Col, Tooltip, Grid
+import {
+  Card, Table, Select, InputNumber, Button, Space, Tag, Modal,
+  Typography, Row, Col, Tooltip, Grid, Switch
 } from 'antd'
-import { 
-  ReloadOutlined, BarChartOutlined, ArrowUpOutlined, 
+import {
+  ReloadOutlined, BarChartOutlined, ArrowUpOutlined,
   ArrowDownOutlined, MinusOutlined
 } from '@ant-design/icons'
 import { getTopPerformers, getSectorStocks } from '../api/scanner'
 import {
   PageHeader,
-  FilterControls,
   SentimentCards,
   LoadingState,
   EmptyState
@@ -38,23 +37,23 @@ const TIMEFRAME_OPTIONS = [
 
 // Index group configurations
 const INDEX_GROUPS = [
-  { 
-    key: 'sectorial', 
-    title: 'Sectorial Indices', 
+  {
+    key: 'sectorial',
+    title: 'Sectorial Indices',
     subtitle: 'Sector-specific indices',
     icon: '📊',
     keywords: ['Auto', 'Bank', 'Financial', 'FMCG', 'IT', 'Metal', 'Pharma', 'PSU', 'Realty', 'Media', 'Infra', 'Energy', 'Commodities', 'Consumption', 'Healthcare', 'Oil', 'Private Bank', 'PSE']
   },
-  { 
-    key: 'broader_market', 
-    title: 'Broader Market', 
+  {
+    key: 'broader_market',
+    title: 'Broader Market',
     subtitle: 'Broad market indices',
     icon: '📈',
     keywords: ['NIFTY', 'SENSEX', 'Midcap', 'Smallcap', 'Next', 'Microcap', 'LargeMid', 'BSE']
   },
-  { 
-    key: 'thematic', 
-    title: 'Thematic Indices', 
+  {
+    key: 'thematic',
+    title: 'Thematic Indices',
     subtitle: 'Theme-based indices',
     icon: '🎯',
     keywords: ['Alpha', 'Quality', 'Value', 'Growth', 'Momentum', 'Dividend', 'MNC', 'Consumer Durables', 'India Defence', 'Capital Markets', 'India Digital', 'Housing', 'Mobility', 'Manufacturing', 'Total Market', 'Services', 'MidSmall']
@@ -64,7 +63,7 @@ const INDEX_GROUPS = [
 // Categorize index into a group
 const categorizeIndex = (indexName) => {
   const name = indexName.toUpperCase()
-  
+
   for (const group of INDEX_GROUPS) {
     for (const keyword of group.keywords) {
       if (name.includes(keyword.toUpperCase())) {
@@ -72,17 +71,17 @@ const categorizeIndex = (indexName) => {
       }
     }
   }
-  
+
   return 'broader_market' // Default to broader market if no match
 }
 
 // Get status tag based on value
 const getStatusTag = (value) => {
   if (value === null || value === undefined) return <Text type="secondary">-</Text>
-  
+
   const color = value > 1 ? 'green' : value < -1 ? 'red' : 'default'
   const sign = value > 0 ? '+' : ''
-  
+
   return (
     <Tag color={color} style={{ minWidth: 70, textAlign: 'center', fontFamily: 'monospace' }}>
       {sign}{value.toFixed(2)}%
@@ -150,18 +149,18 @@ const PerformanceOverview = () => {
       TIMEFRAMES.forEach(tf => {
         const items = categoryData[tf]
         if (!Array.isArray(items)) return
-        
+
         items.forEach(item => {
           if (!item || !item.name) return
-          
+
           if (!sectorsMap.has(item.name)) {
-            sectorsMap.set(item.name, { 
-              name: item.name, 
+            sectorsMap.set(item.name, {
+              name: item.name,
               category: categorizeIndex(item.name),
-              values: {} 
+              values: {}
             })
           }
-          
+
           sectorsMap.get(item.name).values[tf] = item.rs
         })
       })
@@ -350,56 +349,87 @@ const PerformanceOverview = () => {
       <PageHeader
         icon={BarChartOutlined}
         title="Relative Performance Overview"
-        subtitle="Relative Comparision of all major Indices, Sectors v/s Nifty 50"
+        subtitle="Relative Comparision of All Major Indices, Sectors v/s Nifty 50"
       />
 
       {/* Filter Controls - Custom for this page */}
-      <Card style={{ marginBottom: 24 }}>
+      <Card style={{ marginBottom: 24 }} bodyStyle={{ padding: screens.md ? '16px 24px' : '16px' }}>
         <Row gutter={[16, 16]} align="middle" justify="space-between" wrap>
-          <Col xs={24} md={18} lg={16}>
-            <Space wrap size={16}>
-              <FilterControls
-                showAnalysisMode
-                multiTimeframe={multiTimeframe}
-                onMultiTimeframeChange={setMultiTimeframe}
-                showTimeframeSelector
-                timeframe={timeframe}
-                onTimeframeChange={setTimeframe}
-                timeframes={TIMEFRAME_OPTIONS}
-                showViewMode={false}
-                showRefresh={false}
-                style={{ marginBottom: 0, boxShadow: 'none' }}
-              />
-              {/* Lookback */}
+          {/* Left Side: Filters */}
+          <Col xs={24} lg={18}>
+            <Space wrap size={[16, 12]} align="start">
+              {/* Analysis Mode */}
               <div>
-                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 4, fontWeight: 600 }}>
-                  Lookback
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
+                  Analysis Mode
                 </Text>
                 <Space>
+                  <Text style={{ fontSize: 14, color: !multiTimeframe ? '#1890ff' : undefined, fontWeight: !multiTimeframe ? 600 : 400 }}>
+                    Single
+                  </Text>
+                  <Switch
+                    checked={multiTimeframe}
+                    onChange={setMultiTimeframe}
+                  />
+                  <Text style={{ fontSize: 14, color: multiTimeframe ? '#1890ff' : undefined, fontWeight: multiTimeframe ? 600 : 400 }}>
+                    All Timeframes
+                  </Text>
+                </Space>
+              </div>
+
+              {/* Timeframe Selector (only show in single mode) */}
+              {!multiTimeframe && (
+                <div>
+                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
+                    Timeframe
+                  </Text>
+                  <Select
+                    value={timeframe}
+                    onChange={setTimeframe}
+                    style={{ width: 140 }}
+                    size="middle"
+                    options={TIMEFRAME_OPTIONS}
+                  />
+                </div>
+              )}
+
+              {/* Lookback */}
+              <div>
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
+                  Lookback
+                </Text>
+                <Space size={8}>
                   <InputNumber
                     min={1}
                     max={99}
                     value={lookback}
                     onChange={(val) => setLookback(val || 1)}
-                    style={{ width: 80 }}
-                    size={screens.md ? 'middle' : 'large'}
+                    style={{ width: 100 }}
+                    size="middle"
                   />
-                  <Text type="secondary">periods</Text>
+                  <Text type="secondary" style={{ fontSize: 14 }}>periods</Text>
                 </Space>
               </div>
             </Space>
           </Col>
-          <Col xs={24} md={6} lg={8} style={{ textAlign: screens.md ? 'right' : 'left' }}>
-            <Button
-              type="primary"
-              icon={<ReloadOutlined spin={loading} />}
-              onClick={() => fetchData()}
-              loading={loading}
-              size={screens.md ? 'middle' : 'large'}
-              style={{ minWidth: 120 }}
-            >
-              Refresh Data
-            </Button>
+
+          {/* Right Side: Refresh Button */}
+          <Col xs={24} lg={6} style={{ textAlign: screens.lg ? 'right' : 'left' }}>
+            <div style={{ display: 'inline-block' }}>
+              <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600, visibility: screens.lg ? 'hidden' : 'visible' }}>
+                &nbsp;
+              </Text>
+              <Button
+                type="primary"
+                icon={<ReloadOutlined spin={loading} />}
+                onClick={() => fetchData()}
+                loading={loading}
+                size="middle"
+                style={{ minWidth: 140 }}
+              >
+                Refresh Data
+              </Button>
+            </div>
           </Col>
         </Row>
       </Card>
@@ -446,16 +476,16 @@ const PerformanceOverview = () => {
         width={screens.lg ? 900 : '95%'}
       >
         {stocksLoading && <div style={{ textAlign: 'center', padding: 40 }}><LoadingState title="Loading Stocks" message="Fetching stock data..." /></div>}
-        
+
         {!stocksLoading && stocksData && (
           <Table
             columns={[
               { title: '#', key: 'idx', width: 50, render: (_, __, i) => i + 1 },
               { title: 'Symbol', dataIndex: 'symbol', key: 'symbol' },
               { title: 'Name', dataIndex: 'name', key: 'name', ellipsis: true },
-              { 
-                title: 'RS vs Nifty 50', 
-                dataIndex: 'rs', 
+              {
+                title: 'RS vs Nifty 50',
+                dataIndex: 'rs',
                 key: 'rs',
                 sorter: (a, b) => (a.rs || 0) - (b.rs || 0),
                 defaultSortOrder: 'descend',
