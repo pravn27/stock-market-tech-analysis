@@ -6,11 +6,12 @@
 import { useState, useMemo } from 'react'
 import {
   Card, Table, Select, InputNumber, Button, Space, Tag, Modal,
-  Typography, Row, Col, Tooltip, Grid, Switch
+  Typography, Row, Col, Tooltip, Grid, Switch, Alert
 } from 'antd'
 import {
   ReloadOutlined, BarChartOutlined, ArrowUpOutlined,
-  ArrowDownOutlined, MinusOutlined, RiseOutlined, FallOutlined
+  ArrowDownOutlined, MinusOutlined, RiseOutlined, FallOutlined,
+  InfoCircleOutlined
 } from '@ant-design/icons'
 import { getTopPerformers, getSectorStocks } from '../api/scanner'
 import {
@@ -211,7 +212,7 @@ const PerformanceOverview = () => {
   // Calculate sentiment for selected timeframe (using ±0.15% threshold)
   const calculateSentiment = () => {
     const tfLabel = multiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-    
+
     // Count using ±0.15% threshold (matching visual color threshold)
     const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) >= 0.15).length
     const bearishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) <= -0.15).length
@@ -219,10 +220,10 @@ const PerformanceOverview = () => {
       const val = s.values?.[tfLabel] || 0
       return val > -0.15 && val < 0.15
     }).length
-    
+
     const totalCount = allSectors.length
     const bullishPercent = totalCount > 0 ? Math.round((bullishCount / totalCount) * 100) : 0
-    
+
     return {
       bullish: bullishCount,
       neutral: neutralCount,
@@ -319,7 +320,7 @@ const PerformanceOverview = () => {
 
     // Calculate group sentiment (using ±0.15% threshold)
     const tfLabel = multiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-    
+
     // Count using ±0.15% threshold (matching visual color threshold)
     const bullishCount = groupData.filter(s => (s.values?.[tfLabel] || 0) >= 0.15).length
     const bearishCount = groupData.filter(s => (s.values?.[tfLabel] || 0) <= -0.15).length
@@ -327,18 +328,18 @@ const PerformanceOverview = () => {
       const val = s.values?.[tfLabel] || 0
       return val > -0.15 && val < 0.15
     }).length
-    
+
     const total = groupData.length
     const bullishPercent = total > 0 ? Math.round((bullishCount / total) * 100) : 0
     const bearishPercent = total > 0 ? Math.round((bearishCount / total) * 100) : 0
     const neutralPercent = total > 0 ? Math.round((neutralCount / total) * 100) : 0
-    
+
     // Determine dominant sentiment
     let dominantSentiment = 'Neutral'
     let dominantPercent = neutralPercent
     let dominantColor = 'default'
     let dominantIcon = null
-    
+
     if (bullishPercent >= bearishPercent && bullishPercent >= neutralPercent) {
       dominantSentiment = 'Bullish'
       dominantPercent = bullishPercent
@@ -485,6 +486,46 @@ const PerformanceOverview = () => {
           </Col>
         </Row>
       </Card>
+
+      {/* Threshold Information */}
+      <Alert
+        message={
+          <Space size={8} align="center">
+            <InfoCircleOutlined style={{ fontSize: 16 }} />
+            <Text strong>Color & Sentiment Thresholds</Text>
+          </Space>
+        }
+        description={
+          <Space direction="vertical" size={4} style={{ width: '100%' }}>
+            <Space wrap size={16}>
+              <Space size={4}>
+                <Tag color="green" style={{ minWidth: 70, textAlign: 'center' }}>+0.50%</Tag>
+                <Text style={{ fontSize: 13 }}>
+                  <Text strong style={{ color: '#52c41a' }}>Bullish:</Text> RS ≥ +0.15%
+                </Text>
+              </Space>
+              <Space size={4}>
+                <Tag color="default" style={{ minWidth: 70, textAlign: 'center' }}>+0.10%</Tag>
+                <Text style={{ fontSize: 13 }}>
+                  <Text strong style={{ color: '#999' }}>Neutral:</Text> -0.15% {'<'} RS {'<'} +0.15%
+                </Text>
+              </Space>
+              <Space size={4}>
+                <Tag color="red" style={{ minWidth: 70, textAlign: 'center' }}>-0.50%</Tag>
+                <Text style={{ fontSize: 13 }}>
+                  <Text strong style={{ color: '#ff4d4f' }}>Bearish:</Text> RS ≤ -0.15%
+                </Text>
+              </Space>
+            </Space>
+            <Text type="secondary" style={{ fontSize: 12, marginTop: 4 }}>
+              RS = Relative Strength vs Nifty 50. Group badges show the dominant sentiment percentage.
+            </Text>
+          </Space>
+        }
+        type="info"
+        showIcon={false}
+        style={{ marginBottom: 24 }}
+      />
 
       {/* Sentiment Cards */}
       {!loading && sentiment && (
