@@ -11,4 +11,4 @@ export { default as MarketCard } from './MarketCard'
 export { default as MarketGroup } from './MarketGroup'
 export { default as LoadingState } from './LoadingState'
 export { default as EmptyState } from './EmptyState'
-export { default as VixInfoModal } from "./VixInfoModal"
+export { default as VixInfoModal } from './VixInfoModal'
