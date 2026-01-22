@@ -17,6 +17,7 @@ import { getTopPerformers, getSectorStocks } from '../api/scanner'
 import {
   PageHeader,
   SentimentCards,
+  MultiTimeframeSentimentCards,
   LoadingState,
   EmptyState
 } from '../components/markets'
@@ -234,7 +235,35 @@ const PerformanceOverview = () => {
     }
   }
 
+  // Calculate sentiment for all timeframes (multi-timeframe mode)
+  const calculateMultiTimeframeSentiment = () => {
+    const sentiments = {}
+    
+    TIMEFRAMES.forEach(tf => {
+      const bullishCount = allSectors.filter(s => (s.values?.[tf] || 0) >= 0.15).length
+      const bearishCount = allSectors.filter(s => (s.values?.[tf] || 0) <= -0.15).length
+      const neutralCount = allSectors.filter(s => {
+        const val = s.values?.[tf] || 0
+        return val > -0.15 && val < 0.15
+      }).length
+
+      const totalCount = allSectors.length
+      const bullishPercent = totalCount > 0 ? Math.round((bullishCount / totalCount) * 100) : 0
+
+      sentiments[tf] = {
+        bullish: bullishCount,
+        neutral: neutralCount,
+        bearish: bearishCount,
+        total: totalCount,
+        bullishPercent
+      }
+    })
+
+    return sentiments
+  }
+
   const sentiment = allSectors.length > 0 ? calculateSentiment() : null
+  const multiTimeframeSentiments = allSectors.length > 0 && multiTimeframe ? calculateMultiTimeframeSentiment() : null
 
   // Single timeframe columns
   const singleTimeframeColumns = [
@@ -499,11 +528,20 @@ const PerformanceOverview = () => {
       </Card>
 
       {/* Sentiment Cards */}
-      {!loading && sentiment && (
+      {!loading && !multiTimeframe && sentiment && (
         <SentimentCards
           sentiment={sentiment}
           total={sentiment.total}
           subtitle={`${sentiment.bullishPercent >= 50 ? 'Bullish' : 'Bearish'} • ${sentiment.total} indices`}
+        />
+      )}
+
+      {/* Multi-Timeframe Sentiment Cards */}
+      {!loading && multiTimeframe && multiTimeframeSentiments && (
+        <MultiTimeframeSentimentCards
+          sentiments={multiTimeframeSentiments}
+          timeframes={TIMEFRAMES}
+          title="Overall Market Sentiment - All Timeframes"
         />
       )}
 
