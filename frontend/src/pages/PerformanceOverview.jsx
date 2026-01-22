@@ -249,6 +249,16 @@ const PerformanceOverview = () => {
   const calculateMultiTimeframeSentiment = () => {
     const sentiments = {}
     
+    // Map timeframe labels to expected format
+    const tfMapping = {
+      '3M': '3m',
+      'M': 'monthly',
+      'W': 'weekly',
+      'D': 'daily',
+      '4H': '4h',
+      '1H': '1h'
+    }
+    
     TIMEFRAMES.forEach(tf => {
       const bullishCount = allSectors.filter(s => (s.values?.[tf] || 0) >= 0.15).length
       const bearishCount = allSectors.filter(s => (s.values?.[tf] || 0) <= -0.15).length
@@ -260,12 +270,15 @@ const PerformanceOverview = () => {
       const totalCount = allSectors.length
       const bullishPercent = totalCount > 0 ? Math.round((bullishCount / totalCount) * 100) : 0
 
-      sentiments[tf] = {
-        bullish: bullishCount,
-        neutral: neutralCount,
-        bearish: bearishCount,
-        total: totalCount,
-        bullishPercent
+      // Use the mapped timeframe key that the component expects
+      const tfKey = tfMapping[tf]
+      sentiments[tfKey] = {
+        breadth: {
+          positive: bullishCount,
+          negative: bearishCount,
+          total: totalCount,
+          percentage: bullishPercent
+        }
       }
     })
 
@@ -550,7 +563,14 @@ const PerformanceOverview = () => {
       {!loading && multiTimeframe && multiTimeframeSentiments && (
         <MultiTimeframeSentimentCards
           sentiments={multiTimeframeSentiments}
-          timeframes={TIMEFRAMES}
+          timeframes={[
+            { value: '3m', label: '3M', fullLabel: '3 Month' },
+            { value: 'monthly', label: 'M', fullLabel: 'Monthly' },
+            { value: 'weekly', label: 'W', fullLabel: 'Weekly' },
+            { value: 'daily', label: 'D', fullLabel: 'Daily' },
+            { value: '4h', label: '4H', fullLabel: '4 Hour' },
+            { value: '1h', label: '1H', fullLabel: '1 Hour' },
+          ]}
           title="Overall Market Sentiment - All Timeframes"
         />
       )}
