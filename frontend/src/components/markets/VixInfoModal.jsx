@@ -9,9 +9,13 @@ import { getVixLevel, getVixImplications } from '../../utils/marketCalculations'
 
 const { Title, Text, Paragraph } = Typography
 
-const VixInfoModal = ({ visible, onClose, vixValue, vixChangePct, vixLabel = 'VIX' }) => {
-  const vixLevel = getVixLevel(vixValue)
-  const implications = getVixImplications(vixValue)
+const VixInfoModal = ({ visible, onClose, vixValue = 0, vixChangePct = 0, vixLabel = 'VIX' }) => {
+  // Safety check: ensure vixValue and vixChangePct are valid numbers
+  const safeVixValue = vixValue ?? 0
+  const safeVixChangePct = vixChangePct ?? 0
+
+  const vixLevel = getVixLevel(safeVixValue)
+  const implications = getVixImplications(safeVixValue)
   const isIndiaVix = vixLabel.includes('India')
 
   return (
@@ -62,10 +66,10 @@ const VixInfoModal = ({ visible, onClose, vixValue, vixChangePct, vixLabel = 'VI
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text strong style={{ fontSize: 24, color: vixLevel.color }}>
-                {vixValue.toFixed(2)}
+                {safeVixValue.toFixed(2)}
               </Text>
-              <Text strong style={{ fontSize: 18, color: vixChangePct > 0 ? '#ff4d4f' : '#52c41a' }}>
-                {vixChangePct > 0 ? '+' : ''}{vixChangePct.toFixed(2)}%
+              <Text strong style={{ fontSize: 18, color: safeVixChangePct > 0 ? '#ff4d4f' : '#52c41a' }}>
+                {safeVixChangePct > 0 ? '+' : ''}{safeVixChangePct.toFixed(2)}%
               </Text>
             </div>
             <Text type="secondary" style={{ fontSize: 13 }}>

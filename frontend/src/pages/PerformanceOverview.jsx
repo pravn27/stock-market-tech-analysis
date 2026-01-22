@@ -19,9 +19,9 @@ import {
   LoadingState,
   EmptyState
 } from '../components/markets'
-import { 
+import {
   calculateSentiment as calculateMarketSentiment,
-  calculateGroupSentiment 
+  calculateGroupSentiment
 } from '../utils/marketCalculations'
 
 const { Title, Text } = Typography
@@ -215,14 +215,14 @@ const PerformanceOverview = () => {
   // Calculate sentiment for selected timeframe (following Global Markets pattern)
   const calculateSentiment = () => {
     const tfLabel = multiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-    
+
     // Transform sector data to match utility function format
     const transformedData = allSectors.map(s => ({
       change_pct: s.values?.[tfLabel] || 0,
       symbol: s.name,
       error: false
     }))
-    
+
     // Use the same utility function as Global Markets
     return calculateMarketSentiment(transformedData)
   }
@@ -314,24 +314,24 @@ const PerformanceOverview = () => {
 
     // Calculate group sentiment (following Global Markets pattern)
     const tfLabel = multiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-    
+
     // Transform sector data to match utility function format
     const transformedGroupData = groupData.map(s => ({
       change_pct: s.values?.[tfLabel] || 0,
       symbol: s.name,
       error: false
     }))
-    
+
     // Use the same utility function as Global Markets
     const groupSentiment = calculateGroupSentiment(transformedGroupData)
-    
+
     // Extract values for display
     const dominantSentiment = groupSentiment.dominantLabel
     const dominantPercent = groupSentiment.dominantPercent
     const dominantColor = groupSentiment.dominantColor
-    const dominantIcon = dominantSentiment === 'Bullish' ? <RiseOutlined /> 
-      : dominantSentiment === 'Bearish' ? <FallOutlined /> 
-      : null
+    const dominantIcon = dominantSentiment === 'Bullish' ? <RiseOutlined />
+      : dominantSentiment === 'Bearish' ? <FallOutlined />
+        : null
 
     return (
       <div key={groupInfo.key} style={{ marginBottom: 24 }}>
