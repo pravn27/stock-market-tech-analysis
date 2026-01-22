@@ -400,23 +400,11 @@ const PerformanceOverview = () => {
   return (
     <div>
       {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-        <PageHeader
-          icon={BarChartOutlined}
-          title="Relative Performance Overview"
-          subtitle="Relative Comparision of All Major Indices, Sectors v/s Nifty 50"
-          style={{ marginBottom: 0, flex: 1 }}
-        />
-        <Tooltip title="Color & Sentiment Thresholds">
-          <Button
-            type="text"
-            icon={<InfoCircleOutlined style={{ fontSize: 20, color: '#1890ff' }} />}
-            onClick={() => setThresholdModalOpen(true)}
-            size="large"
-            style={{ marginTop: 8 }}
-          />
-        </Tooltip>
-      </div>
+      <PageHeader
+        icon={BarChartOutlined}
+        title="Relative Performance Overview"
+        subtitle="Relative Comparision of All Major Indices, Sectors v/s Nifty 50"
+      />
 
       {/* Filter Controls - Custom for this page */}
       <Card style={{ marginBottom: 24 }} bodyStyle={{ padding: screens.md ? '16px 24px' : '16px' }}>
@@ -479,22 +467,32 @@ const PerformanceOverview = () => {
             </Space>
           </Col>
 
-          {/* Right Side: Refresh Button */}
+          {/* Right Side: Refresh Button & Info Icon */}
           <Col xs={24} lg={6} style={{ textAlign: screens.lg ? 'right' : 'left' }}>
             <div style={{ display: 'inline-block' }}>
               <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600, visibility: screens.lg ? 'hidden' : 'visible' }}>
                 &nbsp;
               </Text>
-              <Button
-                type="primary"
-                icon={<ReloadOutlined spin={loading} />}
-                onClick={() => fetchData()}
-                loading={loading}
-                size="middle"
-                style={{ minWidth: 140 }}
-              >
-                Refresh Data
-              </Button>
+              <Space size={8}>
+                <Button
+                  type="primary"
+                  icon={<ReloadOutlined spin={loading} />}
+                  onClick={() => fetchData()}
+                  loading={loading}
+                  size="middle"
+                  style={{ minWidth: 140 }}
+                >
+                  Refresh Data
+                </Button>
+                <Tooltip title="Color & Sentiment Thresholds">
+                  <Button
+                    type="default"
+                    icon={<InfoCircleOutlined style={{ fontSize: 18, color: '#1890ff' }} />}
+                    onClick={() => setThresholdModalOpen(true)}
+                    size="middle"
+                  />
+                </Tooltip>
+              </Space>
             </div>
           </Col>
         </Row>
