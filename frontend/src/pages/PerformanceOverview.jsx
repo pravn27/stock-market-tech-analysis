@@ -19,6 +19,10 @@ import {
   LoadingState,
   EmptyState
 } from '../components/markets'
+import { 
+  calculateSentiment as calculateMarketSentiment,
+  calculateGroupSentiment 
+} from '../utils/marketCalculations'
 
 const { Title, Text } = Typography
 const { useBreakpoint } = Grid
@@ -208,25 +212,19 @@ const PerformanceOverview = () => {
     return mapping[tfValue] || tfValue
   }
 
-  // Calculate sentiment for selected timeframe
+  // Calculate sentiment for selected timeframe (following Global Markets pattern)
   const calculateSentiment = () => {
     const tfLabel = multiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-    const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-    const neutralCount = allSectors.filter(s => {
-      const val = s.values?.[tfLabel] || 0
-      return val >= -0.5 && val <= 0.5
-    }).length
-    const bearishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) < -0.5).length
-    const totalCount = allSectors.length
-    const bullishPercent = Math.round((bullishCount / totalCount) * 100)
-
-    return {
-      bullish: bullishCount,
-      neutral: neutralCount,
-      bearish: bearishCount,
-      total: totalCount,
-      bullishPercent
-    }
+    
+    // Transform sector data to match utility function format
+    const transformedData = allSectors.map(s => ({
+      change_pct: s.values?.[tfLabel] || 0,
+      symbol: s.name,
+      error: false
+    }))
+    
+    // Use the same utility function as Global Markets
+    return calculateMarketSentiment(transformedData)
   }
 
   const sentiment = allSectors.length > 0 ? calculateSentiment() : null
@@ -314,32 +312,26 @@ const PerformanceOverview = () => {
     const groupData = groupedSectors[groupInfo.key]
     if (!groupData || groupData.length === 0) return null
 
-    // Calculate group sentiment
+    // Calculate group sentiment (following Global Markets pattern)
     const tfLabel = multiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-    const bullishCount = groupData.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
-    const bearishCount = groupData.filter(s => (s.values?.[tfLabel] || 0) < -0.5).length
-    const neutralCount = groupData.filter(s => {
-      const val = s.values?.[tfLabel] || 0
-      return val >= -0.5 && val <= 0.5
-    }).length
-
-    // Determine dominant sentiment
-    let dominantSentiment = 'Neutral'
-    let dominantPercent = Math.round((neutralCount / groupData.length) * 100)
-    let dominantColor = 'default'
-    let dominantIcon = null
-
-    if (bullishCount >= bearishCount && bullishCount >= neutralCount) {
-      dominantSentiment = 'Bullish'
-      dominantPercent = Math.round((bullishCount / groupData.length) * 100)
-      dominantColor = 'green'
-      dominantIcon = <RiseOutlined />
-    } else if (bearishCount >= bullishCount && bearishCount >= neutralCount) {
-      dominantSentiment = 'Bearish'
-      dominantPercent = Math.round((bearishCount / groupData.length) * 100)
-      dominantColor = 'red'
-      dominantIcon = <FallOutlined />
-    }
+    
+    // Transform sector data to match utility function format
+    const transformedGroupData = groupData.map(s => ({
+      change_pct: s.values?.[tfLabel] || 0,
+      symbol: s.name,
+      error: false
+    }))
+    
+    // Use the same utility function as Global Markets
+    const groupSentiment = calculateGroupSentiment(transformedGroupData)
+    
+    // Extract values for display
+    const dominantSentiment = groupSentiment.dominantLabel
+    const dominantPercent = groupSentiment.dominantPercent
+    const dominantColor = groupSentiment.dominantColor
+    const dominantIcon = dominantSentiment === 'Bullish' ? <RiseOutlined /> 
+      : dominantSentiment === 'Bearish' ? <FallOutlined /> 
+      : null
 
     return (
       <div key={groupInfo.key} style={{ marginBottom: 24 }}>
@@ -367,7 +359,7 @@ const PerformanceOverview = () => {
           size="small"
           bodyStyle={{ padding: 0 }}
           style={{
-            boxShadow: screens.md 
+            boxShadow: screens.md
               ? '0 2px 8px rgba(0, 0, 0, 0.08)'
               : '0 1px 4px rgba(0, 0, 0, 0.08)',
             transition: 'all 0.3s ease'
