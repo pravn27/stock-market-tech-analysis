@@ -79,11 +79,11 @@ const categorizeIndex = (indexName) => {
   return 'broader_market' // Default to broader market if no match
 }
 
-// Get status tag based on value
+// Get status tag based on value (±0.15% threshold for color coding)
 const getStatusTag = (value) => {
   if (value === null || value === undefined) return <Text type="secondary">-</Text>
 
-  const color = value > 1 ? 'green' : value < -1 ? 'red' : 'default'
+  const color = value >= 0.15 ? 'green' : value <= -0.15 ? 'red' : 'default'
   const sign = value > 0 ? '+' : ''
 
   return (
@@ -93,10 +93,10 @@ const getStatusTag = (value) => {
   )
 }
 
-// Get status icon
-const getStatusIcon = (weeklyRs) => {
-  if (weeklyRs > 1) return <ArrowUpOutlined style={{ color: '#52c41a' }} />
-  if (weeklyRs < -1) return <ArrowDownOutlined style={{ color: '#ff4d4f' }} />
+// Get status icon (±0.15% threshold for icon display)
+const getStatusIcon = (rs) => {
+  if (rs >= 0.15) return <ArrowUpOutlined style={{ color: '#52c41a' }} />
+  if (rs <= -0.15) return <ArrowDownOutlined style={{ color: '#ff4d4f' }} />
   return <MinusOutlined style={{ color: '#999' }} />
 }
 
