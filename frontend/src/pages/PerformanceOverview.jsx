@@ -19,10 +19,6 @@ import {
   LoadingState,
   EmptyState
 } from '../components/markets'
-import {
-  calculateSentiment as calculateMarketSentiment,
-  calculateGroupSentiment
-} from '../utils/marketCalculations'
 
 const { Title, Text } = Typography
 const { useBreakpoint } = Grid
@@ -212,19 +208,28 @@ const PerformanceOverview = () => {
     return mapping[tfValue] || tfValue
   }
 
-  // Calculate sentiment for selected timeframe (following Global Markets pattern)
+  // Calculate sentiment for selected timeframe (using ±0.15% threshold)
   const calculateSentiment = () => {
     const tfLabel = multiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-
-    // Transform sector data to match utility function format
-    const transformedData = allSectors.map(s => ({
-      change_pct: s.values?.[tfLabel] || 0,
-      symbol: s.name,
-      error: false
-    }))
-
-    // Use the same utility function as Global Markets
-    return calculateMarketSentiment(transformedData)
+    
+    // Count using ±0.15% threshold (matching visual color threshold)
+    const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) >= 0.15).length
+    const bearishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) <= -0.15).length
+    const neutralCount = allSectors.filter(s => {
+      const val = s.values?.[tfLabel] || 0
+      return val > -0.15 && val < 0.15
+    }).length
+    
+    const totalCount = allSectors.length
+    const bullishPercent = totalCount > 0 ? Math.round((bullishCount / totalCount) * 100) : 0
+    
+    return {
+      bullish: bullishCount,
+      neutral: neutralCount,
+      bearish: bearishCount,
+      total: totalCount,
+      bullishPercent
+    }
   }
 
   const sentiment = allSectors.length > 0 ? calculateSentiment() : null
@@ -312,26 +317,39 @@ const PerformanceOverview = () => {
     const groupData = groupedSectors[groupInfo.key]
     if (!groupData || groupData.length === 0) return null
 
-    // Calculate group sentiment (following Global Markets pattern)
+    // Calculate group sentiment (using ±0.15% threshold)
     const tfLabel = multiTimeframe ? 'W' : getTimeframeLabel(timeframe)
-
-    // Transform sector data to match utility function format
-    const transformedGroupData = groupData.map(s => ({
-      change_pct: s.values?.[tfLabel] || 0,
-      symbol: s.name,
-      error: false
-    }))
-
-    // Use the same utility function as Global Markets
-    const groupSentiment = calculateGroupSentiment(transformedGroupData)
-
-    // Extract values for display
-    const dominantSentiment = groupSentiment.dominantLabel
-    const dominantPercent = groupSentiment.dominantPercent
-    const dominantColor = groupSentiment.dominantColor
-    const dominantIcon = dominantSentiment === 'Bullish' ? <RiseOutlined />
-      : dominantSentiment === 'Bearish' ? <FallOutlined />
-        : null
+    
+    // Count using ±0.15% threshold (matching visual color threshold)
+    const bullishCount = groupData.filter(s => (s.values?.[tfLabel] || 0) >= 0.15).length
+    const bearishCount = groupData.filter(s => (s.values?.[tfLabel] || 0) <= -0.15).length
+    const neutralCount = groupData.filter(s => {
+      const val = s.values?.[tfLabel] || 0
+      return val > -0.15 && val < 0.15
+    }).length
+    
+    const total = groupData.length
+    const bullishPercent = total > 0 ? Math.round((bullishCount / total) * 100) : 0
+    const bearishPercent = total > 0 ? Math.round((bearishCount / total) * 100) : 0
+    const neutralPercent = total > 0 ? Math.round((neutralCount / total) * 100) : 0
+    
+    // Determine dominant sentiment
+    let dominantSentiment = 'Neutral'
+    let dominantPercent = neutralPercent
+    let dominantColor = 'default'
+    let dominantIcon = null
+    
+    if (bullishPercent >= bearishPercent && bullishPercent >= neutralPercent) {
+      dominantSentiment = 'Bullish'
+      dominantPercent = bullishPercent
+      dominantColor = 'green'
+      dominantIcon = <RiseOutlined />
+    } else if (bearishPercent >= bullishPercent && bearishPercent >= neutralPercent) {
+      dominantSentiment = 'Bearish'
+      dominantPercent = bearishPercent
+      dominantColor = 'red'
+      dominantIcon = <FallOutlined />
+    }
 
     return (
       <div key={groupInfo.key} style={{ marginBottom: 24 }}>
