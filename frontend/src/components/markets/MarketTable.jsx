@@ -3,11 +3,13 @@
  * Reusable table for displaying markets with single or multi-timeframe data
  */
 
-import { Card, Table, Typography, Space, Tag, Grid } from 'antd'
-import { ArrowUpOutlined, ArrowDownOutlined, RiseOutlined, FallOutlined } from '@ant-design/icons'
+import { useState } from 'react'
+import { Card, Table, Typography, Space, Tag, Grid, Button, Tooltip } from 'antd'
+import { ArrowUpOutlined, ArrowDownOutlined, RiseOutlined, FallOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import { useTheme } from '../../context/ThemeContext'
 import { formatPrice, formatChange, formatPercentage } from '../../utils/formatters'
-import { getSentimentColor, getSentimentTagColor, calculateGroupSentiment } from '../../utils/marketCalculations'
+import { getSentimentColor, getSentimentTagColor, calculateGroupSentiment, getVixLevel, getVixAlert } from '../../utils/marketCalculations'
+import VixInfoModal from './VixInfoModal'
 
 const { Text } = Typography
 const { useBreakpoint } = Grid
@@ -36,6 +38,7 @@ const MarketTable = ({
 }) => {
   const screens = useBreakpoint()
   const { isDarkMode } = useTheme()
+  const [vixModalVisible, setVixModalVisible] = useState(false)
 
   // Filter out excluded symbols
   const filteredMarkets = markets.filter(m => !excludeSymbols.includes(m.symbol))
@@ -46,6 +49,10 @@ const MarketTable = ({
   const sentimentData = !multiTimeframe 
     ? calculateGroupSentiment(markets, excludeSymbols)
     : { dominantPercent: 0, dominantLabel: 'Neutral', dominantColor: 'default' }
+
+  // Get VIX level and alert (if VIX data provided)
+  const vixLevel = vixData ? getVixLevel(vixData.price) : null
+  const vixAlert = vixData ? getVixAlert(vixData.price, vixData.change_pct) : null
 
   // Single timeframe columns
   const singleTimeframeColumns = [
@@ -204,8 +211,9 @@ const MarketTable = ({
   const columns = multiTimeframe ? multiTimeframeColumns : singleTimeframeColumns
 
   return (
-    <div style={{ marginBottom: 24, ...style }}>
-      <Card
+    <>
+      <div style={{ marginBottom: 24, ...style }}>
+        <Card
         title={
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
             <Space size={12}>
@@ -221,25 +229,60 @@ const MarketTable = ({
                   ({filteredMarkets.length} {filteredMarkets.length === 1 ? 'index' : 'indices'})
                 </Text>
                 {vixData && (
-                  <span style={{ marginLeft: 12 }}>
-                    <Text type="secondary" style={{ fontSize: 12 }}>
-                      | {vixData.label || 'VIX'}:
-                    </Text>
-                    <Text strong style={{ fontSize: 14, marginLeft: 6, color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
-                      {vixData.price?.toFixed(2)}
-                    </Text>
-                    <Tag
-                      color={vixData.change_pct > 0 ? 'red' : 'green'}
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        padding: '2px 8px',
-                        marginLeft: 8
-                      }}
-                    >
-                      {vixData.change_pct > 0 ? <ArrowUpOutlined style={{ marginRight: 4 }} /> : <ArrowDownOutlined style={{ marginRight: 4 }} />}
-                      {vixData.change_pct > 0 ? '+' : ''}{vixData.change_pct?.toFixed(2)}%
-                    </Tag>
+                  <span style={{ marginLeft: 12, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    {/* Dynamic VIX Alert Badge (if applicable) */}
+                    {vixAlert && (
+                      <Tag
+                        color={vixAlert.color}
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 700,
+                          padding: '2px 10px',
+                          border: `2px solid ${vixAlert.color}`,
+                        }}
+                      >
+                        {vixAlert.emoji} {vixAlert.title}
+                      </Tag>
+                    )}
+                    
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>
+                        | {vixData.label || 'VIX'}:
+                      </Text>
+                      <Text strong style={{ fontSize: 14, marginLeft: 2, color: vixData.change_pct > 0 ? '#ff4d4f' : '#52c41a' }}>
+                        {vixData.price?.toFixed(2)}
+                      </Text>
+                      <Tag
+                        color={vixData.change_pct > 0 ? 'red' : 'green'}
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 600,
+                          padding: '2px 8px',
+                          marginLeft: 4
+                        }}
+                      >
+                        {vixData.change_pct > 0 ? <ArrowUpOutlined style={{ marginRight: 4 }} /> : <ArrowDownOutlined style={{ marginRight: 4 }} />}
+                        {vixData.change_pct > 0 ? '+' : ''}{vixData.change_pct?.toFixed(2)}%
+                      </Tag>
+                      
+                      {/* VIX Level Indicator */}
+                      {vixLevel && (
+                        <Text style={{ fontSize: 14, marginLeft: 4 }}>
+                          {vixLevel.emoji}
+                        </Text>
+                      )}
+                      
+                      {/* Info Icon to open modal */}
+                      <Tooltip title="Learn about VIX & trading implications">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<InfoCircleOutlined style={{ fontSize: 16, color: '#1890ff' }} />}
+                          onClick={() => setVixModalVisible(true)}
+                          style={{ padding: 0, height: 'auto', marginLeft: 4 }}
+                        />
+                      </Tooltip>
+                    </span>
                   </span>
                 )}
               </div>
@@ -277,6 +320,18 @@ const MarketTable = ({
         />
       </Card>
     </div>
+
+    {/* VIX Info Modal */}
+    {vixData && (
+      <VixInfoModal
+        visible={vixModalVisible}
+        onClose={() => setVixModalVisible(false)}
+        vixValue={vixData.price}
+        vixChangePct={vixData.change_pct}
+        vixLabel={vixData.label || 'VIX'}
+      />
+    )}
+    </>
   )
 }
 
