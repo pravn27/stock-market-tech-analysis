@@ -3,7 +3,7 @@
  * Shows all sectors across ALL timeframes in one sortable table
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   Card, Table, Select, InputNumber, Button, Space, Tag, Modal,
   Typography, Row, Col, Tooltip, Grid, Switch, Alert
@@ -137,6 +137,16 @@ const PerformanceOverview = () => {
       setLoading(false)
     }
   }
+
+  // Fetch data on mount and when lookback changes
+  useEffect(() => {
+    const abortController = new AbortController()
+    fetchData(abortController.signal)
+    
+    return () => {
+      abortController.abort()
+    }
+  }, [lookback])
 
   // Build unified sector list from all categories
   const allSectors = useMemo(() => {
