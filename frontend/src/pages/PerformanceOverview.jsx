@@ -10,7 +10,7 @@ import {
 } from 'antd'
 import {
   ReloadOutlined, BarChartOutlined, ArrowUpOutlined,
-  ArrowDownOutlined, MinusOutlined
+  ArrowDownOutlined, MinusOutlined, RiseOutlined, FallOutlined
 } from '@ant-design/icons'
 import { getTopPerformers, getSectorStocks } from '../api/scanner'
 import {
@@ -314,22 +314,64 @@ const PerformanceOverview = () => {
     const groupData = groupedSectors[groupInfo.key]
     if (!groupData || groupData.length === 0) return null
 
+    // Calculate group sentiment
+    const tfLabel = multiTimeframe ? 'W' : getTimeframeLabel(timeframe)
+    const bullishCount = groupData.filter(s => (s.values?.[tfLabel] || 0) > 0.5).length
+    const bearishCount = groupData.filter(s => (s.values?.[tfLabel] || 0) < -0.5).length
+    const neutralCount = groupData.filter(s => {
+      const val = s.values?.[tfLabel] || 0
+      return val >= -0.5 && val <= 0.5
+    }).length
+
+    // Determine dominant sentiment
+    let dominantSentiment = 'Neutral'
+    let dominantPercent = Math.round((neutralCount / groupData.length) * 100)
+    let dominantColor = 'default'
+    let dominantIcon = null
+
+    if (bullishCount >= bearishCount && bullishCount >= neutralCount) {
+      dominantSentiment = 'Bullish'
+      dominantPercent = Math.round((bullishCount / groupData.length) * 100)
+      dominantColor = 'green'
+      dominantIcon = <RiseOutlined />
+    } else if (bearishCount >= bullishCount && bearishCount >= neutralCount) {
+      dominantSentiment = 'Bearish'
+      dominantPercent = Math.round((bearishCount / groupData.length) * 100)
+      dominantColor = 'red'
+      dominantIcon = <FallOutlined />
+    }
+
     return (
       <div key={groupInfo.key} style={{ marginBottom: 24 }}>
         <Card
           title={
-            <Space>
-              <span style={{ fontSize: 20 }}>{groupInfo.icon}</span>
-              <div>
-                <Text strong style={{ fontSize: 16 }}>{groupInfo.title}</Text>
-                <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
-                  ({groupData.length} indices)
-                </Text>
-              </div>
-            </Space>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+              <Space size={12}>
+                <span style={{ fontSize: 20 }}>{groupInfo.icon}</span>
+                <div>
+                  <Text strong style={{ fontSize: 16 }}>{groupInfo.title}</Text>
+                  <Text type="secondary" style={{ fontSize: 12, marginLeft: 8 }}>
+                    ({groupData.length} indices)
+                  </Text>
+                </div>
+              </Space>
+              <Tag
+                color={dominantColor}
+                icon={dominantIcon}
+                style={{ fontSize: 13, padding: '4px 12px', fontWeight: 600 }}
+              >
+                {dominantPercent}% {dominantSentiment}
+              </Tag>
+            </div>
           }
           size="small"
           bodyStyle={{ padding: 0 }}
+          style={{
+            boxShadow: screens.md 
+              ? '0 2px 8px rgba(0, 0, 0, 0.08)'
+              : '0 1px 4px rgba(0, 0, 0, 0.08)',
+            transition: 'all 0.3s ease'
+          }}
         >
           <Table
             columns={multiTimeframe ? multiTimeframeColumns : singleTimeframeColumns}
