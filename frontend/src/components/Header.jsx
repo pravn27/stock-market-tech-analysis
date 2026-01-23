@@ -37,6 +37,7 @@ const AppHeader = () => {
     const path = location.pathname
     if (path.includes('/global-market')) return 'global'
     if (path.includes('/commodity')) return 'commodity'
+    if (path.includes('/india/sector/')) return 'overview' // Sector detail pages are part of India Market
     if (path.includes('/relative-performance')) return 'overview'
     if (path.includes('/nifty-50')) return 'nifty50'
     if (path.includes('/bank-nifty')) return 'banknifty'
