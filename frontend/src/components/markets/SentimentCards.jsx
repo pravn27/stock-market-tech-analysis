@@ -126,8 +126,8 @@ export const SingleTimeframeSentimentCards = ({
 
   return (
     <Row gutter={[16, 16]} style={{ marginBottom: 32, ...style }}>
-      {/* Main Sentiment Card */}
-      <Col xs={24} lg={10}>
+      {/* Dominant Sentiment Card (40%) */}
+      <Col xs={24} sm={24} md={10}>
         <Card
           style={{
             background: isBullish
@@ -147,8 +147,8 @@ export const SingleTimeframeSentimentCards = ({
         >
           <Space direction="vertical" size={16} style={{ width: '100%' }}>
             <div>
-              <Text strong style={{ fontSize: 18, display: 'block', marginBottom: 8, fontWeight: 700 }}>
-                Overall Market Sentiment
+              <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 8 }}>
+                Dominant Sentiment
               </Text>
               <Space size={16} align="end">
                 <Statistic
@@ -187,8 +187,8 @@ export const SingleTimeframeSentimentCards = ({
         </Card>
       </Col>
 
-      {/* Bullish Card */}
-      <Col xs={8} lg={5}>
+      {/* Bullish Card (20%) */}
+      <Col xs={8} sm={8} md={14/3}>
         <Card
           hoverable
           style={{
@@ -213,8 +213,8 @@ export const SingleTimeframeSentimentCards = ({
         </Card>
       </Col>
 
-      {/* Neutral Card */}
-      <Col xs={8} lg={5}>
+      {/* Neutral Card (20%) */}
+      <Col xs={8} sm={8} md={14/3}>
         <Card
           hoverable
           style={{
@@ -238,8 +238,8 @@ export const SingleTimeframeSentimentCards = ({
         </Card>
       </Col>
 
-      {/* Bearish Card */}
-      <Col xs={8} lg={4}>
+      {/* Bearish Card (20%) */}
+      <Col xs={8} sm={8} md={14/3}>
         <Card
           hoverable
           style={{
