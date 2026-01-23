@@ -96,13 +96,58 @@ const SectorStockDetail = () => {
 
   // Calculate sentiment
   const calculateSentiment = () => {
-    if (!data?.stocks) return { bullish: 0, bearish: 0, neutral: 0 }
+    if (!data?.stocks) return { 
+      bullish: 0, 
+      bearish: 0, 
+      neutral: 0,
+      bullishPercent: 0,
+      bearishPercent: 0,
+      neutralPercent: 0,
+      dominantSentiment: 'Neutral',
+      dominantPercent: 0,
+      dominantColor: 'default',
+      dominantIcon: null
+    }
 
     const bullish = data.stocks.filter(s => (s.relative_strength?.[tfKey] || 0) >= 0.15).length
     const bearish = data.stocks.filter(s => (s.relative_strength?.[tfKey] || 0) <= -0.15).length
     const neutral = data.stocks.length - bullish - bearish
+    
+    const total = data.stocks.length
+    const bullishPercent = total > 0 ? Math.round((bullish / total) * 100) : 0
+    const bearishPercent = total > 0 ? Math.round((bearish / total) * 100) : 0
+    const neutralPercent = total > 0 ? Math.round((neutral / total) * 100) : 0
 
-    return { bullish, bearish, neutral }
+    // Determine dominant sentiment
+    let dominantSentiment = 'Neutral'
+    let dominantPercent = neutralPercent
+    let dominantColor = 'default'
+    let dominantIcon = <MinusOutlined />
+
+    if (bullishPercent >= bearishPercent && bullishPercent >= neutralPercent) {
+      dominantSentiment = 'Bullish'
+      dominantPercent = bullishPercent
+      dominantColor = 'green'
+      dominantIcon = <RiseOutlined />
+    } else if (bearishPercent >= bullishPercent && bearishPercent >= neutralPercent) {
+      dominantSentiment = 'Bearish'
+      dominantPercent = bearishPercent
+      dominantColor = 'red'
+      dominantIcon = <FallOutlined />
+    }
+
+    return { 
+      bullish, 
+      bearish, 
+      neutral,
+      bullishPercent,
+      bearishPercent,
+      neutralPercent,
+      dominantSentiment,
+      dominantPercent,
+      dominantColor,
+      dominantIcon
+    }
   }
 
   const sentiment = calculateSentiment()
@@ -317,47 +362,132 @@ const SectorStockDetail = () => {
 
       {/* Sentiment Summary Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={12} sm={6}>
-          <Card>
-            <Statistic
-              title="Total Stocks"
-              value={data.total_stocks}
-              valueStyle={{ color: '#1890ff' }}
-            />
+        {/* Left: Overall Market Sentiment Card */}
+        <Col xs={24} md={12}>
+          <Card
+            style={{
+              height: '100%',
+              borderLeft: `4px solid ${
+                sentiment.dominantColor === 'green' ? '#52c41a' : 
+                sentiment.dominantColor === 'red' ? '#ff4d4f' : 
+                '#d9d9d9'
+              }`
+            }}
+          >
+            <Title level={5} style={{ marginTop: 0, marginBottom: 16, fontSize: 16 }}>
+              Overall Market Sentiment
+            </Title>
+            
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              <Space align="start" size={12}>
+                {sentiment.dominantIcon && (
+                  <span style={{ 
+                    fontSize: 32, 
+                    color: sentiment.dominantColor === 'green' ? '#52c41a' : 
+                           sentiment.dominantColor === 'red' ? '#ff4d4f' : '#8c8c8c'
+                  }}>
+                    {sentiment.dominantIcon}
+                  </span>
+                )}
+                <div>
+                  <Text style={{ fontSize: 32, fontWeight: 700 }}>
+                    {sentiment.dominantPercent}%
+                  </Text>
+                </div>
+              </Space>
+              
+              <Text 
+                strong 
+                style={{ 
+                  fontSize: 16,
+                  color: sentiment.dominantColor === 'green' ? '#52c41a' : 
+                         sentiment.dominantColor === 'red' ? '#ff4d4f' : '#8c8c8c',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                {sentiment.dominantSentiment}
+              </Text>
+              
+              <Text type="secondary" style={{ fontSize: 13 }}>
+                {sentiment.dominantSentiment} • {data.total_stocks} stocks
+              </Text>
+            </Space>
           </Card>
         </Col>
-        <Col xs={12} sm={6}>
-          <Card>
-            <Statistic
-              title="Bullish"
-              value={sentiment.bullish}
-              prefix={<RiseOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-              suffix={`/ ${data.total_stocks}`}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} sm={6}>
-          <Card>
-            <Statistic
-              title="Bearish"
-              value={sentiment.bearish}
-              prefix={<FallOutlined />}
-              valueStyle={{ color: '#ff4d4f' }}
-              suffix={`/ ${data.total_stocks}`}
-            />
-          </Card>
-        </Col>
-        <Col xs={12} sm={6}>
-          <Card>
-            <Statistic
-              title="Neutral"
-              value={sentiment.neutral}
-              prefix={<MinusOutlined />}
-              valueStyle={{ color: '#8c8c8c' }}
-              suffix={`/ ${data.total_stocks}`}
-            />
-          </Card>
+
+        {/* Right: 3 Smaller Cards */}
+        <Col xs={24} md={12}>
+          <Row gutter={[16, 16]}>
+            {/* Bullish Card */}
+            <Col span={24}>
+              <Card 
+                size="small"
+                style={{ borderTop: '3px solid #52c41a' }}
+              >
+                <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Bullish</Text>
+                  <Space align="center" size={12} style={{ width: '100%', justifyContent: 'space-between' }}>
+                    <Space align="center" size={8}>
+                      <RiseOutlined style={{ fontSize: 24, color: '#52c41a' }} />
+                      <Text strong style={{ fontSize: 24, color: '#52c41a' }}>
+                        {sentiment.bullish}
+                      </Text>
+                    </Space>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      {sentiment.bullishPercent}% of stocks
+                    </Text>
+                  </Space>
+                </Space>
+              </Card>
+            </Col>
+
+            {/* Neutral Card */}
+            <Col span={24}>
+              <Card 
+                size="small"
+                style={{ borderTop: '3px solid #d9d9d9' }}
+              >
+                <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Neutral</Text>
+                  <Space align="center" size={12} style={{ width: '100%', justifyContent: 'space-between' }}>
+                    <Space align="center" size={8}>
+                      <MinusOutlined style={{ fontSize: 24, color: '#8c8c8c' }} />
+                      <Text strong style={{ fontSize: 24, color: '#8c8c8c' }}>
+                        {sentiment.neutral}
+                      </Text>
+                    </Space>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      {sentiment.neutralPercent}% of stocks
+                    </Text>
+                  </Space>
+                </Space>
+              </Card>
+            </Col>
+
+            {/* Bearish Card */}
+            <Col span={24}>
+              <Card 
+                size="small"
+                style={{ borderTop: '3px solid #ff4d4f' }}
+              >
+                <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Bearish</Text>
+                  <Space align="center" size={12} style={{ width: '100%', justifyContent: 'space-between' }}>
+                    <Space align="center" size={8}>
+                      <FallOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />
+                      <Text strong style={{ fontSize: 24, color: '#ff4d4f' }}>
+                        {sentiment.bearish}
+                      </Text>
+                    </Space>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      {sentiment.bearishPercent}% of stocks
+                    </Text>
+                  </Space>
+                </Space>
+              </Card>
+            </Col>
+          </Row>
         </Col>
       </Row>
 
