@@ -1,9 +1,10 @@
 /**
- * Header Component - Ant Design Implementation
+ * Header Component - Ant Design Implementation with React Router
  * Professional navigation with theme toggle
  */
 
 import React, { useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Layout, Menu, Dropdown, Button, Space, Switch, Typography, Grid } from 'antd'
 import {
   MenuOutlined,
@@ -24,10 +25,40 @@ const { Header: AntHeader } = Layout
 const { Text } = Typography
 const { useBreakpoint } = Grid
 
-const AppHeader = ({ activePage, onPageChange }) => {
+const AppHeader = () => {
+  const navigate = useNavigate()
+  const location = useLocation()
   const { isDarkMode, toggleTheme } = useTheme()
   const screens = useBreakpoint()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  // Get current active page from URL path
+  const getActivePageFromPath = () => {
+    const path = location.pathname
+    if (path.includes('/global-market')) return 'global'
+    if (path.includes('/commodity')) return 'commodity'
+    if (path.includes('/relative-performance')) return 'overview'
+    if (path.includes('/nifty-50')) return 'nifty50'
+    if (path.includes('/bank-nifty')) return 'banknifty'
+    if (path.includes('/checklist-scanner')) return 'dow-scanner'
+    return 'global'
+  }
+
+  const activePage = getActivePageFromPath()
+
+  // Route mapping
+  const routeMap = {
+    'global': '/stock-market-tech-analysis/global-market',
+    'commodity': '/stock-market-tech-analysis/commodity',
+    'overview': '/stock-market-tech-analysis/india/relative-performance',
+    'nifty50': '/stock-market-tech-analysis/india/nifty-50',
+    'banknifty': '/stock-market-tech-analysis/india/bank-nifty',
+    'dow-scanner': '/stock-market-tech-analysis/checklist-scanner',
+  }
+
+  const navigateToPage = (key) => {
+    navigate(routeMap[key])
+  }
 
   // Performance dropdown items
   const performanceItems = [
@@ -39,7 +70,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
   const isPerformanceActive = performanceItems.some(item => item.key === activePage)
 
   const handleMenuClick = ({ key }) => {
-    onPageChange(key)
+    navigateToPage(key)
     setMobileMenuOpen(false)
   }
 
@@ -95,7 +126,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
       <Button
         type={activePage === 'global' ? 'primary' : 'text'}
         icon={<GlobalOutlined />}
-        onClick={() => onPageChange('global')}
+        onClick={() => navigateToPage('global')}
         style={{ fontWeight: 600 }}
       >
         Global Market
@@ -104,7 +135,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
       <Button
         type={activePage === 'commodity' ? 'primary' : 'text'}
         icon={<DollarOutlined />}
-        onClick={() => onPageChange('commodity')}
+        onClick={() => navigateToPage('commodity')}
         style={{ fontWeight: 600 }}
       >
         Commodity
@@ -123,7 +154,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
       <Button
         type={activePage === 'dow-scanner' ? 'primary' : 'text'}
         icon={<FileSearchOutlined />}
-        onClick={() => onPageChange('dow-scanner')}
+        onClick={() => navigateToPage('dow-scanner')}
         style={{ fontWeight: 600 }}
       >
         Checklist
@@ -164,7 +195,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
           gap: 10,
           cursor: 'pointer'
         }}
-        onClick={() => onPageChange('global')}
+        onClick={() => navigateToPage('global')}
       >
         <LineChartOutlined
           style={{
