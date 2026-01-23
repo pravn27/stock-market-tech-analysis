@@ -14,6 +14,7 @@ import Commodity from './pages/Commodity'
 import Nifty50 from './pages/Nifty50'
 import BankNifty from './pages/BankNifty'
 import DowTheoryScanner from './pages/DowTheoryScanner'
+import SectorStockDetail from './pages/SectorStockDetail'
 import './index.css'
 
 const { Content, Footer } = Layout
@@ -61,6 +62,7 @@ const AppContent = () => {
             
             {/* India Market Routes */}
             <Route path="/stock-market-tech-analysis/india/relative-performance" element={<PerformanceOverview />} />
+            <Route path="/stock-market-tech-analysis/india/sector/:sectorSymbol" element={<SectorStockDetail />} />
             <Route path="/stock-market-tech-analysis/india/nifty-50" element={<Nifty50 />} />
             <Route path="/stock-market-tech-analysis/india/bank-nifty" element={<BankNifty />} />
             

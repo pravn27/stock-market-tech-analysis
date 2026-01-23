@@ -4,6 +4,7 @@
  */
 
 import { useState, useMemo, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Card, Table, Select, InputNumber, Button, Space, Tag, Modal,
   Typography, Row, Col, Tooltip, Grid, Switch, Alert
@@ -99,6 +100,7 @@ const getStatusIcon = (rs) => {
 }
 
 const PerformanceOverview = () => {
+  const navigate = useNavigate()
   const screens = useBreakpoint()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -443,6 +445,13 @@ const PerformanceOverview = () => {
             pagination={false}
             size="small"
             scroll={{ x: multiTimeframe ? 900 : 500 }}
+            onRow={(record) => ({
+              onClick: () => {
+                // Navigate to sector detail page
+                navigate(`/stock-market-tech-analysis/india/sector/${encodeURIComponent(record.name)}`)
+              },
+              style: { cursor: 'pointer' }
+            })}
           />
         </Card>
       </div>

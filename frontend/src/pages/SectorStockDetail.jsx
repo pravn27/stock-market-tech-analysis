@@ -1,0 +1,423 @@
+/**
+ * Sector Stock Detail Page
+ * Displays all stocks within a specific sector/index with their performance metrics
+ */
+
+import React, { useState, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import {
+  Card, Table, Space, Tag, Typography, Breadcrumb, Button, Select, Statistic,
+  Row, Col, Spin, Alert, Grid, Segmented
+} from 'antd'
+import {
+  HomeOutlined, LineChartOutlined, ReloadOutlined, RiseOutlined,
+  FallOutlined, MinusOutlined, ArrowLeftOutlined, TableOutlined, AppstoreOutlined
+} from '@ant-design/icons'
+import { useTheme } from '../context/ThemeContext'
+import axios from 'axios'
+
+const { Title, Text } = Typography
+const { useBreakpoint } = Grid
+
+const TIMEFRAME_OPTIONS = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: '4h', label: '4 Hour' },
+  { value: '1h', label: '1 Hour' },
+]
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
+
+const SectorStockDetail = () => {
+  const { sectorSymbol } = useParams()
+  const navigate = useNavigate()
+  const { isDarkMode } = useTheme()
+  const screens = useBreakpoint()
+
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [data, setData] = useState(null)
+  const [timeframe, setTimeframe] = useState('daily')
+  const [lookback, setLookback] = useState(1)
+  const [viewMode, setViewMode] = useState('table') // 'table' or 'cards'
+
+  useEffect(() => {
+    fetchData()
+  }, [sectorSymbol, timeframe, lookback])
+
+  const fetchData = async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/stocks/sector/${sectorSymbol}`,
+        {
+          params: { timeframe, lookback }
+        }
+      )
+      setData(response.data)
+    } catch (err) {
+      console.error('Error fetching sector stocks:', err)
+      setError(err.response?.data?.detail || 'Failed to load sector stocks data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Get timeframe key for data access
+  const getTimeframeKey = (tf) => {
+    const map = {
+      '1h': 'one_hour',
+      '4h': 'four_hour',
+      'daily': 'daily',
+      'weekly': 'weekly',
+      'monthly': 'monthly'
+    }
+    return map[tf] || 'daily'
+  }
+
+  const tfKey = getTimeframeKey(timeframe)
+
+  // Get status tag color and icon
+  const getStatusTag = (value) => {
+    if (value >= 0.15) return { color: 'green', icon: <RiseOutlined />, label: 'Bullish' }
+    if (value <= -0.15) return { color: 'red', icon: <FallOutlined />, label: 'Bearish' }
+    return { color: 'default', icon: <MinusOutlined />, label: 'Neutral' }
+  }
+
+  // Format percentage
+  const formatPercent = (value) => {
+    if (!value && value !== 0) return 'N/A'
+    const sign = value >= 0 ? '+' : ''
+    return `${sign}${value.toFixed(2)}%`
+  }
+
+  // Calculate sentiment
+  const calculateSentiment = () => {
+    if (!data?.stocks) return { bullish: 0, bearish: 0, neutral: 0 }
+
+    const bullish = data.stocks.filter(s => (s.relative_strength?.[tfKey] || 0) >= 0.15).length
+    const bearish = data.stocks.filter(s => (s.relative_strength?.[tfKey] || 0) <= -0.15).length
+    const neutral = data.stocks.length - bullish - bearish
+
+    return { bullish, bearish, neutral }
+  }
+
+  const sentiment = calculateSentiment()
+
+  // Table columns
+  const columns = [
+    {
+      title: 'Rank',
+      dataIndex: 'rank',
+      key: 'rank',
+      width: 70,
+      align: 'center',
+      render: (rank) => <Text strong>{rank}</Text>
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'name',
+      key: 'name',
+      width: 200,
+      render: (name, record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{name}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{record.symbol}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      width: 100,
+      align: 'right',
+      render: (price) => <Text>₹{price?.toFixed(2) || 'N/A'}</Text>
+    },
+    {
+      title: 'Change %',
+      dataIndex: 'returns',
+      key: 'change',
+      width: 100,
+      align: 'right',
+      render: (returns) => {
+        const value = returns?.[tfKey] || 0
+        const status = getStatusTag(value)
+        return (
+          <Tag color={status.color} style={{ minWidth: 70, textAlign: 'center' }}>
+            {formatPercent(value)}
+          </Tag>
+        )
+      }
+    },
+    {
+      title: 'Relative Performance',
+      dataIndex: 'relative_strength',
+      key: 'relative',
+      width: 120,
+      align: 'right',
+      render: (relative) => {
+        const value = relative?.[tfKey] || 0
+        const status = getStatusTag(value)
+        return (
+          <Tag color={status.color} icon={status.icon} style={{ minWidth: 80, textAlign: 'center' }}>
+            {formatPercent(value)}
+          </Tag>
+        )
+      }
+    },
+    {
+      title: 'Status',
+      dataIndex: 'relative_strength',
+      key: 'status',
+      width: 100,
+      align: 'center',
+      render: (relative) => {
+        const value = relative?.[tfKey] || 0
+        const status = getStatusTag(value)
+        return (
+          <Tag color={status.color} icon={status.icon}>
+            {status.label}
+          </Tag>
+        )
+      }
+    }
+  ]
+
+  // Render stock card
+  const renderStockCard = (stock) => {
+    const relativeValue = stock.relative_strength?.[tfKey] || 0
+    const changeValue = stock.returns?.[tfKey] || 0
+    const status = getStatusTag(relativeValue)
+
+    return (
+      <Col xs={24} sm={12} md={8} lg={6} key={stock.symbol}>
+        <Card
+          size="small"
+          style={{
+            borderLeft: `4px solid ${status.color === 'green' ? '#52c41a' : status.color === 'red' ? '#ff4d4f' : '#d9d9d9'}`,
+            height: '100%'
+          }}
+        >
+          <Space direction="vertical" size={8} style={{ width: '100%' }}>
+            <div>
+              <Text strong style={{ fontSize: 14 }}>{stock.name}</Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: 11 }}>{stock.symbol}</Text>
+            </div>
+            
+            <Statistic
+              value={stock.price}
+              precision={2}
+              prefix="₹"
+              valueStyle={{ fontSize: 16 }}
+            />
+
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Text type="secondary" style={{ fontSize: 11 }}>Change:</Text>
+                <Tag color={changeValue >= 0 ? 'green' : 'red'} style={{ fontSize: 11 }}>
+                  {formatPercent(changeValue)}
+                </Tag>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Text type="secondary" style={{ fontSize: 11 }}>Relative:</Text>
+                <Tag color={status.color} icon={status.icon} style={{ fontSize: 11 }}>
+                  {formatPercent(relativeValue)}
+                </Tag>
+              </div>
+            </Space>
+          </Space>
+        </Card>
+      </Col>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px 20px' }}>
+        <Spin size="large" tip="Loading sector stocks..." />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <Alert
+        message="Error"
+        description={error}
+        type="error"
+        showIcon
+        action={
+          <Button size="small" onClick={fetchData}>
+            Retry
+          </Button>
+        }
+      />
+    )
+  }
+
+  if (!data) return null
+
+  return (
+    <div style={{ padding: screens.md ? 0 : 8 }}>
+      {/* Breadcrumb Navigation */}
+      <Card size="small" style={{ marginBottom: 16 }}>
+        <Space direction={screens.md ? 'horizontal' : 'vertical'} style={{ width: '100%', justifyContent: 'space-between' }}>
+          <Breadcrumb
+            items={[
+              {
+                title: <HomeOutlined />,
+                href: '/stock-market-tech-analysis/global-market',
+              },
+              {
+                title: (
+                  <>
+                    <LineChartOutlined />
+                    <span>Relative Performance</span>
+                  </>
+                ),
+                href: '/stock-market-tech-analysis/india/relative-performance',
+              },
+              {
+                title: data.sector_name,
+              },
+            ]}
+          />
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate('/stock-market-tech-analysis/india/relative-performance')}
+          >
+            Back
+          </Button>
+        </Space>
+      </Card>
+
+      {/* Page Header */}
+      <Card
+        style={{
+          marginBottom: 24,
+          background: isDarkMode
+            ? 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)'
+            : 'linear-gradient(135deg, #1e88e5 0%, #1976d2 100%)',
+          color: 'white',
+          borderRadius: 8,
+        }}
+      >
+        <Title level={3} style={{ color: 'white', marginBottom: 8 }}>
+          {data.sector_name}
+        </Title>
+        <Text style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: 14 }}>
+          Stock Performance vs NIFTY 50
+        </Text>
+      </Card>
+
+      {/* Sentiment Summary Cards */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={12} sm={6}>
+          <Card>
+            <Statistic
+              title="Total Stocks"
+              value={data.total_stocks}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card>
+            <Statistic
+              title="Bullish"
+              value={sentiment.bullish}
+              prefix={<RiseOutlined />}
+              valueStyle={{ color: '#52c41a' }}
+              suffix={`/ ${data.total_stocks}`}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card>
+            <Statistic
+              title="Bearish"
+              value={sentiment.bearish}
+              prefix={<FallOutlined />}
+              valueStyle={{ color: '#ff4d4f' }}
+              suffix={`/ ${data.total_stocks}`}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card>
+            <Statistic
+              title="Neutral"
+              value={sentiment.neutral}
+              prefix={<MinusOutlined />}
+              valueStyle={{ color: '#8c8c8c' }}
+              suffix={`/ ${data.total_stocks}`}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Filter Controls */}
+      <Card size="small" style={{ marginBottom: 24 }}>
+        <Space direction={screens.md ? 'horizontal' : 'vertical'} style={{ width: '100%', justifyContent: 'space-between' }}>
+          <Space wrap>
+            <Select
+              value={timeframe}
+              onChange={setTimeframe}
+              options={TIMEFRAME_OPTIONS}
+              style={{ width: 120 }}
+            />
+            <Select
+              value={lookback}
+              onChange={setLookback}
+              style={{ width: 140 }}
+            >
+              <Select.Option value={1}>1 period</Select.Option>
+              <Select.Option value={2}>2 periods</Select.Option>
+              <Select.Option value={3}>3 periods</Select.Option>
+            </Select>
+            <Segmented
+              value={viewMode}
+              onChange={setViewMode}
+              options={[
+                { label: 'Table', value: 'table', icon: <TableOutlined /> },
+                { label: 'Cards', value: 'cards', icon: <AppstoreOutlined /> },
+              ]}
+            />
+          </Space>
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            onClick={fetchData}
+          >
+            Refresh
+          </Button>
+        </Space>
+      </Card>
+
+      {/* Data Display - Table or Cards */}
+      {viewMode === 'table' ? (
+        <Card>
+          <Table
+            columns={columns}
+            dataSource={data.stocks}
+            rowKey="symbol"
+            pagination={{ pageSize: 20, showSizeChanger: true }}
+            scroll={{ x: 800 }}
+            size="small"
+          />
+        </Card>
+      ) : (
+        <Row gutter={[16, 16]}>
+          {data.stocks.map(renderStockCard)}
+        </Row>
+      )}
+    </div>
+  )
+}
+
+export default SectorStockDetail
