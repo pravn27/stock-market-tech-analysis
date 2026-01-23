@@ -41,6 +41,8 @@ const SectorStockDetail = () => {
   const [timeframe, setTimeframe] = useState('daily')
   const [lookback, setLookback] = useState(1)
   const [viewMode, setViewMode] = useState('table') // 'table' or 'cards'
+  const [sortBy, setSortBy] = useState('rank') // 'rank', 'name', 'price', 'change', 'relative'
+  const [sortOrder, setSortOrder] = useState('asc') // 'asc' or 'desc'
 
   useEffect(() => {
     fetchData()
@@ -152,7 +154,46 @@ const SectorStockDetail = () => {
 
   const sentiment = calculateSentiment()
 
-  // Table columns
+  // Sort data for card view
+  const getSortedStocks = () => {
+    if (!data?.stocks) return []
+    
+    const sorted = [...data.stocks].sort((a, b) => {
+      let aVal, bVal
+      
+      switch (sortBy) {
+        case 'rank':
+          aVal = a.rank || 0
+          bVal = b.rank || 0
+          break
+        case 'name':
+          return sortOrder === 'asc' 
+            ? (a.name || '').localeCompare(b.name || '')
+            : (b.name || '').localeCompare(a.name || '')
+        case 'price':
+          aVal = a.price || 0
+          bVal = b.price || 0
+          break
+        case 'change':
+          aVal = a.returns?.[tfKey] || 0
+          bVal = b.returns?.[tfKey] || 0
+          break
+        case 'relative':
+          aVal = a.relative_strength?.[tfKey] || 0
+          bVal = b.relative_strength?.[tfKey] || 0
+          break
+        default:
+          aVal = a.rank || 0
+          bVal = b.rank || 0
+      }
+      
+      return sortOrder === 'asc' ? aVal - bVal : bVal - aVal
+    })
+    
+    return sorted
+  }
+
+  // Table columns with sorting
   const columns = [
     {
       title: 'Rank',
@@ -160,6 +201,8 @@ const SectorStockDetail = () => {
       key: 'rank',
       width: 70,
       align: 'center',
+      sorter: (a, b) => (a.rank || 0) - (b.rank || 0),
+      defaultSortOrder: 'ascend',
       render: (rank) => <Text strong>{rank}</Text>
     },
     {
@@ -167,6 +210,7 @@ const SectorStockDetail = () => {
       dataIndex: 'name',
       key: 'name',
       width: 200,
+      sorter: (a, b) => (a.name || '').localeCompare(b.name || ''),
       render: (name, record) => (
         <Space direction="vertical" size={0}>
           <Text strong>{name}</Text>
@@ -180,6 +224,7 @@ const SectorStockDetail = () => {
       key: 'price',
       width: 100,
       align: 'right',
+      sorter: (a, b) => (a.price || 0) - (b.price || 0),
       render: (price) => <Text>₹{price?.toFixed(2) || 'N/A'}</Text>
     },
     {
@@ -188,6 +233,7 @@ const SectorStockDetail = () => {
       key: 'change',
       width: 100,
       align: 'right',
+      sorter: (a, b) => (a.returns?.[tfKey] || 0) - (b.returns?.[tfKey] || 0),
       render: (returns) => {
         const value = returns?.[tfKey] || 0
         const status = getStatusTag(value)
@@ -204,6 +250,7 @@ const SectorStockDetail = () => {
       key: 'relative',
       width: 120,
       align: 'right',
+      sorter: (a, b) => (a.relative_strength?.[tfKey] || 0) - (b.relative_strength?.[tfKey] || 0),
       render: (relative) => {
         const value = relative?.[tfKey] || 0
         const status = getStatusTag(value)
@@ -220,6 +267,7 @@ const SectorStockDetail = () => {
       key: 'status',
       width: 100,
       align: 'center',
+      sorter: (a, b) => (a.relative_strength?.[tfKey] || 0) - (b.relative_strength?.[tfKey] || 0),
       render: (relative) => {
         const value = relative?.[tfKey] || 0
         const status = getStatusTag(value)
@@ -518,6 +566,27 @@ const SectorStockDetail = () => {
                 { label: 'Cards', value: 'cards', icon: <AppstoreOutlined /> },
               ]}
             />
+            {viewMode === 'cards' && (
+              <>
+                <Select
+                  value={sortBy}
+                  onChange={setSortBy}
+                  style={{ width: 150 }}
+                  placeholder="Sort by"
+                >
+                  <Select.Option value="rank">Rank</Select.Option>
+                  <Select.Option value="name">Name</Select.Option>
+                  <Select.Option value="price">Price</Select.Option>
+                  <Select.Option value="change">Change %</Select.Option>
+                  <Select.Option value="relative">Relative Perf.</Select.Option>
+                </Select>
+                <Button
+                  icon={sortOrder === 'asc' ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                />
+              </>
+            )}
           </Space>
           <Button
             type="primary"
@@ -536,14 +605,19 @@ const SectorStockDetail = () => {
             columns={columns}
             dataSource={data.stocks}
             rowKey="symbol"
-            pagination={{ pageSize: 20, showSizeChanger: true }}
+            pagination={{ 
+              pageSize: 20, 
+              showSizeChanger: true,
+              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} stocks`
+            }}
             scroll={{ x: 800 }}
             size="small"
+            showSorterTooltip={{ title: 'Click to sort' }}
           />
         </Card>
       ) : (
         <Row gutter={[16, 16]}>
-          {data.stocks.map(renderStockCard)}
+          {getSortedStocks().map(renderStockCard)}
         </Row>
       )}
     </div>
