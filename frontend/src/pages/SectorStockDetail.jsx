@@ -408,10 +408,10 @@ const SectorStockDetail = () => {
         </Text>
       </Card>
 
-      {/* Sentiment Summary Cards - 40% Dominant + 20% Each */}
+      {/* Sentiment Summary Cards - 37.5% Dominant + 20.8% Each */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        {/* Dominant Sentiment Card (40%) */}
-        <Col xs={24} sm={24} md={10}>
+        {/* Dominant Sentiment Card (37.5% = 9/24) */}
+        <Col xs={24} sm={24} md={9}>
           <Card
             style={{
               height: '100%',
@@ -460,8 +460,8 @@ const SectorStockDetail = () => {
           </Card>
         </Col>
 
-        {/* Bullish Card (20%) */}
-        <Col xs={8} sm={8} md={14/3}>
+        {/* Bullish Card (20.8% = 5/24) */}
+        <Col xs={8} sm={8} md={5}>
           <Card 
             style={{ 
               height: '100%',
@@ -483,8 +483,8 @@ const SectorStockDetail = () => {
           </Card>
         </Col>
 
-        {/* Neutral Card (20%) */}
-        <Col xs={8} sm={8} md={14/3}>
+        {/* Neutral Card (20.8% = 5/24) */}
+        <Col xs={8} sm={8} md={5}>
           <Card 
             style={{ 
               height: '100%',
@@ -506,8 +506,8 @@ const SectorStockDetail = () => {
           </Card>
         </Col>
 
-        {/* Bearish Card (20%) */}
-        <Col xs={8} sm={8} md={14/3}>
+        {/* Bearish Card (20.8% = 5/24) */}
+        <Col xs={8} sm={8} md={5}>
           <Card 
             style={{ 
               height: '100%',
