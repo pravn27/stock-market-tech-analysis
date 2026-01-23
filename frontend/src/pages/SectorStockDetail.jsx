@@ -669,11 +669,7 @@ const SectorStockDetail = () => {
             columns={columns}
             dataSource={data.stocks}
             rowKey="symbol"
-            pagination={{ 
-              pageSize: 20, 
-              showSizeChanger: true,
-              showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} stocks`
-            }}
+            pagination={false}
             scroll={{ x: 800 }}
             size="small"
             showSorterTooltip={{ title: 'Click to sort' }}
