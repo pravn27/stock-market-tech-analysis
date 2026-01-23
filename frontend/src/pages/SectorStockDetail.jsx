@@ -21,11 +21,21 @@ const { Title, Text } = Typography
 const { useBreakpoint } = Grid
 
 const TIMEFRAME_OPTIONS = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: '4h', label: '4 Hour' },
-  { value: '1h', label: '1 Hour' },
+  { value: '3m', label: '3 Month', fullLabel: '3 Month' },
+  { value: 'monthly', label: 'Monthly', fullLabel: 'Monthly' },
+  { value: 'weekly', label: 'Weekly', fullLabel: 'Weekly' },
+  { value: 'daily', label: 'Daily', fullLabel: 'Daily' },
+  { value: '4h', label: '4 Hour', fullLabel: '4 Hour' },
+  { value: '1h', label: '1 Hour', fullLabel: '1 Hour' },
+]
+
+const TIMEFRAMES = [
+  { value: '3m', label: '3M', fullLabel: '3 Month' },
+  { value: 'monthly', label: 'M', fullLabel: 'Monthly' },
+  { value: 'weekly', label: 'W', fullLabel: 'Weekly' },
+  { value: 'daily', label: 'D', fullLabel: 'Daily' },
+  { value: '4h', label: '4H', fullLabel: '4 Hour' },
+  { value: '1h', label: '1H', fullLabel: '1 Hour' },
 ]
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
@@ -48,25 +58,71 @@ const SectorStockDetail = () => {
 
   useEffect(() => {
     fetchData()
-  }, [sectorSymbol, timeframe, lookback])
+  }, [sectorSymbol, timeframe, lookback, multiTimeframe])
 
   const fetchData = async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/stocks/sector/${sectorSymbol}`,
-        {
-          params: { timeframe, lookback }
-        }
-      )
-      setData(response.data)
+      if (multiTimeframe) {
+        // For multi-timeframe, fetch all timeframes data
+        // TODO: Create backend endpoint for multi-timeframe sector stocks
+        // For now, we'll fetch multiple timeframes individually
+        const timeframePromises = TIMEFRAMES.map(tf => 
+          axios.get(
+            `${API_BASE_URL}/stocks/sector/${sectorSymbol}`,
+            { params: { timeframe: tf.value, lookback } }
+          )
+        )
+        
+        const responses = await Promise.all(timeframePromises)
+        
+        // Transform data to multi-timeframe format
+        const firstResponse = responses[0].data
+        const transformedStocks = firstResponse.stocks.map((stock, idx) => {
+          const timeframes = {}
+          TIMEFRAMES.forEach((tf, tfIdx) => {
+            const tfStock = responses[tfIdx].data.stocks.find(s => s.symbol === stock.symbol)
+            if (tfStock) {
+              const tfKey = getTimeframeKey(tf.value)
+              timeframes[tf.value] = {
+                change_pct: tfStock.returns?.[tfKey],
+                relative_strength: tfStock.relative_strength?.[tfKey]
+              }
+            }
+          })
+          return {
+            ...stock,
+            timeframes
+          }
+        })
+        
+        setData({
+          ...firstResponse,
+          stocks: transformedStocks
+        })
+      } else {
+        // Single timeframe mode
+        const response = await axios.get(
+          `${API_BASE_URL}/stocks/sector/${sectorSymbol}`,
+          { params: { timeframe, lookback } }
+        )
+        setData(response.data)
+      }
     } catch (err) {
       console.error('Error fetching sector stocks:', err)
       setError(err.response?.data?.detail || 'Failed to load sector stocks data')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Handle multi-timeframe toggle
+  const handleMultiTimeframeChange = (checked) => {
+    setMultiTimeframe(checked)
+    if (checked) {
+      setViewMode('table') // Force table view when multi-timeframe is enabled
     }
   }
 
@@ -77,7 +133,8 @@ const SectorStockDetail = () => {
       '4h': 'four_hour',
       'daily': 'daily',
       'weekly': 'weekly',
-      'monthly': 'monthly'
+      'monthly': 'monthly',
+      '3m': 'three_month'
     }
     return map[tf] || 'daily'
   }
@@ -155,6 +212,7 @@ const SectorStockDetail = () => {
   }
 
   const sentiment = calculateSentiment()
+  const [selectedTimeframe, setSelectedTimeframe] = useState('daily')
 
   // Sort data for card view
   const getSortedStocks = () => {
@@ -195,8 +253,83 @@ const SectorStockDetail = () => {
     return sorted
   }
 
-  // Table columns with sorting
-  const columns = [
+  // Multi-timeframe columns
+  const multiTimeframeColumns = [
+    {
+      title: 'Rank',
+      dataIndex: 'rank',
+      key: 'rank',
+      width: 70,
+      align: 'center',
+      fixed: screens.md ? 'left' : false,
+      sorter: (a, b) => (a.rank || 0) - (b.rank || 0),
+      defaultSortOrder: 'ascend',
+      render: (rank) => <Text strong>{rank}</Text>
+    },
+    {
+      title: 'Stock',
+      dataIndex: 'name',
+      key: 'name',
+      width: 200,
+      fixed: screens.md ? 'left' : false,
+      sorter: (a, b) => (a.name || '').localeCompare(b.name || ''),
+      render: (name, record) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{name}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{record.symbol}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Price',
+      dataIndex: 'price',
+      key: 'price',
+      width: 110,
+      align: 'right',
+      sorter: (a, b) => (a.price || 0) - (b.price || 0),
+      render: (price) => <Text strong style={{ fontFamily: 'monospace' }}>₹{price?.toFixed(2) || 'N/A'}</Text>
+    },
+    ...TIMEFRAMES.map(tf => ({
+      title: tf.label,
+      key: `tf_${tf.value}`,
+      align: 'center',
+      width: 100,
+      sorter: (a, b) => {
+        const aVal = a.timeframes?.[tf.value]?.relative_strength || 0
+        const bVal = b.timeframes?.[tf.value]?.relative_strength || 0
+        return aVal - bVal
+      },
+      render: (_, record) => {
+        const tfData = record.timeframes?.[tf.value]
+        if (!tfData || tfData.relative_strength === null) return '-'
+
+        const value = tfData.relative_strength
+        const status = getStatusTag(value)
+        const isSelected = tf.value === selectedTimeframe
+
+        return (
+          <Tag
+            color={status.color}
+            icon={status.icon}
+            style={{
+              minWidth: 75,
+              textAlign: 'center',
+              fontSize: 12,
+              fontWeight: isSelected ? 700 : 500,
+              padding: '3px 6px',
+              backgroundColor: isSelected && (isDarkMode ? 'rgba(24, 144, 255, 0.15)' : 'rgba(24, 144, 255, 0.08)'),
+              borderWidth: isSelected ? 2 : 1,
+            }}
+          >
+            {formatPercent(value)}
+          </Tag>
+        )
+      },
+    })),
+  ]
+
+  // Single timeframe columns with sorting
+  const singleTimeframeColumns = [
     {
       title: 'Rank',
       dataIndex: 'rank',
@@ -281,6 +414,9 @@ const SectorStockDetail = () => {
       }
     }
   ]
+
+  // Determine which columns to use
+  const columns = multiTimeframe ? multiTimeframeColumns : singleTimeframeColumns
 
   // Render stock card
   const renderStockCard = (stock) => {
@@ -427,7 +563,7 @@ const SectorStockDetail = () => {
                   </Text>
                   <Switch
                     checked={multiTimeframe}
-                    onChange={setMultiTimeframe}
+                    onChange={handleMultiTimeframeChange}
                   />
                   <Text style={{ fontSize: 14, color: multiTimeframe ? '#1890ff' : undefined, fontWeight: multiTimeframe ? 600 : 400 }}>
                     All Timeframes
@@ -469,20 +605,22 @@ const SectorStockDetail = () => {
                 </Space>
               </div>
 
-              {/* View Mode */}
-              <div>
-                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                  View Mode
-                </Text>
-                <Segmented
-                  value={viewMode}
-                  onChange={setViewMode}
-                  options={[
-                    { label: 'Table', value: 'table', icon: <TableOutlined /> },
-                    { label: 'Cards', value: 'cards', icon: <AppstoreOutlined /> },
-                  ]}
-                />
-              </div>
+              {/* View Mode (hide in multi-timeframe mode) */}
+              {!multiTimeframe && (
+                <div>
+                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
+                    View Mode
+                  </Text>
+                  <Segmented
+                    value={viewMode}
+                    onChange={setViewMode}
+                    options={[
+                      { label: 'Table', value: 'table', icon: <TableOutlined /> },
+                      { label: 'Cards', value: 'cards', icon: <AppstoreOutlined /> },
+                    ]}
+                  />
+                </div>
+              )}
 
               {/* Sort Controls (only for cards) */}
               {viewMode === 'cards' && (
