@@ -47,14 +47,14 @@ const AppContent = () => {
   const innerPadding = screens.md ? '0 16px' : '0'
 
   return (
-    <Layout 
-      style={{ 
+    <Layout
+      style={{
         minHeight: '100vh',
         background: isDarkMode ? '#0a0a0a' : '#f5f5f5'
       }}
     >
       <Header activePage={activePage} onPageChange={setActivePage} />
-      
+
       <Content
         style={{
           marginTop: 64, // Header height
@@ -64,7 +64,7 @@ const AppContent = () => {
           margin: '64px auto 0',
         }}
       >
-        <div style={{ 
+        <div style={{
           padding: innerPadding,
           maxWidth: '100%',
         }}>

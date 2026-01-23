@@ -111,7 +111,7 @@ const AppHeader = ({ activePage, onPageChange }) => {
       </Button>
 
       <Dropdown menu={performanceMenu} trigger={['click']}>
-        <Button 
+        <Button
           type={isPerformanceActive ? 'primary' : 'text'}
           icon={<BarChartOutlined />}
           style={{ fontWeight: 600 }}
@@ -158,23 +158,23 @@ const AppHeader = ({ activePage, onPageChange }) => {
     >
       {/* Logo */}
       <div
-        style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 10, 
-          cursor: 'pointer' 
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          cursor: 'pointer'
         }}
         onClick={() => onPageChange('global')}
       >
-        <LineChartOutlined 
-          style={{ 
-            fontSize: 26, 
-            color: '#1890ff' 
-          }} 
+        <LineChartOutlined
+          style={{
+            fontSize: 26,
+            color: '#1890ff'
+          }}
         />
-        <Text 
-          strong 
-          style={{ 
+        <Text
+          strong
+          style={{
             fontSize: screens.md ? 18 : 15,
             whiteSpace: 'nowrap'
           }}
@@ -198,8 +198,8 @@ const AppHeader = ({ activePage, onPageChange }) => {
 
         {/* Mobile Menu */}
         {!screens.md && (
-          <Dropdown 
-            menu={mobileMenu} 
+          <Dropdown
+            menu={mobileMenu}
             trigger={['click']}
             open={mobileMenuOpen}
             onOpenChange={setMobileMenuOpen}
