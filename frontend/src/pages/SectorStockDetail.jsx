@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Card, Table, Space, Tag, Typography, Breadcrumb, Button, Select, Statistic,
-  Row, Col, Spin, Alert, Grid, Segmented, InputNumber
+  Row, Col, Spin, Alert, Grid, Segmented, InputNumber, Switch
 } from 'antd'
 import {
   HomeOutlined, LineChartOutlined, ReloadOutlined, RiseOutlined,
@@ -39,6 +39,7 @@ const SectorStockDetail = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
+  const [multiTimeframe, setMultiTimeframe] = useState(false)
   const [timeframe, setTimeframe] = useState('daily')
   const [lookback, setLookback] = useState(1)
   const [viewMode, setViewMode] = useState('table') // 'table' or 'cards'
@@ -537,19 +538,40 @@ const SectorStockDetail = () => {
           {/* Left Side: Filters */}
           <Col xs={24} lg={18}>
             <Space wrap size={[16, 12]} align="start">
-              {/* Timeframe */}
+              {/* Analysis Mode */}
               <div>
                 <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
-                  Timeframe
+                  Analysis Mode
                 </Text>
-                <Select
-                  value={timeframe}
-                  onChange={setTimeframe}
-                  options={TIMEFRAME_OPTIONS}
-                  style={{ width: 140 }}
-                  size="middle"
-                />
+                <Space>
+                  <Text style={{ fontSize: 14, color: !multiTimeframe ? '#1890ff' : undefined, fontWeight: !multiTimeframe ? 600 : 400 }}>
+                    Single
+                  </Text>
+                  <Switch
+                    checked={multiTimeframe}
+                    onChange={setMultiTimeframe}
+                  />
+                  <Text style={{ fontSize: 14, color: multiTimeframe ? '#1890ff' : undefined, fontWeight: multiTimeframe ? 600 : 400 }}>
+                    All Timeframes
+                  </Text>
+                </Space>
               </div>
+
+              {/* Timeframe (only show in single mode) */}
+              {!multiTimeframe && (
+                <div>
+                  <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
+                    Timeframe
+                  </Text>
+                  <Select
+                    value={timeframe}
+                    onChange={setTimeframe}
+                    options={TIMEFRAME_OPTIONS}
+                    style={{ width: 140 }}
+                    size="middle"
+                  />
+                </div>
+              )}
 
               {/* Lookback */}
               <div>
