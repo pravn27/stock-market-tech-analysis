@@ -7,11 +7,12 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Card, Table, Space, Tag, Typography, Breadcrumb, Button, Select, Statistic,
-  Row, Col, Spin, Alert, Grid, Segmented
+  Row, Col, Spin, Alert, Grid, Segmented, InputNumber
 } from 'antd'
 import {
   HomeOutlined, LineChartOutlined, ReloadOutlined, RiseOutlined,
-  FallOutlined, MinusOutlined, ArrowLeftOutlined, TableOutlined, AppstoreOutlined
+  FallOutlined, MinusOutlined, ArrowLeftOutlined, TableOutlined, AppstoreOutlined,
+  ArrowUpOutlined, ArrowDownOutlined
 } from '@ant-design/icons'
 import { useTheme } from '../context/ThemeContext'
 import axios from 'axios'
@@ -531,62 +532,112 @@ const SectorStockDetail = () => {
       </Row>
 
       {/* Filter Controls */}
-      <Card size="small" style={{ marginBottom: 24 }}>
-        <Space direction={screens.md ? 'horizontal' : 'vertical'} style={{ width: '100%', justifyContent: 'space-between' }}>
-          <Space wrap>
-            <Select
-              value={timeframe}
-              onChange={setTimeframe}
-              options={TIMEFRAME_OPTIONS}
-              style={{ width: 120 }}
-            />
-            <Select
-              value={lookback}
-              onChange={setLookback}
-              style={{ width: 140 }}
-            >
-              <Select.Option value={1}>1 period</Select.Option>
-              <Select.Option value={2}>2 periods</Select.Option>
-              <Select.Option value={3}>3 periods</Select.Option>
-            </Select>
-            <Segmented
-              value={viewMode}
-              onChange={setViewMode}
-              options={[
-                { label: 'Table', value: 'table', icon: <TableOutlined /> },
-                { label: 'Cards', value: 'cards', icon: <AppstoreOutlined /> },
-              ]}
-            />
-            {viewMode === 'cards' && (
-              <>
+      <Card style={{ marginBottom: 24 }} bodyStyle={{ padding: screens.md ? '16px 24px' : '16px' }}>
+        <Row gutter={[16, 16]} align="middle" justify="space-between" wrap>
+          {/* Left Side: Filters */}
+          <Col xs={24} lg={18}>
+            <Space wrap size={[16, 12]} align="start">
+              {/* Timeframe */}
+              <div>
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
+                  Timeframe
+                </Text>
                 <Select
-                  value={sortBy}
-                  onChange={setSortBy}
-                  style={{ width: 150 }}
-                  placeholder="Sort by"
-                >
-                  <Select.Option value="rank">Rank</Select.Option>
-                  <Select.Option value="name">Name</Select.Option>
-                  <Select.Option value="price">Price</Select.Option>
-                  <Select.Option value="change">Change %</Select.Option>
-                  <Select.Option value="relative">Relative Perf.</Select.Option>
-                </Select>
-                <Button
-                  icon={sortOrder === 'asc' ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                  value={timeframe}
+                  onChange={setTimeframe}
+                  options={TIMEFRAME_OPTIONS}
+                  style={{ width: 140 }}
+                  size="middle"
                 />
-              </>
-            )}
-          </Space>
-          <Button
-            type="primary"
-            icon={<ReloadOutlined />}
-            onClick={fetchData}
-          >
-            Refresh
-          </Button>
-        </Space>
+              </div>
+
+              {/* Lookback */}
+              <div>
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
+                  Lookback
+                </Text>
+                <Space size={8}>
+                  <InputNumber
+                    min={1}
+                    max={99}
+                    value={lookback}
+                    onChange={(val) => setLookback(val || 1)}
+                    style={{ width: 100 }}
+                    size="middle"
+                  />
+                  <Text type="secondary" style={{ fontSize: 14 }}>periods</Text>
+                </Space>
+              </div>
+
+              {/* View Mode */}
+              <div>
+                <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
+                  View Mode
+                </Text>
+                <Segmented
+                  value={viewMode}
+                  onChange={setViewMode}
+                  options={[
+                    { label: 'Table', value: 'table', icon: <TableOutlined /> },
+                    { label: 'Cards', value: 'cards', icon: <AppstoreOutlined /> },
+                  ]}
+                />
+              </div>
+
+              {/* Sort Controls (only for cards) */}
+              {viewMode === 'cards' && (
+                <>
+                  <div>
+                    <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
+                      Sort By
+                    </Text>
+                    <Select
+                      value={sortBy}
+                      onChange={setSortBy}
+                      style={{ width: 150 }}
+                      size="middle"
+                    >
+                      <Select.Option value="rank">Rank</Select.Option>
+                      <Select.Option value="name">Name</Select.Option>
+                      <Select.Option value="price">Price</Select.Option>
+                      <Select.Option value="change">Change %</Select.Option>
+                      <Select.Option value="relative">Relative Perf.</Select.Option>
+                    </Select>
+                  </div>
+                  <div>
+                    <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600 }}>
+                      Order
+                    </Text>
+                    <Button
+                      icon={sortOrder === 'asc' ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                      onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                      size="middle"
+                    >
+                      {sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </Space>
+          </Col>
+
+          {/* Right Side: Refresh Button */}
+          <Col xs={24} lg={6} style={{ textAlign: screens.lg ? 'right' : 'left' }}>
+            <div style={{ display: 'inline-block' }}>
+              <Text strong style={{ fontSize: 12, display: 'block', marginBottom: 8, fontWeight: 600, visibility: screens.lg ? 'hidden' : 'visible' }}>
+                &nbsp;
+              </Text>
+              <Button
+                type="primary"
+                icon={<ReloadOutlined />}
+                onClick={fetchData}
+                size="large"
+              >
+                Refresh Data
+              </Button>
+            </div>
+          </Col>
+        </Row>
       </Card>
 
       {/* Data Display - Table or Cards */}
