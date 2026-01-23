@@ -16,9 +16,6 @@ import {
   BulbFilled,
   StockOutlined,
   BankOutlined,
-  FundOutlined,
-  AppstoreOutlined,
-  UnorderedListOutlined,
   DollarOutlined,
 } from '@ant-design/icons'
 import { useTheme } from '../context/ThemeContext'
@@ -37,8 +34,6 @@ const AppHeader = ({ activePage, onPageChange }) => {
     { key: 'overview', label: 'Relative Performance', icon: <LineChartOutlined /> },
     { key: 'nifty50', label: 'Nifty 50', icon: <StockOutlined /> },
     { key: 'banknifty', label: 'Bank Nifty', icon: <BankOutlined /> },
-    { key: 'sectors', label: 'Sector Performance', icon: <FundOutlined /> },
-    { key: 'stocks', label: 'Sector Stocks', icon: <AppstoreOutlined /> },
   ]
 
   const isPerformanceActive = performanceItems.some(item => item.key === activePage)

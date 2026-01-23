@@ -12,8 +12,6 @@ import GlobalMarkets from './pages/GlobalMarkets'
 import Commodity from './pages/Commodity'
 import Nifty50 from './pages/Nifty50'
 import BankNifty from './pages/BankNifty'
-import SectorPerformance from './pages/SectorPerformance'
-import SectorStocks from './pages/SectorStocks'
 import DowTheoryScanner from './pages/DowTheoryScanner'
 import './index.css'
 
@@ -39,10 +37,6 @@ const AppContent = () => {
         return <Nifty50 />
       case 'banknifty':
         return <BankNifty />
-      case 'sectors':
-        return <SectorPerformance />
-      case 'stocks':
-        return <SectorStocks />
       default:
         return <PerformanceOverview />
     }
