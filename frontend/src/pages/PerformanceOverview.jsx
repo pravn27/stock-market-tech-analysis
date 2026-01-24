@@ -195,12 +195,42 @@ const PerformanceOverview = () => {
   const [stocksLoading, setStocksLoading] = useState(false)
   const [thresholdModalOpen, setThresholdModalOpen] = useState(false)
 
-  const fetchData = async (signal) => {
+  // Cache key for sessionStorage
+  const getCacheKey = () => `performance_data_lookback_${lookback}`
+
+  const fetchData = async (signal, forceRefresh = false) => {
+    // Check cache first (unless force refresh)
+    if (!forceRefresh) {
+      const cacheKey = getCacheKey()
+      const cachedData = sessionStorage.getItem(cacheKey)
+      if (cachedData) {
+        try {
+          const parsed = JSON.parse(cachedData)
+          const cacheAge = Date.now() - parsed.timestamp
+          // Use cache if less than 5 minutes old
+          if (cacheAge < 5 * 60 * 1000) {
+            setData(parsed.data)
+            setLoading(false)
+            return
+          }
+        } catch (e) {
+          // Invalid cache, proceed to fetch
+        }
+      }
+    }
+
     setLoading(true)
     setError(null)
     try {
       const result = await getTopPerformers(100, 'all', lookback, signal)
       setData(result)
+      
+      // Cache the result
+      const cacheKey = getCacheKey()
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        data: result,
+        timestamp: Date.now()
+      }))
     } catch (err) {
       if (err.name !== 'CanceledError') {
         const detail = err.response?.data?.detail
@@ -222,7 +252,7 @@ const PerformanceOverview = () => {
   // Fetch data on mount and when lookback changes
   useEffect(() => {
     const abortController = new AbortController()
-    fetchData(abortController.signal)
+    fetchData(abortController.signal, false) // Use cache if available
     
     return () => {
       abortController.abort()
@@ -641,7 +671,7 @@ const PerformanceOverview = () => {
                 <Button
                   type="primary"
                   icon={<ReloadOutlined spin={loading} />}
-                  onClick={() => fetchData()}
+                  onClick={() => fetchData(null, true)}
                   loading={loading}
                   size="middle"
                   style={{ minWidth: 140 }}
@@ -700,7 +730,7 @@ const PerformanceOverview = () => {
         <EmptyState
           title="Error Loading Data"
           description={error}
-          onRefresh={() => fetchData()}
+          onRefresh={() => fetchData(null, true)}
         />
       )}
 
