@@ -99,6 +99,65 @@ const getStatusIcon = (rs) => {
   return <MinusOutlined style={{ color: '#999' }} />
 }
 
+// Sectors that have constituent stock data available
+// (matching SECTOR_STOCKS_MAP in backend/core/sector_stocks.py)
+const SECTORS_WITH_STOCK_DATA = [
+  // Banking & Finance
+  'Bank Nifty',
+  'Nifty PSU Bank',
+  'Nifty Pvt Bank',
+  'Nifty Finance',
+  
+  // Technology
+  'Nifty IT',
+  
+  // Healthcare
+  'Nifty Pharma',
+  'Nifty Healthcare',
+  
+  // Consumer
+  'Nifty FMCG',
+  'Nifty Consumer Durables',
+  'Nifty India Consumption',
+  
+  // Industrial & Manufacturing
+  'Nifty Auto',
+  'Nifty Metal',
+  'Nifty Realty',
+  'Nifty Infra',
+  
+  // Energy & Resources
+  'Nifty Energy',
+  'Nifty Oil & Gas',
+  
+  // Others
+  'Nifty Media',
+  'Nifty Commodities',
+  'Nifty MNC',
+  'Nifty Services',
+  'Nifty PSE',
+  'Nifty CPSE',
+  
+  // Thematic
+  'Nifty India Defence',
+  'Nifty India Manufacturing',
+  'Nifty India Digital',
+  'Nifty Capital Markets',
+  'Nifty Chemicals',
+  'Nifty Housing',
+  'Nifty Transport & Logistics',
+  'Nifty EV & New Age Auto',
+  'Nifty India Tourism',
+  'Nifty Rural',
+  'Nifty Mobility',
+  
+  // Broad Market
+  'Nifty Midcap 100',
+  'Nifty Midcap 50',
+  'Nifty Smallcap 100',
+  'Nifty Smallcap 50',
+]
+
 const PerformanceOverview = () => {
   const navigate = useNavigate()
   const screens = useBreakpoint()
@@ -306,12 +365,24 @@ const PerformanceOverview = () => {
       width: screens.md ? 280 : 200,
       render: (name, record) => {
         const tfLabel = getTimeframeLabel(timeframe)
+        const hasStockData = SECTORS_WITH_STOCK_DATA.includes(name)
         return (
           <Space>
             {getStatusIcon(record.values?.[tfLabel])}
-            <Text strong style={{ cursor: 'pointer' }} onClick={() => openStocksModal(name)}>
+            <Text 
+              strong 
+              style={{ 
+                color: hasStockData ? '#1890ff' : undefined,
+                opacity: hasStockData ? 1 : 0.6
+              }}
+            >
               {name}
             </Text>
+            {hasStockData && (
+              <Text type="secondary" style={{ fontSize: '12px' }}>
+                (click to view stocks)
+              </Text>
+            )}
           </Space>
         )
       },
@@ -348,14 +419,23 @@ const PerformanceOverview = () => {
       key: 'name',
       fixed: screens.md ? false : 'left',
       width: screens.md ? 220 : 150,
-      render: (name, record) => (
-        <Space>
-          {getStatusIcon(record.values?.['W'])}
-          <Text strong style={{ cursor: 'pointer' }} onClick={() => openStocksModal(name)}>
-            {name}
-          </Text>
-        </Space>
-      ),
+      render: (name, record) => {
+        const hasStockData = SECTORS_WITH_STOCK_DATA.includes(name)
+        return (
+          <Space>
+            {getStatusIcon(record.values?.['W'])}
+            <Text 
+              strong 
+              style={{ 
+                color: hasStockData ? '#1890ff' : undefined,
+                opacity: hasStockData ? 1 : 0.6
+              }}
+            >
+              {name}
+            </Text>
+          </Space>
+        )
+      },
     },
     ...TIMEFRAMES.map(tf => ({
       title: <Tooltip title={TF_KEY_MAP[tf]}><Text strong>{tf}</Text></Tooltip>,
@@ -445,13 +525,18 @@ const PerformanceOverview = () => {
             pagination={false}
             size="small"
             scroll={{ x: multiTimeframe ? 900 : 500 }}
-            onRow={(record) => ({
-              onClick: () => {
-                // Navigate to sector detail page
-                navigate(`/stock-market-tech-analysis/india/sector/${encodeURIComponent(record.name)}`)
-              },
-              style: { cursor: 'pointer' }
-            })}
+            onRow={(record) => {
+              const hasStockData = SECTORS_WITH_STOCK_DATA.includes(record.name)
+              return {
+                onClick: hasStockData
+                  ? () => navigate(`/stock-market-tech-analysis/india/sector/${encodeURIComponent(record.name)}`)
+                  : undefined,
+                style: { 
+                  cursor: hasStockData ? 'pointer' : 'default',
+                  opacity: hasStockData ? 1 : 0.6
+                }
+              }
+            }}
           />
         </Card>
       </div>
