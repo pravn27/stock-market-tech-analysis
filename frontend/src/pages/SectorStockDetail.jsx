@@ -16,6 +16,7 @@ import {
 } from '@ant-design/icons'
 import { useTheme } from '../context/ThemeContext'
 import axios from 'axios'
+import { API_BASE_URL } from '../api/config'
 
 const { Title, Text } = Typography
 const { useBreakpoint } = Grid
@@ -37,8 +38,6 @@ const TIMEFRAMES = [
   { value: '4h', label: '4H', fullLabel: '4 Hour' },
   { value: '1h', label: '1H', fullLabel: '1 Hour' },
 ]
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
 
 const SectorStockDetail = () => {
   const { sectorSymbol } = useParams()
