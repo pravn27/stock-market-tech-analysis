@@ -63,14 +63,14 @@ const INDEX_GROUPS = [
     title: 'Broader Market',
     subtitle: 'Aggregated market indices (view-only)',
     icon: '📈',
-    keywords: ['Next', 'Nifty 100', 'Nifty 200', 'Nifty 500', 'Total Market', 'Midcap 150', 'Midcap Select', 'Smallcap 250', 'Microcap 250', 'LargeMidcap', 'MidSmallcap']
+    keywords: ['Next', 'Nifty 100', 'Nifty 200', 'Nifty 500', 'Total Market', 'Midcap 150', 'Midcap Select', 'Smallcap 250', 'Microcap 250']
   },
   {
     key: 'thematic',
     title: 'Thematic Indices',
     subtitle: 'Specialized thematic indices (view-only)',
     icon: '🎯',
-    keywords: ['Core Housing', 'Infra & Logistics', 'Non-Cyclical Consumer']
+    keywords: []  // No thematic indices available from NSE API
   }
 ]
 
