@@ -655,9 +655,11 @@ const SectorStockDetail = () => {
               </Text>
               <Button
                 type="primary"
-                icon={<ReloadOutlined />}
+                icon={<ReloadOutlined spin={loading} />}
                 onClick={fetchData}
-                size="large"
+                loading={loading}
+                size="middle"
+                style={{ minWidth: 140 }}
               >
                 Refresh Data
               </Button>
