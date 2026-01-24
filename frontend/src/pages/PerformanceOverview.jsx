@@ -43,23 +43,34 @@ const INDEX_GROUPS = [
   {
     key: 'sectorial',
     title: 'Sectorial Indices',
-    subtitle: 'Sector-specific indices',
+    subtitle: 'All sectors with constituent stock data (clickable)',
     icon: '📊',
-    keywords: ['Auto', 'Bank', 'Financial', 'FMCG', 'IT', 'Metal', 'Pharma', 'PSU', 'Realty', 'Media', 'Infra', 'Energy', 'Commodities', 'Consumption', 'Healthcare', 'Oil', 'Private Bank', 'PSE']
+    keywords: [
+      // Traditional sectors
+      'Auto', 'Bank', 'Financial', 'FMCG', 'IT', 'Metal', 'Pharma', 'Realty', 'Media', 'Energy', 'Commodities', 'Healthcare', 'Oil', 'PSE', 'CPSE',
+      // MNC and Services
+      'MNC', 'Services',
+      // Consumer
+      'Consumer Durables', 'Consumption',
+      // Moved from Thematic (have stock data)
+      'India Defence', 'India Manufacturing', 'India Digital', 'Housing', 'Transport & Logistics', 'India Tourism', 'Rural', 'Capital Markets', 'Chemicals', 'EV & New Age', 'Mobility',
+      // Moved from Broader (have stock data)
+      'Midcap 50', 'Midcap 100', 'Smallcap 50', 'Smallcap 100'
+    ]
   },
   {
     key: 'broader_market',
     title: 'Broader Market',
-    subtitle: 'Broad market indices',
+    subtitle: 'Aggregated market indices (view-only)',
     icon: '📈',
-    keywords: ['NIFTY', 'SENSEX', 'Midcap', 'Smallcap', 'Next', 'Microcap', 'LargeMid', 'BSE']
+    keywords: ['Next', 'Nifty 100', 'Nifty 200', 'Nifty 500', 'Total Market', 'Midcap 150', 'Midcap Select', 'Smallcap 250', 'Microcap 250', 'LargeMidcap', 'MidSmallcap']
   },
   {
     key: 'thematic',
     title: 'Thematic Indices',
-    subtitle: 'Theme-based indices',
+    subtitle: 'Specialized thematic indices (view-only)',
     icon: '🎯',
-    keywords: ['Alpha', 'Quality', 'Value', 'Growth', 'Momentum', 'Dividend', 'MNC', 'Consumer Durables', 'India Defence', 'Capital Markets', 'India Digital', 'Housing', 'Mobility', 'Manufacturing', 'Total Market', 'Services', 'MidSmall']
+    keywords: ['Core Housing', 'Infra & Logistics', 'Non-Cyclical Consumer']
   }
 ]
 
@@ -67,8 +78,17 @@ const INDEX_GROUPS = [
 const categorizeIndex = (indexName) => {
   const name = indexName.toUpperCase()
 
+  // Special case: NIFTY 50 goes to broader market (benchmark)
+  if (name === 'NIFTY 50') {
+    return 'broader_market'
+  }
+
+  // Check for exact/specific matches first (longer keywords first for specificity)
   for (const group of INDEX_GROUPS) {
-    for (const keyword of group.keywords) {
+    // Sort keywords by length (descending) for more specific matching
+    const sortedKeywords = [...group.keywords].sort((a, b) => b.length - a.length)
+    
+    for (const keyword of sortedKeywords) {
       if (name.includes(keyword.toUpperCase())) {
         return group.key
       }
