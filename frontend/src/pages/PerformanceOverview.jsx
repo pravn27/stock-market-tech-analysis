@@ -448,11 +448,6 @@ const PerformanceOverview = () => {
             >
               {name}
             </Text>
-            {hasStockData && (
-              <Text type="secondary" style={{ fontSize: '12px' }}>
-                (click to view stocks)
-              </Text>
-            )}
           </Space>
         )
       },
