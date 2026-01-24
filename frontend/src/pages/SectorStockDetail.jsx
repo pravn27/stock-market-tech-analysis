@@ -17,6 +17,7 @@ import {
 import { useTheme } from '../context/ThemeContext'
 import axios from 'axios'
 import { API_BASE_URL } from '../api/config'
+import { PageHeader } from '../components/markets'
 
 const { Title, Text } = Typography
 const { useBreakpoint } = Grid
@@ -527,23 +528,11 @@ const SectorStockDetail = () => {
       </Card>
 
       {/* Page Header */}
-      <Card
-        style={{
-          marginBottom: 24,
-          background: isDarkMode
-            ? 'linear-gradient(135deg, #1a237e 0%, #0d47a1 100%)'
-            : 'linear-gradient(135deg, #1e88e5 0%, #1976d2 100%)',
-          color: 'white',
-          borderRadius: 8,
-        }}
-      >
-        <Title level={3} style={{ color: 'white', marginBottom: 8 }}>
-          {data.sector_name}
-        </Title>
-        <Text style={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: 14 }}>
-          Stock Performance vs NIFTY 50
-        </Text>
-      </Card>
+      <PageHeader
+        icon={LineChartOutlined}
+        title={data.sector_name}
+        subtitle="Stock Performance vs NIFTY 50"
+      />
 
       {/* Filter Controls */}
       <Card style={{ marginBottom: 24 }} bodyStyle={{ padding: screens.md ? '16px 24px' : '16px' }}>
