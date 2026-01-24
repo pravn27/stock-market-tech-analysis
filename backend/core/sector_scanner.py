@@ -25,7 +25,7 @@ from core.nse_fetcher import get_nse_fetcher
 # Fallback: NSE India (NSE:NAME) - for indices not available on Yahoo Finance
 # Reference: https://www.nseindia.com/market-data/live-market-indices
 
-# Sectorial Indices (All major sectors)
+# Sectorial Indices (All sectors with constituent stock data)
 NIFTY_SECTORS_MAIN = {
     "NIFTY 50": "^NSEI",
     
@@ -64,142 +64,83 @@ NIFTY_SECTORS_MAIN = {
     "Nifty Services": "^CNXSERVICE",
     "Nifty PSE": "^CNXPSE",
     "Nifty CPSE": "NSE:NIFTY CPSE",  # NSE fallback
+    
+    # Defence & Manufacturing (moved from Thematic)
+    "Nifty India Defence": "NSE:NIFTY INDIA DEFENCE",
+    "Nifty India Manufacturing": "NSE:NIFTY INDIA MANUFACTURING",
+    
+    # Digital & Technology (moved from Thematic)
+    "Nifty India Digital": "NSE:NIFTY INDIA DIGITAL",
+    
+    # Housing & Infrastructure (moved from Thematic)
+    "Nifty Housing": "NSE:NIFTY HOUSING",
+    "Nifty Transport & Logistics": "NSE:NIFTY TRANSPORTATION & LOGISTICS",
+    
+    # Consumption & Tourism (moved from Thematic)
+    "Nifty India Tourism": "NSE:NIFTY INDIA TOURISM",
+    "Nifty Rural": "NSE:NIFTY RURAL",
+    
+    # Financial Markets (moved from Thematic)
+    "Nifty Capital Markets": "NSE:NIFTY CAPITAL MARKETS",
+    "Nifty Chemicals": "NSE:NIFTY CHEMICALS",
+    
+    # Automotive (moved from Thematic)
+    "Nifty EV & New Age Auto": "NSE:NIFTY EV & NEW AGE AUTOMOTIVE",
+    "Nifty Mobility": "NSE:NIFTY MOBILITY",
+    
+    # Midcap & Smallcap (moved from Broad Market - have stock data)
+    "Nifty Midcap 50": "^NIFTYMIDCAP50",
+    "Nifty Midcap 100": "^CNXMIDCAP",
+    "Nifty Smallcap 50": "^NIFTYSMLCAP50",
+    "Nifty Smallcap 100": "^CNXSMALLCAP",
 }
 
-# Broader Market Indices
+# Broader Market Indices (aggregated indices without constituent stock data)
 NIFTY_BROAD_INDICES = {
     # Benchmark
     "NIFTY 50": "^NSEI",
     
-    # Broad Market
+    # Broad Market Aggregates
     "Nifty Next 50": "^NIFTYJR",
     "Nifty 100": "^CNX100",
     "Nifty 200": "^CNX200",
     "Nifty 500": "^CNX500",
     "Nifty Total Market": "NSE:NIFTY TOTAL MARKET",  # NSE fallback
     
-    # Midcap Indices
-    "Nifty Midcap 50": "^NIFTYMIDCAP50",
-    "Nifty Midcap 100": "^CNXMIDCAP",
+    # Midcap Aggregates (no stock data available)
     "Nifty Midcap 150": "NSE:NIFTY MIDCAP 150",  # NSE fallback
     "Nifty Midcap Select": "NSE:NIFTY MIDCAP SELECT",  # NSE fallback
     
-    # Smallcap Indices
-    "Nifty Smallcap 50": "^NIFTYSMLCAP50",
-    "Nifty Smallcap 100": "^CNXSMALLCAP",
+    # Smallcap Aggregates (no stock data available)
     "Nifty Smallcap 250": "NSE:NIFTY SMALLCAP 250",  # NSE fallback
     
     # Microcap
     "Nifty Microcap 250": "NSE:NIFTY MICROCAP 250",  # NSE fallback
     
-    # Combined
+    # Combined Market Cap Indices
     "Nifty LargeMidcap 250": "NSE:NIFTY LARGEMIDCAP 250",  # NSE fallback
     "Nifty MidSmallcap 400": "NSE:NIFTY MIDSMALLCAP 400",  # NSE fallback
 }
 
-# Thematic Indices (Most are NSE-only)
+# Thematic Indices (view-only, no constituent stock data available)
 NIFTY_THEMATIC = {
     "NIFTY 50": "^NSEI",
     
-    # Defence & Manufacturing
-    "Nifty India Defence": "NSE:NIFTY INDIA DEFENCE",  # NSE fallback
-    "Nifty India Manufacturing": "NSE:NIFTY INDIA MANUFACTURING",  # NSE fallback
-    
-    # Digital & Technology
-    "Nifty India Digital": "NSE:NIFTY INDIA DIGITAL",  # NSE fallback
-    
-    # Housing & Infrastructure
-    "Nifty Housing": "NSE:NIFTY HOUSING",  # NSE fallback
+    # Housing (Core Housing - no stock data)
     "Nifty Core Housing": "NSE:NIFTY CORE HOUSING",  # NSE fallback
+    
+    # Infrastructure (aggregated - no stock data)
     "Nifty Infra & Logistics": "NSE:NIFTY INDIA INFRASTRUCTURE & LOGISTICS",  # NSE fallback
-    "Nifty Transport & Logistics": "NSE:NIFTY TRANSPORTATION & LOGISTICS",  # NSE fallback
     
-    # Consumption & Tourism
-    "Nifty India Tourism": "NSE:NIFTY INDIA TOURISM",  # NSE fallback
-    "Nifty Rural": "NSE:NIFTY RURAL",  # NSE fallback
+    # Consumption (aggregated - no stock data)
     "Nifty Non-Cyclical Consumer": "NSE:NIFTY NON-CYCLICAL CONSUMER",  # NSE fallback
-    
-    # Others
-    "Nifty Capital Markets": "NSE:NIFTY CAPITAL MARKETS",  # NSE fallback
-    "Nifty Chemicals": "NSE:NIFTY CHEMICALS",  # NSE fallback
-    "Nifty EV & New Age Auto": "NSE:NIFTY EV & NEW AGE AUTOMOTIVE",  # NSE fallback
-    "Nifty Mobility": "NSE:NIFTY MOBILITY",  # NSE fallback
 }
 
 # All Indices Combined (Sectors + Broad Market + Thematic)
 NIFTY_ALL_SECTORS = {
-    # Benchmark
-    "NIFTY 50": "^NSEI",
-    
-    # === SECTORIAL ===
-    # Banking & Finance
-    "Bank Nifty": "^NSEBANK",
-    "Nifty PSU Bank": "^CNXPSUBANK",
-    "Nifty Pvt Bank": "NSE:NIFTY PRIVATE BANK",  # NSE fallback - Yahoo delisted
-    "Nifty Finance": "NSE:NIFTY FINANCIAL SERVICES",  # NSE fallback - Yahoo delisted
-    
-    # Technology
-    "Nifty IT": "^CNXIT",
-    
-    # Healthcare
-    "Nifty Pharma": "^CNXPHARMA",
-    "Nifty Healthcare": "NSE:NIFTY HEALTHCARE INDEX",  # NSE fallback
-    
-    # Consumer
-    "Nifty FMCG": "^CNXFMCG",
-    "Nifty Consumer Durables": "NSE:NIFTY CONSUMER DURABLES",  # NSE fallback
-    "Nifty India Consumption": "NSE:NIFTY INDIA CONSUMPTION",  # NSE fallback
-    
-    # Industrial & Manufacturing
-    "Nifty Auto": "^CNXAUTO",
-    "Nifty Metal": "^CNXMETAL",
-    "Nifty Realty": "^CNXREALTY",
-    "Nifty Infra": "^CNXINFRA",
-    
-    # Energy & Resources
-    "Nifty Energy": "^CNXENERGY",
-    "Nifty Oil & Gas": "^CNXENERGY",  # Same as Energy on Yahoo
-    
-    # Others
-    "Nifty Media": "^CNXMEDIA",
-    "Nifty Commodities": "NSE:NIFTY COMMODITIES",  # NSE fallback
-    "Nifty MNC": "^CNXMNC",
-    "Nifty Services": "^CNXSERVICE",
-    "Nifty PSE": "^CNXPSE",
-    "Nifty CPSE": "NSE:NIFTY CPSE",  # NSE fallback
-    
-    # === BROAD MARKET ===
-    "Nifty Next 50": "^NIFTYJR",
-    "Nifty 100": "^CNX100",
-    "Nifty 200": "^CNX200",
-    "Nifty 500": "^CNX500",
-    "Nifty Total Market": "NSE:NIFTY TOTAL MARKET",  # NSE fallback
-    
-    # Midcap
-    "Nifty Midcap 50": "^NIFTYMIDCAP50",
-    "Nifty Midcap 100": "^CNXMIDCAP",
-    "Nifty Midcap 150": "NSE:NIFTY MIDCAP 150",  # NSE fallback
-    "Nifty Midcap Select": "NSE:NIFTY MIDCAP SELECT",  # NSE fallback
-    
-    # Smallcap
-    "Nifty Smallcap 50": "^NIFTYSMLCAP50",
-    "Nifty Smallcap 100": "^CNXSMALLCAP",
-    "Nifty Smallcap 250": "NSE:NIFTY SMALLCAP 250",  # NSE fallback
-    
-    # Microcap & Combined
-    "Nifty Microcap 250": "NSE:NIFTY MICROCAP 250",  # NSE fallback
-    "Nifty LargeMidcap 250": "NSE:NIFTY LARGEMIDCAP 250",  # NSE fallback
-    "Nifty MidSmallcap 400": "NSE:NIFTY MIDSMALLCAP 400",  # NSE fallback
-    
-    # === THEMATIC ===
-    "Nifty India Defence": "NSE:NIFTY INDIA DEFENCE",  # NSE fallback
-    "Nifty India Manufacturing": "NSE:NIFTY INDIA MANUFACTURING",  # NSE fallback
-    "Nifty India Digital": "NSE:NIFTY INDIA DIGITAL",  # NSE fallback
-    "Nifty Housing": "NSE:NIFTY HOUSING",  # NSE fallback
-    "Nifty Capital Markets": "NSE:NIFTY CAPITAL MARKETS",  # NSE fallback
-    "Nifty Chemicals": "NSE:NIFTY CHEMICALS",  # NSE fallback
-    "Nifty Transport & Logistics": "NSE:NIFTY TRANSPORTATION & LOGISTICS",  # NSE fallback
-    "Nifty EV & New Age Auto": "NSE:NIFTY EV & NEW AGE AUTOMOTIVE",
+    **NIFTY_SECTORS_MAIN,
+    **NIFTY_BROAD_INDICES,
+    **NIFTY_THEMATIC
 }
 
 
