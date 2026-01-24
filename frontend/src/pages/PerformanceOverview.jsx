@@ -63,14 +63,14 @@ const INDEX_GROUPS = [
     title: 'Broader Market',
     subtitle: 'Aggregated market indices (view-only)',
     icon: '📈',
-    keywords: ['Next', 'Nifty 100', 'Nifty 200', 'Nifty 500', 'Total Market', 'Midcap 150', 'Midcap Select', 'Smallcap 250', 'Microcap 250']
+    keywords: ['Next', 'Nifty 100', 'Nifty 200', 'Nifty 500', 'Total Market', 'Midcap 150', 'Midcap Select', 'Smallcap 250', 'Microcap 250', 'LargeMidcap', 'MidSmallcap']
   },
   {
     key: 'thematic',
     title: 'Thematic Indices',
     subtitle: 'Specialized thematic indices (view-only)',
     icon: '🎯',
-    keywords: []  // No thematic indices available from NSE API
+    keywords: ['Core Housing', 'Infra & Logistics', 'Non-Cyclical Consumer']
   }
 ]
 
@@ -100,7 +100,13 @@ const categorizeIndex = (indexName) => {
 
 // Get status tag based on value (±0.15% threshold for color coding)
 const getStatusTag = (value) => {
-  if (value === null || value === undefined) return <Text type="secondary">-</Text>
+  if (value === null || value === undefined || isNaN(value)) {
+    return (
+      <Tag color="default" style={{ minWidth: 70, textAlign: 'center', fontSize: '11px' }}>
+        No Data
+      </Tag>
+    )
+  }
 
   const color = value >= 0.15 ? 'green' : value <= -0.15 ? 'red' : 'default'
   const sign = value > 0 ? '+' : ''
@@ -114,6 +120,9 @@ const getStatusTag = (value) => {
 
 // Get status icon (±0.15% threshold for icon display)
 const getStatusIcon = (rs) => {
+  if (rs === null || rs === undefined || isNaN(rs)) {
+    return <MinusOutlined style={{ color: '#d9d9d9' }} />
+  }
   if (rs >= 0.15) return <ArrowUpOutlined style={{ color: '#52c41a' }} />
   if (rs <= -0.15) return <ArrowDownOutlined style={{ color: '#ff4d4f' }} />
   return <MinusOutlined style={{ color: '#999' }} />
@@ -336,15 +345,21 @@ const PerformanceOverview = () => {
   const calculateSentiment = () => {
     const tfLabel = multiTimeframe ? 'W' : getTimeframeLabel(timeframe)
 
+    // Filter out sectors with no data
+    const validSectors = allSectors.filter(s => {
+      const val = s.values?.[tfLabel]
+      return val !== null && val !== undefined && !isNaN(val)
+    })
+
     // Count using ±0.15% threshold (matching visual color threshold)
-    const bullishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) >= 0.15).length
-    const bearishCount = allSectors.filter(s => (s.values?.[tfLabel] || 0) <= -0.15).length
-    const neutralCount = allSectors.filter(s => {
-      const val = s.values?.[tfLabel] || 0
+    const bullishCount = validSectors.filter(s => s.values[tfLabel] >= 0.15).length
+    const bearishCount = validSectors.filter(s => s.values[tfLabel] <= -0.15).length
+    const neutralCount = validSectors.filter(s => {
+      const val = s.values[tfLabel]
       return val > -0.15 && val < 0.15
     }).length
 
-    const totalCount = allSectors.length
+    const totalCount = validSectors.length
     const bullishPercent = totalCount > 0 ? Math.round((bullishCount / totalCount) * 100) : 0
 
     return {
@@ -371,14 +386,20 @@ const PerformanceOverview = () => {
     }
     
     TIMEFRAMES.forEach(tf => {
-      const bullishCount = allSectors.filter(s => (s.values?.[tf] || 0) >= 0.15).length
-      const bearishCount = allSectors.filter(s => (s.values?.[tf] || 0) <= -0.15).length
-      const neutralCount = allSectors.filter(s => {
-        const val = s.values?.[tf] || 0
+      // Filter out sectors with no data for this timeframe
+      const validSectors = allSectors.filter(s => {
+        const val = s.values?.[tf]
+        return val !== null && val !== undefined && !isNaN(val)
+      })
+      
+      const bullishCount = validSectors.filter(s => s.values[tf] >= 0.15).length
+      const bearishCount = validSectors.filter(s => s.values[tf] <= -0.15).length
+      const neutralCount = validSectors.filter(s => {
+        const val = s.values[tf]
         return val > -0.15 && val < 0.15
       }).length
 
-      const totalCount = allSectors.length
+      const totalCount = validSectors.length
       const bullishPercent = totalCount > 0 ? Math.round((bullishCount / totalCount) * 100) : 0
 
       // Use the mapped timeframe key that the component expects

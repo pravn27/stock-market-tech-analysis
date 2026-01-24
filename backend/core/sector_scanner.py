@@ -117,20 +117,23 @@ NIFTY_BROAD_INDICES = {
     # Microcap
     "Nifty Microcap 250": "NSE:NIFTY MICROCAP 250",  # NSE fallback
     
-    # Combined Market Cap Indices (commented out - not available in NSE API)
-    # "Nifty LargeMidcap 250": "NSE:NIFTY LARGEMIDCAP 250",
-    # "Nifty MidSmallcap 400": "NSE:NIFTY MIDSMALLCAP 400",
+    # Combined Market Cap Indices
+    "Nifty LargeMidcap 250": "NSE:NIFTY LARGEMIDCAP 250",  # May not be available
+    "Nifty MidSmallcap 400": "NSE:NIFTY MIDSMALLCAP 400",  # May not be available
 }
 
 # Thematic Indices (view-only, no constituent stock data available)
-# Note: These indices are not available in NSE API, commented out to avoid errors
 NIFTY_THEMATIC = {
     "NIFTY 50": "^NSEI",
     
-    # The following indices are not available in NSE API and have been removed:
-    # "Nifty Core Housing": "NSE:NIFTY CORE HOUSING",
-    # "Nifty Infra & Logistics": "NSE:NIFTY INDIA INFRASTRUCTURE & LOGISTICS",
-    # "Nifty Non-Cyclical Consumer": "NSE:NIFTY NON-CYCLICAL CONSUMER",
+    # Housing
+    "Nifty Core Housing": "NSE:NIFTY CORE HOUSING",  # May not be available
+    
+    # Infrastructure
+    "Nifty Infra & Logistics": "NSE:NIFTY INDIA INFRASTRUCTURE & LOGISTICS",  # May not be available
+    
+    # Consumption
+    "Nifty Non-Cyclical Consumer": "NSE:NIFTY NON-CYCLICAL CONSUMER",  # May not be available
 }
 
 # All Indices Combined (Sectors + Broad Market + Thematic)
