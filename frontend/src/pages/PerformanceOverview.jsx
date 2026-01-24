@@ -372,7 +372,6 @@ const PerformanceOverview = () => {
             <Text 
               strong 
               style={{ 
-                color: hasStockData ? '#1890ff' : undefined,
                 opacity: hasStockData ? 1 : 0.6
               }}
             >
@@ -427,7 +426,6 @@ const PerformanceOverview = () => {
             <Text 
               strong 
               style={{ 
-                color: hasStockData ? '#1890ff' : undefined,
                 opacity: hasStockData ? 1 : 0.6
               }}
             >
